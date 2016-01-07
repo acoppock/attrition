@@ -199,4 +199,55 @@ estimator_ev <- function(Y, Z, R,  minY, maxY, alpha, data){
            upp_var=var_u))
 }
 
+#' @param Y The (unquoted) outcome variable. Must be numeric.
+#' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
+#' @param R The (unquoted) respose indicator variable. Must be numeric and take values 0 or 1.
+#' @param R1 The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.
+#' @param Attempt The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.
+#' @param R2 The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.
+#' @param strata A single (unquoted) variable that indicates which strata units are in. DOES NOT WORK YET
+#' @param alpha The desired significance level. 0.05 by default.
+#' @param data A dataframe
+#'
+#' @return A results matrix
+#' @export
+estimator_trim <-
+function(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL, strata = NULL, alpha = 0.05, data){
+  Y <-  eval(substitute(Y), data)
+  if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
+  Z <-  eval(substitute(Z), data)
+  if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
+
+  R <-  eval(substitute(R), data)
+  if(!is.null(R)){
+    if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
+
+    out <- trimming_bounds(Out = Y, Treat = Z, Fail = as.numeric(R == 0), Weight = rep(1, length(Y)), monotonicity = TRUE)
+  }else{
+    R1 <-  eval(substitute(R1), data)
+    if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
+    R2 <-  eval(substitute(R2), data)
+    if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
+    Attempt <-  eval(substitute(Attempt), data)
+    if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
+
+    Weight <- rep(NA, length(Y))
+
+    Weight[R1==1] <- 1
+    Weight[Attempt==1 & Z ==1] <- sum(Z == 1 & R1 == 0)/sum(Z == 1 & Attempt == 1)
+    Weight[Attempt==1 & Z ==0] <- sum(Z == 0 & R1 == 0)/sum(Z == 0 & Attempt == 1)
+
+    Fail <- as.numeric(R1 == 0 & R2 == 0)
+
+    Keep <- (R1 == 1 | Attempt == 1)
+
+    out <- trimming_bounds(Out = Y[Keep], Treat = Z[Keep],
+                           Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE)
+  }
+
+  return(out)
+}
+
+
+
 

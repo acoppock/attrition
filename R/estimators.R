@@ -174,3 +174,56 @@ optim_manski_2s <- function(p1_t,p2_t,s1_t,s2_nm_t,
 }
 
 
+function(Out, Treat, Fail, Weight, monotonicity = FALSE) {
+
+  dataf <- data.frame(Out, Treat, Fail, Weight)
+  datafsort <- dataf[order(Out),]
+
+  OutS0 <- datafsort[datafsort$Fail==0 & datafsort$Treat==0,]
+  OutS1 <- datafsort[datafsort$Fail==0 & datafsort$Treat==1,]
+
+  OutS0$Weight <- OutS0$Weight/sum(OutS0$Weight)
+  OutS1$Weight <- OutS1$Weight/sum(OutS1$Weight)
+
+  OutS0.CDF <- OutS0$Weight
+  OutS1.CDF <- OutS1$Weight
+
+  for(i in 2:length(OutS0.CDF)) OutS0.CDF[i] <- OutS0.CDF[i] + OutS0.CDF[i-1]
+  for(i in 2:length(OutS1.CDF)) OutS1.CDF[i] <- OutS1.CDF[i] + OutS1.CDF[i-1]
+
+  f0 <- sum(Weight[Fail==1 & Treat==0])/sum(Weight[Treat==0])
+  f1 <- sum(Weight[Fail==1 & Treat==1])/sum(Weight[Treat==1])
+
+  if(monotonicity){
+    Q <- ((1 - f1) - (1 - f0))/(1-f1)
+    if(Q < 0){stop("Monotonicity appears to be violated: The control group is more likely to be missing than the treatment group.")}
+
+    Out0_mono <- weighted.mean(OutS0$Out, OutS0$Weight)
+
+    Out1U_mono <- weighted.mean(OutS1$Out[OutS1.CDF>Q], OutS1$Weight[OutS1.CDF>Q])
+    Out1L_mono <- weighted.mean(OutS1$Out[OutS1.CDF<(1-Q)], OutS1$Weight[OutS1.CDF<(1-Q)])
+
+    upper_bound <- Out1U_mono - Out0_mono
+    lower_bound <- Out1L_mono - Out0_mono
+
+    return(c(upper_bound = upper_bound, lower_bound = lower_bound,
+             Out0_mono = Out0_mono, Out1L_mono=Out1L_mono, Out1U_mono = Out1U_mono))
+
+  }else{
+
+    trim0 <- (f1)/(1-f0)
+    trim1 <- (f0)/(1-f1)
+
+    Out0U <- weighted.mean(OutS0$Out[OutS0.CDF>trim0], OutS0$Weight[OutS0.CDF>trim0])
+    Out0L <- weighted.mean(OutS0$Out[OutS0.CDF<(1-trim0)], OutS0$Weight[OutS0.CDF<(1-trim0)])
+
+    Out1U <- weighted.mean(OutS1$Out[OutS1.CDF>trim1], OutS1$Weight[OutS1.CDF>trim1])
+    Out1L <- weighted.mean(OutS1$Out[OutS1.CDF<(1-trim1)], OutS1$Weight[OutS1.CDF<(1-trim1)])
+
+    upper_bound = Out1U - Out0L
+    lower_bound = Out1L - Out0U
+
+    return(c(upper_bound = upper_bound, lower_bound = lower_bound, Out0L=Out0L, Out0U=Out0U, Out1L=Out1L, Out1U=Out1U))
+
+  }
+}
