@@ -1,11 +1,10 @@
 Package: attrition
-Type: Package
-Title: Tools for Estimating Worst-case Bounds in Experiments Encountering Attrition
+Title: What the Package Does (one line, title case)
 Version: 0.0.0.9000
-Date: 2015-10-11
-Author: c(
-    person("Coppock", "Alexander", email = "acoppock@gmail.com", role = c("aut", "cre"),
-    person("Kern", "Holger", email = hkern@fsu.edu, role = "aut"))
-Description: This package provides estimators for worst case bounds, trimming bounds, and worst-case bounds under double sampling.  See Aronow et al. 2015. "Combining double sampling and bounds to address non-ignorable missing outcomes in randomized experiments."
-License: GPL-3
-LazyData: TRUE
+Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Description: What the package does (one paragraph).
+Depends:
+    R (>= 3.2.3)
+License: What license is it under?
+LazyData: true
+RoxygenNote: 5.0.1

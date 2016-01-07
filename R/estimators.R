@@ -5,19 +5,19 @@ ds_var <- function(n1,n2,p1,p2,s1,s2,y1m,y2m) p1*n1/n1^2 * s1^2 + ((1-p1)*n1)^2/
 # calculate manski bounds
 #' @export
 ds_manski <- function(p1,p2,y1m,y2m_nm,minY,maxY) {
-	const1 <- p1*y1m + (1-p1)*p2*y2m_nm
-	const2 <- (1-p1)*(1-p2)
-	return(c(const1+const2*minY,const1+const2*maxY))
+  const1 <- p1*y1m + (1-p1)*p2*y2m_nm
+  const2 <- (1-p1)*(1-p2)
+  return(c(const1+const2*minY,const1+const2*maxY))
 }
 
 # calculate two-sample sampling variance
 #' @export
 ds_var_2s <- function(treatment_vec,control_vec) {
   ts_var <-
-  ds_var(treatment_vec[1],treatment_vec[2],
-         treatment_vec[3],treatment_vec[4],
-         treatment_vec[5],treatment_vec[6],
-         treatment_vec[7],treatment_vec[8]) +
+    ds_var(treatment_vec[1],treatment_vec[2],
+           treatment_vec[3],treatment_vec[4],
+           treatment_vec[5],treatment_vec[6],
+           treatment_vec[7],treatment_vec[8]) +
     ds_var(control_vec[1],control_vec[2],
            control_vec[3],control_vec[4],
            control_vec[5],control_vec[6],
@@ -28,12 +28,12 @@ ds_var_2s <- function(treatment_vec,control_vec) {
 # estimate manski bounds, two-sample:
 #' @export
 ds_manski_2s <- function(p1_t,p2_t,y1m_t,y2m_t,p1_c,p2_c,y1m_c,y2m_c,minY,maxY) {
-	const1_t <- p1_t*y1m_t + (1-p1_t)*p2_t*y2m_t
-	const2_t <- (1-p1_t)*(1-p2_t)
-	const1_c <- p1_c*y1m_c + (1-p1_c)*p2_c*y2m_c
-	const2_c <- (1-p1_c)*(1-p2_c)
-	return(c(const1_t+const2_t*minY - (const1_c+const2_c*maxY),const1_t+const2_t*maxY - (const1_c+const2_c*minY)))
-	}
+  const1_t <- p1_t*y1m_t + (1-p1_t)*p2_t*y2m_t
+  const2_t <- (1-p1_t)*(1-p2_t)
+  const1_c <- p1_c*y1m_c + (1-p1_c)*p2_c*y2m_c
+  const2_c <- (1-p1_c)*(1-p2_c)
+  return(c(const1_t+const2_t*minY - (const1_c+const2_c*maxY),const1_t+const2_t*maxY - (const1_c+const2_c*minY)))
+}
 
 #' @export
 ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
@@ -59,39 +59,40 @@ ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
       const <- minY
     }else{
       const <- maxY
-      wm <- gen_mean(y2m_nm,p2,lower_bound,minY,maxY)
-      # formula for combined var
-      return(p2*s2_nm^2 + p2*(y2m_nm-wm)^2 + (1-p2)*(const-wm)^2)
     }
+    wm <- gen_mean(y2m_nm,p2,lower_bound,minY,maxY)
+    # formula for combined var
+    return(p2*s2_nm^2 + p2*(y2m_nm-wm)^2 + (1-p2)*(const-wm)^2)
+
   }
 
-    y2m_t_L <- gen_mean(y2m_nm_t,p2_t,lower_bound=TRUE,minY,maxY)
-    y2m_t_U <- gen_mean(y2m_nm_t,p2_t,lower_bound=FALSE,minY,maxY)
-    y2m_c_L <- gen_mean(y2m_nm_c,p2_c,lower_bound=TRUE,minY,maxY)
-    y2m_c_U <- gen_mean(y2m_nm_c,p2_c,lower_bound=FALSE,minY,maxY)
+  y2m_t_L <- gen_mean(y2m_nm_t,p2_t,lower_bound=TRUE,minY,maxY)
+  y2m_t_U <- gen_mean(y2m_nm_t,p2_t,lower_bound=FALSE,minY,maxY)
+  y2m_c_L <- gen_mean(y2m_nm_c,p2_c,lower_bound=TRUE,minY,maxY)
+  y2m_c_U <- gen_mean(y2m_nm_c,p2_c,lower_bound=FALSE,minY,maxY)
 
-    s2_t_L <- gen_var(y2m_nm_t,s2_nm_t,p2_t,lower_bound=TRUE,minY,maxY)^.5
-    s2_t_U <- gen_var(y2m_nm_t,s2_nm_t,p2_t,lower_bound=FALSE,minY,maxY)^.5
-    s2_c_L <- gen_var(y2m_nm_c,s2_nm_c,p2_c,lower_bound=TRUE,minY,maxY)^.5
-    s2_c_U <- gen_var(y2m_nm_c,s2_nm_c,p2_c,lower_bound=FALSE,minY,maxY)^.5
+  s2_t_L <- gen_var(y2m_nm_t,s2_nm_t,p2_t,lower_bound=TRUE,minY,maxY)^.5
+  s2_t_U <- gen_var(y2m_nm_t,s2_nm_t,p2_t,lower_bound=FALSE,minY,maxY)^.5
+  s2_c_L <- gen_var(y2m_nm_c,s2_nm_c,p2_c,lower_bound=TRUE,minY,maxY)^.5
+  s2_c_U <- gen_var(y2m_nm_c,s2_nm_c,p2_c,lower_bound=FALSE,minY,maxY)^.5
 
-    manski_bounds_est <- ds_manski_2s(p1_t,p2_t,y1m_t,y2m_nm_t,p1_c,p2_c,y1m_c,y2m_nm_c,minY,maxY)
-    lower_bound_est <- ds_manski_2s(p1_t,p2_t,y1m_t,y2m_nm_t,p1_c,p2_c,y1m_c,y2m_nm_c,minY,maxY)[1]
-    upper_bound_est <- ds_manski_2s(p1_t,p2_t,y1m_t,y2m_nm_t,p1_c,p2_c,y1m_c,y2m_nm_c,minY,maxY)[2]
+  manski_bounds_est <- ds_manski_2s(p1_t,p2_t,y1m_t,y2m_nm_t,p1_c,p2_c,y1m_c,y2m_nm_c,minY,maxY)
+  lower_bound_est <- ds_manski_2s(p1_t,p2_t,y1m_t,y2m_nm_t,p1_c,p2_c,y1m_c,y2m_nm_c,minY,maxY)[1]
+  upper_bound_est <- ds_manski_2s(p1_t,p2_t,y1m_t,y2m_nm_t,p1_c,p2_c,y1m_c,y2m_nm_c,minY,maxY)[2]
 
-    lower_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_L,y1m_t,y2m_t_L),c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_U,y1m_c,y2m_c_U))
-    upper_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_U,y1m_t,y2m_t_U),c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
+  lower_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_L,y1m_t,y2m_t_L),c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_U,y1m_c,y2m_c_U))
+  upper_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_U,y1m_t,y2m_t_U),c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
 
 
-    im_crit <- function(ca) abs(pnorm(ca + (upper_bound_est-lower_bound_est)/max(upper_bound_var_est,lower_bound_var_est))-pnorm(-ca)-(1-alpha))
+  im_crit <- function(ca) abs(pnorm(ca + (upper_bound_est-lower_bound_est)/max(upper_bound_var_est,lower_bound_var_est))-pnorm(-ca)-(1-alpha))
 
-    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
+  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
 
-    return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
-             ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
-             low_est=lower_bound_est,upp_est=upper_bound_est,
-             low_var=lower_bound_var_est,upp_var=upper_bound_var_est))
-  }
+  return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+           ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
+           low_est=lower_bound_est,upp_est=upper_bound_est,
+           low_var=lower_bound_var_est,upp_var=upper_bound_var_est))
+}
 
 #' find the n1,n2 (number of attempts to measure) that minimize width of Manski CIs
 #' @export
@@ -174,56 +175,57 @@ optim_manski_2s <- function(p1_t,p2_t,s1_t,s2_nm_t,
 }
 
 
-function(Out, Treat, Fail, Weight, monotonicity = FALSE) {
+trimming_bounds <-
+  function(Out, Treat, Fail, Weight, monotonicity = FALSE) {
 
-  dataf <- data.frame(Out, Treat, Fail, Weight)
-  datafsort <- dataf[order(Out),]
+    dataf <- data.frame(Out, Treat, Fail, Weight)
+    datafsort <- dataf[order(Out),]
 
-  OutS0 <- datafsort[datafsort$Fail==0 & datafsort$Treat==0,]
-  OutS1 <- datafsort[datafsort$Fail==0 & datafsort$Treat==1,]
+    OutS0 <- datafsort[datafsort$Fail==0 & datafsort$Treat==0,]
+    OutS1 <- datafsort[datafsort$Fail==0 & datafsort$Treat==1,]
 
-  OutS0$Weight <- OutS0$Weight/sum(OutS0$Weight)
-  OutS1$Weight <- OutS1$Weight/sum(OutS1$Weight)
+    OutS0$Weight <- OutS0$Weight/sum(OutS0$Weight)
+    OutS1$Weight <- OutS1$Weight/sum(OutS1$Weight)
 
-  OutS0.CDF <- OutS0$Weight
-  OutS1.CDF <- OutS1$Weight
+    OutS0.CDF <- OutS0$Weight
+    OutS1.CDF <- OutS1$Weight
 
-  for(i in 2:length(OutS0.CDF)) OutS0.CDF[i] <- OutS0.CDF[i] + OutS0.CDF[i-1]
-  for(i in 2:length(OutS1.CDF)) OutS1.CDF[i] <- OutS1.CDF[i] + OutS1.CDF[i-1]
+    for(i in 2:length(OutS0.CDF)) OutS0.CDF[i] <- OutS0.CDF[i] + OutS0.CDF[i-1]
+    for(i in 2:length(OutS1.CDF)) OutS1.CDF[i] <- OutS1.CDF[i] + OutS1.CDF[i-1]
 
-  f0 <- sum(Weight[Fail==1 & Treat==0])/sum(Weight[Treat==0])
-  f1 <- sum(Weight[Fail==1 & Treat==1])/sum(Weight[Treat==1])
+    f0 <- sum(Weight[Fail==1 & Treat==0])/sum(Weight[Treat==0])
+    f1 <- sum(Weight[Fail==1 & Treat==1])/sum(Weight[Treat==1])
 
-  if(monotonicity){
-    Q <- ((1 - f1) - (1 - f0))/(1-f1)
-    if(Q < 0){stop("Monotonicity appears to be violated: The control group is more likely to be missing than the treatment group.")}
+    if(monotonicity){
+      Q <- ((1 - f1) - (1 - f0))/(1-f1)
+      if(Q < 0){stop("Monotonicity appears to be violated: The control group is more likely to be missing than the treatment group.")}
 
-    Out0_mono <- weighted.mean(OutS0$Out, OutS0$Weight)
+      Out0_mono <- weighted.mean(OutS0$Out, OutS0$Weight)
 
-    Out1U_mono <- weighted.mean(OutS1$Out[OutS1.CDF>Q], OutS1$Weight[OutS1.CDF>Q])
-    Out1L_mono <- weighted.mean(OutS1$Out[OutS1.CDF<(1-Q)], OutS1$Weight[OutS1.CDF<(1-Q)])
+      Out1U_mono <- weighted.mean(OutS1$Out[OutS1.CDF>Q], OutS1$Weight[OutS1.CDF>Q])
+      Out1L_mono <- weighted.mean(OutS1$Out[OutS1.CDF<(1-Q)], OutS1$Weight[OutS1.CDF<(1-Q)])
 
-    upper_bound <- Out1U_mono - Out0_mono
-    lower_bound <- Out1L_mono - Out0_mono
+      upper_bound <- Out1U_mono - Out0_mono
+      lower_bound <- Out1L_mono - Out0_mono
 
-    return(c(upper_bound = upper_bound, lower_bound = lower_bound,
-             Out0_mono = Out0_mono, Out1L_mono=Out1L_mono, Out1U_mono = Out1U_mono))
+      return(c(upper_bound = upper_bound, lower_bound = lower_bound,
+               Out0_mono = Out0_mono, Out1L_mono=Out1L_mono, Out1U_mono = Out1U_mono))
 
-  }else{
+    }else{
 
-    trim0 <- (f1)/(1-f0)
-    trim1 <- (f0)/(1-f1)
+      trim0 <- (f1)/(1-f0)
+      trim1 <- (f0)/(1-f1)
 
-    Out0U <- weighted.mean(OutS0$Out[OutS0.CDF>trim0], OutS0$Weight[OutS0.CDF>trim0])
-    Out0L <- weighted.mean(OutS0$Out[OutS0.CDF<(1-trim0)], OutS0$Weight[OutS0.CDF<(1-trim0)])
+      Out0U <- weighted.mean(OutS0$Out[OutS0.CDF>trim0], OutS0$Weight[OutS0.CDF>trim0])
+      Out0L <- weighted.mean(OutS0$Out[OutS0.CDF<(1-trim0)], OutS0$Weight[OutS0.CDF<(1-trim0)])
 
-    Out1U <- weighted.mean(OutS1$Out[OutS1.CDF>trim1], OutS1$Weight[OutS1.CDF>trim1])
-    Out1L <- weighted.mean(OutS1$Out[OutS1.CDF<(1-trim1)], OutS1$Weight[OutS1.CDF<(1-trim1)])
+      Out1U <- weighted.mean(OutS1$Out[OutS1.CDF>trim1], OutS1$Weight[OutS1.CDF>trim1])
+      Out1L <- weighted.mean(OutS1$Out[OutS1.CDF<(1-trim1)], OutS1$Weight[OutS1.CDF<(1-trim1)])
 
-    upper_bound = Out1U - Out0L
-    lower_bound = Out1L - Out0U
+      upper_bound = Out1U - Out0L
+      lower_bound = Out1L - Out0U
 
-    return(c(upper_bound = upper_bound, lower_bound = lower_bound, Out0L=Out0L, Out0U=Out0U, Out1L=Out1L, Out1U=Out1U))
+      return(c(upper_bound = upper_bound, lower_bound = lower_bound, Out0L=Out0L, Out0U=Out0U, Out1L=Out1L, Out1U=Out1U))
 
+    }
   }
-}
