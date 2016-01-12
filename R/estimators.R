@@ -209,7 +209,8 @@ trimming_bounds <-
       lower_bound <- Out1L_mono - Out0_mono
 
       return(c(upper_bound = upper_bound, lower_bound = lower_bound,
-               Out0_mono = Out0_mono, Out1L_mono=Out1L_mono, Out1U_mono = Out1U_mono))
+               Out0_mono = Out0_mono, Out1L_mono=Out1L_mono, Out1U_mono = Out1U_mono,
+               control_group_N = nrow(OutS0), treat_group_N = nrow(OutS1), Q = Q, f1 = f1, f0 = f0, pi_r_1 = 1 - f1, pi_r_0 = 1 - f0))
 
     }else{
 
@@ -225,7 +226,8 @@ trimming_bounds <-
       upper_bound = Out1U - Out0L
       lower_bound = Out1L - Out0U
 
-      return(c(upper_bound = upper_bound, lower_bound = lower_bound, Out0L=Out0L, Out0U=Out0U, Out1L=Out1L, Out1U=Out1U))
+      return(c(upper_bound = upper_bound, lower_bound = lower_bound, Out0L=Out0L, Out0U=Out0U, Out1L=Out1L, Out1U=Out1U,
+               control_group_N = nrow(OutS0), treat_group_N = nrow(OutS1), trim0 = trim0, trim1 = trim1))
 
     }
   }
