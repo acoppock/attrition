@@ -80,18 +80,22 @@ ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
   lower_bound_est <- ds_manski_2s(p1_t,p2_t,y1m_t,y2m_nm_t,p1_c,p2_c,y1m_c,y2m_nm_c,minY,maxY)[1]
   upper_bound_est <- ds_manski_2s(p1_t,p2_t,y1m_t,y2m_nm_t,p1_c,p2_c,y1m_c,y2m_nm_c,minY,maxY)[2]
 
-  lower_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_L,y1m_t,y2m_t_L),c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_U,y1m_c,y2m_c_U))
-  upper_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_U,y1m_t,y2m_t_U),c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
+  lower_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_L,y1m_t,y2m_t_L),
+                                   c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_U,y1m_c,y2m_c_U))
+  upper_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_U,y1m_t,y2m_t_U),
+                                   c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
 
 
-  im_crit <- function(ca) abs(pnorm(ca + (upper_bound_est-lower_bound_est)/max(upper_bound_var_est,lower_bound_var_est))-pnorm(-ca)-(1-alpha))
+  im_crit <- function(ca) abs(pnorm(ca + (upper_bound_est-lower_bound_est)/
+                                      sqrt(max(upper_bound_var_est,lower_bound_var_est))
+                                    )-pnorm(-ca)-(1-alpha))
 
   sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
 
   return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
            ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
            low_est=lower_bound_est,upp_est=upper_bound_est,
-           low_var=lower_bound_var_est,upp_var=upper_bound_var_est))
+           low_var=lower_bound_var_est,upp_var=upper_bound_var_est, sig = sig))
 }
 
 #' find the n1,n2 (number of attempts to measure) that minimize width of Manski CIs
@@ -231,3 +235,59 @@ trimming_bounds <-
 
     }
   }
+
+
+
+#' @export
+manski_cis <- function(n1_t, n1_c,
+                       n1_t_s, n1_c_s,
+                       p1_t, p1_c,
+                       y1m_t, y1m_c,
+                       s1_t, s1_c,
+                       minY,maxY,alpha){
+
+  gen_mean <- function(y1m, p, lower_bound=TRUE, minY, maxY){
+    if (lower_bound == TRUE){
+      return(p*y1m + (1-p)*minY)
+    }else{
+      return(p*y1m+ (1-p)*maxY)
+    }
+  }
+
+  gen_var <- function(y1m, s1, p, lower_bound = TRUE, minY, maxY) {
+    if (lower_bound==TRUE){
+      const <- minY
+    }else{
+      const <- maxY
+    }
+    wm <- gen_mean(y1m,p,lower_bound,minY,maxY)
+    # formula for combined var
+    return(p*s1^2 + p*(y1m-wm)^2 + (1-p)*(const-wm)^2)
+  }
+
+  est_u <-
+    gen_mean(y1m = y1m_t, p = p1_t, lower_bound = FALSE, minY = minY, maxY = maxY) -
+    gen_mean(y1m = y1m_c, p = p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)
+  est_l <-
+    gen_mean(y1m = y1m_t, p = p1_t, lower_bound = TRUE, minY = minY, maxY = maxY) -
+    gen_mean(y1m = y1m_c, p = p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
+
+  var_u <-
+    gen_var(y1m = y1m_t, s1 = s1_t, p = p1_t, lower_bound = FALSE, minY = minY, maxY = maxY) +
+    gen_var(y1m = y1m_c, s1 = s1_c, p = p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)
+  var_l <-
+    gen_var(y1m = y1m_t, s1 = s1_t, p = p1_t, lower_bound = TRUE, minY = minY, maxY = maxY) +
+    gen_var(y1m = y1m_c, s1 = s1_c, p = p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
+
+
+  im_crit <- function(ca) abs(pnorm(ca + (est_u-est_l)/max(var_u,var_l))-pnorm(-ca)-(1-alpha))
+  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
+
+  return(c(ci_lower=est_l - sig*var_l^.5,
+           ci_upper=est_u + sig*var_u^.5,
+           low_est=est_l,
+           upp_est=est_u,
+           low_var=var_l,
+           upp_var=var_u))
+}
+
