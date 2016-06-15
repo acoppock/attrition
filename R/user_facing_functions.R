@@ -98,7 +98,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
     s2_nm_c <- sd(Y[R2==1 & Z==0])
     s2_nm_t <- sd(Y[R2==1 & Z==1])
 
-   # c1a_t <- c1r_t <- c2a_t <- c2r_t <- -99 # irrelevant
+    # c1a_t <- c1r_t <- c2a_t <- c2r_t <- -99 # irrelevant
 
     cis_out <- ds_manski_cis_2s(n1_t=n1_t,n2_t=n2_t,
                                 n1_c=n1_c,n2_c=n2_c,
@@ -116,42 +116,42 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
   }else{
     # If there is a stratification variable, call estimator_ds recursively.
 
-  if(sum(is.na(strata))!=0){stop("The stratification variable (strata) must not contain any missing values.")}
+    if(sum(is.na(strata))!=0){stop("The stratification variable (strata) must not contain any missing values.")}
 
-  unique_strata <- unique(strata)
-  n_strata <- length(unique_strata)
-  m1_l_vec <- m1_u_vec <- v1_l_vec <- v1_u_vec <- proportions <- rep(NA, n_strata)
+    unique_strata <- unique(strata)
+    n_strata <- length(unique_strata)
+    m1_l_vec <- m1_u_vec <- v1_l_vec <- v1_u_vec <- proportions <- rep(NA, n_strata)
 
-  ds_df <- data.frame(Y, R1, Z, Attempt, R2, strata)
+    ds_df <- data.frame(Y, R1, Z, Attempt, R2, strata)
 
-  for(i in 1:n_strata){
-    ests <- estimator_ds(Y = Y, R1 = R1,Z = Z,
-                         Attempt = Attempt, R2 = R2,
-                         minY = minY, maxY = maxY, alpha = alpha,
-                         data=subset(ds_df, strata==unique_strata[i]))
-    m1_l_vec[i] <- ests[3]
-    m1_u_vec[i] <- ests[4]
-    v1_l_vec[i] <- ests[5]
-    v1_u_vec[i] <- ests[6]
-    proportions[i] <- mean(strata == unique_strata[i])
-  }
+    for(i in 1:n_strata){
+      ests <- estimator_ds(Y = Y, R1 = R1,Z = Z,
+                           Attempt = Attempt, R2 = R2,
+                           minY = minY, maxY = maxY, alpha = alpha,
+                           data=subset(ds_df, strata==unique_strata[i]))
+      m1_l_vec[i] <- ests[3]
+      m1_u_vec[i] <- ests[4]
+      v1_l_vec[i] <- ests[5]
+      v1_u_vec[i] <- ests[6]
+      proportions[i] <- mean(strata == unique_strata[i])
+    }
 
-  est_l <-  sum(m1_l_vec *proportions)
-  est_u <-  sum(m1_u_vec *proportions)
+    est_l <-  sum(m1_l_vec *proportions)
+    est_u <-  sum(m1_u_vec *proportions)
 
-  var_l <- sum(v1_l_vec *proportions^2)
-  var_u <- sum(v1_u_vec *proportions^2)
+    var_l <- sum(v1_l_vec *proportions^2)
+    var_u <- sum(v1_u_vec *proportions^2)
 
-  im_crit <- function(ca) abs(pnorm(ca + (est_u-est_l)/max(var_u,var_l))-pnorm(-ca)-(1-alpha))
+    im_crit <- function(ca) abs(pnorm(ca + (est_u-est_l)/max(var_u,var_l))-pnorm(-ca)-(1-alpha))
 
-  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
+    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
 
-  return(c(ci_lower=est_l - sig*var_l^.5,
-           ci_upper=est_u + sig*var_u^.5,
-           low_est=est_l,
-           upp_est=est_u,
-           low_var=var_l,
-           upp_var=var_u))
+    return(c(ci_lower=est_l - sig*var_l^.5,
+             ci_upper=est_u + sig*var_u^.5,
+             low_est=est_l,
+             upp_est=est_u,
+             low_var=var_l,
+             upp_var=var_u))
   }
 }
 
@@ -250,6 +250,118 @@ estimator_trim <-
 
     return(out)
   }
+
+#' Sensitivity Analysis
+#'
+#' @param Y The (unquoted) outcome variable. Must be numeric.
+#' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
+#' @param R1 The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.
+#' @param Attempt The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.
+#' @param R2 The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.
+#' @param minY The minimum possible value of the outcome (Y) variable.
+#' @param maxY The maximum possible value of the outcome (Y) variable.
+#' @param strata A single (unquoted) variable that indicates which strata units are in.
+#' @param alpha The desired significance level. 0.05 by default.
+#' @param data A dataframe
+#' @param sims Number of points at which to evaluate sensitivity test. Defaults to 100
+#'
+#' @return A list containing a ggplot object, a dataframe of simulated bounds and cis, and a value of pstar, if it exists.
+#' @export
+#'
+sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata = NULL, alpha = 0.05, data){
+  require(ggplot2)
+  require(dplyr)
+  require(purrr)
+  require(reshape2)
+
+  Y <-  eval(substitute(Y), data)
+  if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
+  Z <-  eval(substitute(Z), data)
+  if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
+  R1 <-  eval(substitute(R1), data)
+  if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
+  R2 <-  eval(substitute(R2), data)
+  if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
+  Attempt <-  eval(substitute(Attempt), data)
+  if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
+
+  df <- data.frame(Y, Z, R1, R2, Attempt)
+
+
+
+  ps <- seq(0, 1, length.out = sims)
+
+  sims_df <-
+    map(ps, ~sensitivity_ds_ci(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,
+                               R2 = R2, minY=minY, maxY=maxY, data=df, p = .x)) %>%
+    do.call(rbind, .) %>%
+    data.frame() %>%
+    mutate(p = ps,
+           change_lower = find_sign_changes(ci_lower),
+           change_upper = find_sign_changes(ci_upper),
+           change_any = change_lower | change_upper)
+
+
+    #gg_df <-
+    #  sims_df %>%
+    #melt(id.vars = c("p"), measure.vars = c("ci_upper", "ci_lower", "upp_est", "low_est")) %>%
+    #filter(!variable %in% c("low_var", "upp_var", "sig")) %>%
+    #mutate(type = ifelse(variable %in% c("ci_upper", "ci_lower"),
+    #                     "95% Confidence Interval", "Identification Region"))
+  points_df <-
+    data.frame(p = c(0, 1, 1),
+               value = c(with(sims_df, low_est[p==0]),
+                         with(sims_df, low_est[p==1]),
+                         with(sims_df, upp_est[p==1])),
+               hjust = c(-.3, 1.1, 1.1),
+               vjust = c(NA, 1, -1),
+               label = c("Naive Estimate", "Worst Case Lower Bound", "Worst Case Upper Bound"))
+
+  g <-
+    ggplot(sims_df, aes(x = p)) +
+    geom_line(aes(y = upp_est), alpha = 0.5) +
+    geom_line(aes(y = low_est), alpha = 0.5) +
+    geom_ribbon(aes(ymax = ci_upper, ymin = ci_lower), alpha = 0.2) +
+    geom_point(data = points_df, aes(y = value)) +
+    geom_text(data = points_df, aes(y = value, label = label, hjust = hjust, vjust = vjust)) +
+    ylab("Identification Regions and 95% Confidence Intervals") +
+    xlab(expression(paste("Sensitivity Parameter ", delta, " (0 = Ignorability)"))) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    theme_bw() +
+    theme(legend.position = "bottom",
+          legend.key.width = unit(3, "lines"),
+          legend.title = element_blank())
+
+
+  p_star_df <- "No value of the sensitivity parameter yields a statistically significant result."
+
+  p_star <- with(sims_df, p[change_any])
+  if(length(p_star) == 1){
+    p_star_df <- data.frame(p = p_star,
+                            value = 0,
+                            label = paste0("delta^'*' == ", round(p_star, 2)),
+                            hjust = ifelse(p_star > 0.5, 1.1, -1.1),
+                            vjust = ifelse(with(sims_df, low_est[p==0]) > 0, 1.3, -1.3))
+
+    g <- g + geom_point(data = p_star_df, aes(y = value)) +
+          geom_text(data = p_star_df, aes(label = label, y = value,  vjust = vjust), parse = TRUE)
+  }
+
+  return(list(sensitivity_plot = g, sims_df = sims_df, p_star = p_star_df))
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

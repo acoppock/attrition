@@ -1,10 +1,16 @@
 Package: attrition
 Title: What the Package Does (one line, title case)
 Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Authors@R: person("Alexander", "Coppock", email = "acoppock@gmail.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
-Depends:
+Depends: 
     R (>= 3.2.3)
-License: What license is it under?
+Imports: 
+    dplyr,
+    ggplot2,
+    purrr,
+    reshape2
+License: GPL-3
 LazyData: true
 RoxygenNote: 5.0.1
+Suggests: testthat

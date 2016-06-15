@@ -1,3 +1,4 @@
+library(attrition)
 set.seed(343) # For reproducibility
 N <- 1000
 
@@ -8,8 +9,8 @@ Y_1 <- sample(1:5, N, replace=TRUE, prob = c(0.1, 0.1, 0.4, 0.3, 0.1))
 R1_0 <- rbinom(N, 1, prob = 0.7)
 R1_1 <- rbinom(N, 1, prob = 0.8)
 
-R2_0 <- rbinom(N, 1, prob = 0.9)
-R2_1 <- rbinom(N, 1, prob = 0.95)
+R2_0 <- rbinom(N, 1, prob = 0.7)
+R2_1 <- rbinom(N, 1, prob = 0.75)
 
 # Covariate
 strata <- as.numeric(Y_0 > 2)
@@ -39,3 +40,20 @@ estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, data=df)
 
 # With post-stratification
 estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, strata=strata, data=df)
+
+df <- within(df,{
+  Z_rev <- 1-Z
+})
+
+# Sensitivity
+# Pos
+sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY=0, maxY=5, data=df)
+sens$sensitivity_plot
+# Neg
+sens <- sensitivity_ds(Y, Z_rev, R1, Attempt, R2, minY=0, maxY=5, data=df)
+
+
+sens <- sensitivity_ds(Y, Z_rev, R1, Attempt, R2, minY=0, maxY=2, data=df)
+
+
+debugonce(sensitivity_ds)
