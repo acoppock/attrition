@@ -57,3 +57,69 @@ sens <- sensitivity_ds(Y, Z_rev, R1, Attempt, R2, minY=0, maxY=2, data=df)
 
 
 debugonce(sensitivity_ds)
+
+
+
+
+# test extreme value bounds -----------------------------------------------
+
+rm(list=ls())
+N <- 100
+
+Y_0 <- rep(c(0,1), c(50, 50))
+Y_1 <- rep(c(0,1), c(50, 50))
+
+R1_0 <- rbinom(N, 1, prob = 0.5)
+R1_1 <- rbinom(N, 1, prob = 0.5)
+
+
+Z <- rbinom(N, 1, .5)
+
+# Reveal Initial Sample Outcomes
+R1 <- Z*R1_1 + (1-Z)*R1_0 # Initial sample response
+Y_star <- Z*Y_1 + (1-Z)*Y_0 # True outcomes
+Y <- Y_star
+Y[R1==0] <- NA # Mask outcome of non-responders
+
+test_df <- data.frame(Y, Z, R1)
+
+estimator_ev(Y, Z, R1, 0, 1, data = test_df)
+
+debug(estimator_ev)
+
+# Manual
+
+Y_upp <- Y
+Y_upp[is.na(Y)] <- 1
+Y_low <- Y
+Y_low[is.na(Y)] <- 0
+
+mean(Y_upp[Z==1]) - mean(Y_low[Z==0])
+mean(Y_low[Z==1]) - mean(Y_upp[Z==0])
+
+
+
+
+
+RT1 <- mean(!is.na(Y[Z==1]))
+YT1 <- mean((Y[Z==1]), na.rm = TRUE)
+
+RC1 <- mean(!is.na(Y[Z==0]))
+YC1 <- mean((Y[Z==0]), na.rm = TRUE)
+
+Y_L <- 0
+Y_U <- 1
+
+
+a_hat_prime <- RT1*YT1 + (1-RT1)*Y_L
+b_hat_prime <- RT1*YT1 + (1-RT1)*Y_U
+c_hat_prime <- RC1*YC1 + (1-RC1)*Y_L
+d_hat_prime <- RC1*YC1 + (1-RC1)*Y_U
+
+upp_est_prime <- b_hat_prime - c_hat_prime
+low_est_prime <- a_hat_prime - d_hat_prime
+
+
+
+
+
