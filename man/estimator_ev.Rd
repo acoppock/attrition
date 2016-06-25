@@ -4,7 +4,7 @@
 \alias{estimator_ev}
 \title{Extreme Value (Manski) Bounds}
 \usage{
-estimator_ev(Y, Z, R, minY, maxY, alpha = 0.05, data)
+estimator_ev(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 }
 \arguments{
 \item{Y}{The (unquoted) outcome variable. Must be numeric.}
@@ -17,11 +17,11 @@ estimator_ev(Y, Z, R, minY, maxY, alpha = 0.05, data)
 
 \item{maxY}{The maximum possible value of the outcome (Y) variable.}
 
+\item{strata}{A single (unquoted) variable that indicates which strata units are in.}
+
 \item{alpha}{The desired significance level. 0.05 by default.}
 
 \item{data}{A dataframe}
-
-\item{strata}{A single (unquoted) variable that indicates which strata units are in.}
 }
 \value{
 A results matrix

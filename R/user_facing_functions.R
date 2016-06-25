@@ -136,22 +136,25 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
       proportions[i] <- mean(strata == unique_strata[i])
     }
 
-    est_l <-  sum(m1_l_vec *proportions)
-    est_u <-  sum(m1_u_vec *proportions)
+    lower_bound_est <-  sum(m1_l_vec *proportions)
+    upper_bound_est <-  sum(m1_u_vec *proportions)
 
-    var_l <- sum(v1_l_vec *proportions^2)
-    var_u <- sum(v1_u_vec *proportions^2)
+    lower_bound_var_est <- sum(v1_l_vec *proportions^2)
+    upper_bound_var_est <- sum(v1_u_vec *proportions^2)
 
-    im_crit <- function(ca) abs(pnorm(ca + (est_u-est_l)/max(var_u,var_l))-pnorm(-ca)-(1-alpha))
+    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
+                 lower_bound_est = lower_bound_est,
+                 upper_bound_est = upper_bound_est,
+                 lower_bound_var_est = lower_bound_var_est,
+                 upper_bound_var_est = upper_bound_var_est,
+                 alpha = alpha)$par
 
-    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
-
-    return(c(ci_lower=est_l - sig*var_l^.5,
-             ci_upper=est_u + sig*var_u^.5,
-             low_est=est_l,
-             upp_est=est_u,
-             low_var=var_l,
-             upp_var=var_u))
+    return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+             ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
+             low_est=lower_bound_est,
+             upp_est=upper_bound_est,
+             low_var=lower_bound_var_est,
+             upp_var=upper_bound_var_est))
   }
 }
 
@@ -169,35 +172,84 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 #'
 #' @return A results matrix
 #' @export
-estimator_ev <- function(Y, Z, R,  minY, maxY, alpha = 0.05, data){
+estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data){
   Y <-  eval(substitute(Y), data)
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
   Z <-  eval(substitute(Z), data)
   if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
   R <-  eval(substitute(R), data)
-  if(!all(R %in% c(0,1))){stop("Theresponse variable (R) must be numeric and take values zero or one.")}
+  if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
 
   if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
 
-  DV_l <- DV_u <- Y
-  DV_l[R==0] <- minY
-  DV_u[R==0] <- maxY
+  strata <-  eval(substitute(strata), data)
+  if(is.null(strata)) {
+    n1_c_s <- sum(R==1 & Z==0)
+    n1_t_s <- sum(R==1 & Z==1)
+    n1_c <- sum(Z==0) # clean up
+    n1_t <- sum(Z==1)
 
-  est_u <- mean(DV_u[Z==1]) - mean(DV_l[Z==0])
-  est_l <- mean(DV_l[Z==1]) - mean(DV_u[Z==0])
+    p1_c <- n1_c_s/n1_c
+    p1_t <- n1_t_s/n1_t
 
-  var_u <- var(DV_u[Z==1])/sum(Z==1) + var(DV_l[Z==0])/sum(Z==0)
-  var_l <- var(DV_l[Z==1])/sum(Z==1) + var(DV_u[Z==0])/sum(Z==0)
+    y1m_c <- mean(Y[R==1 & Z==0])
+    y1m_t <- mean(Y[R==1 & Z==1])
 
-  im_crit <- function(ca) abs(pnorm(ca + (est_u-est_l)/max(var_u,var_l))-pnorm(-ca)-(1-alpha))
-  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
+    s1_c <- sd(Y[R==1 & Z==0])
+    s1_t <- sd(Y[R==1 & Z==1])
 
-  return(c(ci_lower=est_l - sig*var_l^.5,
-           ci_upper=est_u + sig*var_u^.5,
-           low_est=est_l,
-           upp_est=est_u,
-           low_var=var_l,
-           upp_var=var_u))
+
+    cis_out <- manski_cis(n1_t = n1t, n1_c = n1_c,
+                          n1_t_s = n1_t_s, n1_c_s = n1_c_c,
+                          p1_t = p1_t, p1_c = p1_c,
+                          y1m_t = y1m_t, y1m_c = y1m_c,
+                          s1_t = s1_t, s1_c = s1_c,
+                          minY = minY, maxY = maxY, alpha = alpha)
+
+    return(cis_out)
+  }else{
+    # If there is a stratification variable, call estimator_ds recursively.
+
+    if(sum(is.na(strata))!=0){stop("The stratification variable (strata) must not contain any missing values.")}
+
+    unique_strata <- unique(strata)
+    n_strata <- length(unique_strata)
+    m1_l_vec <- m1_u_vec <- v1_l_vec <- v1_u_vec <- proportions <- rep(NA, n_strata)
+
+    ds_df <- data.frame(Y, Z, R, strata)
+
+    for(i in 1:n_strata){
+      ests <- estimator_ev(Y = Y, Z = Z, R = R,
+                           minY = minY, maxY = maxY, alpha = alpha,
+                           data=subset(ds_df, strata==unique_strata[i]))
+      m1_l_vec[i] <- ests[3]
+      m1_u_vec[i] <- ests[4]
+      v1_l_vec[i] <- ests[5]
+      v1_u_vec[i] <- ests[6]
+      proportions[i] <- mean(strata == unique_strata[i])
+    }
+
+    lower_bound_est <-  sum(m1_l_vec *proportions)
+    upper_bound_est <-  sum(m1_u_vec *proportions)
+
+    lower_bound_var_est <- sum(v1_l_vec *proportions^2)
+    upper_bound_var_est <- sum(v1_u_vec *proportions^2)
+
+    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
+                 lower_bound_est = lower_bound_est,
+                 upper_bound_est = upper_bound_est,
+                 lower_bound_var_est = lower_bound_var_est,
+                 upper_bound_var_est = upper_bound_var_est,
+                 alpha = alpha)$par
+
+    return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+             ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
+             low_est=lower_bound_est,
+             upp_est=upper_bound_est,
+             low_var=lower_bound_var_est,
+             upp_var=upper_bound_var_est))
+  }
+
 }
 
 #' Trimming Bounds
@@ -251,7 +303,131 @@ estimator_trim <-
     return(out)
   }
 
+
+#' Extreme Value Bounds with Double Sampling with Sensitivity
+#'
+#' This function yields extreme value bounds under the assumption that the outcomes of 1-delta of the missing second-round units are ignorable, that is, that they are drawn from an unknown distribution with mean and variance equal to the observed second-round groups.
+#'
+#' @param Y The (unquoted) outcome variable. Must be numeric.
+#' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
+#' @param R1 The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.
+#' @param Attempt The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.
+#' @param R2 The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.
+#' @param minY The minimum possible value of the outcome (Y) variable.
+#' @param maxY The maximum possible value of the outcome (Y) variable.
+#' @param strata A single (unquoted) variable that indicates which strata units are in.
+#' @param alpha The desired significance level. 0.05 by default.
+#' @param data A dataframe
+#' @param sims Number of points at which to evaluate sensitivity test. Defaults to 100
+#'
+#' @return A list containing a ggplot object, a dataframe of simulated bounds and cis, and a value of pstar, if it exists.
+#' @export
+#'
+estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata = NULL, alpha = 0.05, data){
+  Y <-  eval(substitute(Y), data)
+  if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
+  Z <-  eval(substitute(Z), data)
+  if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
+  R1 <-  eval(substitute(R1), data)
+  if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
+  R2 <-  eval(substitute(R2), data)
+  if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
+  Attempt <-  eval(substitute(Attempt), data)
+  if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
+
+  if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
+
+  strata <-  eval(substitute(strata), data)
+  if(is.null(strata)) {
+    n1_c_s <- sum(R1==1 & Z==0)
+    n1_t_s <- sum(R1==1 & Z==1)
+    n1_c <- sum(Z==0) # clean up
+    n1_t <- sum(Z==1)
+
+    p1_c <- n1_c_s/n1_c
+    p1_t <- n1_t_s/n1_t
+
+    y1m_c <- mean(Y[R1==1 & Z==0])
+    y1m_t <- mean(Y[R1==1 & Z==1])
+
+    n2_c <- sum(Attempt ==1 & Z ==0)
+    n2_t <- sum(Attempt ==1 & Z ==1)
+
+    p2_c <- sum(R2==1 & Z==0)/n2_c
+    p2_t <- sum(R2==1 & Z==1)/n2_t
+
+    y2m_nm_c <- mean(Y[R2==1 & Z==0])
+    y2m_nm_t <- mean(Y[R2==1 & Z==1])
+
+    s1_c <- sd(Y[R1==1 & Z==0])
+    s1_t <- sd(Y[R1==1 & Z==1])
+    s2_nm_c <- sd(Y[R2==1 & Z==0])
+    s2_nm_t <- sd(Y[R2==1 & Z==1])
+
+    # c1a_t <- c1r_t <- c2a_t <- c2r_t <- -99 # irrelevant
+
+    cis_out <- ds_manski_cis_2s_sens(n1_t=n1_t,n2_t=n2_t,
+                                     n1_c=n1_c,n2_c=n2_c,
+                                     p1_t=p1_t,p2_t=p2_t,
+                                     s1_t=s1_t,s1_c=s1_c,
+                                     s2_nm_t=s2_nm_t,
+                                     s2_nm_c=s2_nm_c,
+                                     y1m_t=y1m_t,y1m_c=y1m_c,
+                                     y2m_nm_t=y2m_nm_t,
+                                     y2m_nm_c=y2m_nm_c,
+                                     c1a_t=c1a_t,c1r_t=c1r_t,c2a_t=c2a_t,c2r_t=c2r_t,
+                                     p1_c=p1_c,p2_c=p2_c,
+                                     minY=minY,maxY=maxY,alpha=alpha, delta = delta)
+    return(cis_out)
+  }else{
+    # If there is a stratification variable, call estimator_ds recursively.
+
+    if(sum(is.na(strata))!=0){stop("The stratification variable (strata) must not contain any missing values.")}
+
+    unique_strata <- unique(strata)
+    n_strata <- length(unique_strata)
+    m1_l_vec <- m1_u_vec <- v1_l_vec <- v1_u_vec <- proportions <- rep(NA, n_strata)
+
+    ds_df <- data.frame(Y, R1, Z, Attempt, R2, strata)
+
+    for(i in 1:n_strata){
+      ests <- estimator_ds_sens(Y = Y, R1 = R1,Z = Z,
+                                Attempt = Attempt, R2 = R2,
+                                minY = minY, maxY = maxY, alpha = alpha,
+                                data=subset(ds_df, strata==unique_strata[i]), delta = delta)
+      m1_l_vec[i] <- ests[3]
+      m1_u_vec[i] <- ests[4]
+      v1_l_vec[i] <- ests[5]
+      v1_u_vec[i] <- ests[6]
+      proportions[i] <- mean(strata == unique_strata[i])
+    }
+
+    lower_bound_est <-  sum(m1_l_vec *proportions)
+    upper_bound_est <-  sum(m1_u_vec *proportions)
+
+    lower_bound_var_est <- sum(v1_l_vec *proportions^2)
+    upper_bound_var_est <- sum(v1_u_vec *proportions^2)
+
+    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
+                 lower_bound_est = lower_bound_est,
+                 upper_bound_est = upper_bound_est,
+                 lower_bound_var_est = lower_bound_var_est,
+                 upper_bound_var_est = upper_bound_var_est,
+                 alpha = alpha)$par
+
+    return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+             ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
+             low_est=lower_bound_est,
+             upp_est=upper_bound_est,
+             low_var=lower_bound_var_est,
+             upp_var=upper_bound_var_est))
+  }
+}
+
+
 #' Sensitivity Analysis
+#'
+#' This function performs a line search over values of delta, the sensitivity parameter, in order to find (if it exists) delta*, the value of delta where the confidence interval no longer includes zero.
 #'
 #' @param Y The (unquoted) outcome variable. Must be numeric.
 #' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
@@ -285,19 +461,35 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
   Attempt <-  eval(substitute(Attempt), data)
   if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
 
-  df <- data.frame(Y, Z, R1, R2, Attempt)
+  strata <-  eval(substitute(strata), data)
 
+  if(is.null(strata)){
+  df <- data.frame(Y, Z, R1, R2, Attempt)
   ps <- seq(0, 1, length.out = sims)
 
   sims_df <-
-    map(ps, ~sensitivity_ds_ci(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,
-                               R2 = R2, minY=minY, maxY=maxY, data=df, p = .x)) %>%
+    map(ps, ~estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,
+                               R2 = R2, minY=minY, maxY=maxY, data=df, delta = .x)) %>%
     do.call(rbind, .) %>%
     data.frame() %>%
     mutate(p = ps,
            change_lower = find_sign_changes(ci_lower),
            change_upper = find_sign_changes(ci_upper),
            change_any = change_lower | change_upper)
+  }else{
+    df <- data.frame(Y, Z, R1, R2, Attempt, strata)
+    ps <- seq(0, 1, length.out = sims)
+
+    sims_df <-
+      map(ps, ~estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, strata = strata,
+                                 R2 = R2, minY=minY, maxY=maxY, data=df, delta = .x)) %>%
+      do.call(rbind, .) %>%
+      data.frame() %>%
+      mutate(p = ps,
+             change_lower = find_sign_changes(ci_lower),
+             change_upper = find_sign_changes(ci_upper),
+             change_any = change_lower | change_upper)
+  }
 
 
   points_df <-
@@ -342,19 +534,3 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
   return(list(sensitivity_plot = g, sims_df = sims_df, p_star = p_star_df))
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
