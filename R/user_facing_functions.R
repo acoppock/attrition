@@ -287,8 +287,6 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
 
   df <- data.frame(Y, Z, R1, R2, Attempt)
 
-
-
   ps <- seq(0, 1, length.out = sims)
 
   sims_df <-
@@ -302,12 +300,6 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
            change_any = change_lower | change_upper)
 
 
-    #gg_df <-
-    #  sims_df %>%
-    #melt(id.vars = c("p"), measure.vars = c("ci_upper", "ci_lower", "upp_est", "low_est")) %>%
-    #filter(!variable %in% c("low_var", "upp_var", "sig")) %>%
-    #mutate(type = ifelse(variable %in% c("ci_upper", "ci_lower"),
-    #                     "95% Confidence Interval", "Identification Region"))
   points_df <-
     data.frame(p = c(0, 1, 1),
                value = c(with(sims_df, low_est[p==0]),
@@ -344,7 +336,7 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
                             vjust = ifelse(with(sims_df, low_est[p==0]) > 0, 1.3, -1.3))
 
     g <- g + geom_point(data = p_star_df, aes(y = value)) +
-          geom_text(data = p_star_df, aes(label = label, y = value,  vjust = vjust), parse = TRUE)
+      geom_text(data = p_star_df, aes(label = label, y = value,  vjust = vjust), parse = TRUE)
   }
 
   return(list(sensitivity_plot = g, sims_df = sims_df, p_star = p_star_df))

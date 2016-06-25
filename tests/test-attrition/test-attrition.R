@@ -56,9 +56,6 @@ sens <- sensitivity_ds(Y, Z_rev, R1, Attempt, R2, minY=0, maxY=5, data=df)
 sens <- sensitivity_ds(Y, Z_rev, R1, Attempt, R2, minY=0, maxY=2, data=df)
 
 
-debugonce(sensitivity_ds)
-
-
 
 
 # test extreme value bounds -----------------------------------------------
@@ -85,7 +82,6 @@ test_df <- data.frame(Y, Z, R1)
 
 estimator_ev(Y, Z, R1, 0, 1, data = test_df)
 
-debug(estimator_ev)
 
 # Manual
 

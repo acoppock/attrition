@@ -45,27 +45,6 @@ ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
                              y1m_c,y2m_nm_c,
                              minY,maxY,alpha) {
 
-  # compute 2nd round manski mean
-  gen_mean <- function(y2m_nm,p2,lower_bound=TRUE,minY,maxY){
-    if (lower_bound == TRUE){
-      return(p2*y2m_nm + (1-p2)*minY)
-    }else{
-      return(p2*y2m_nm+(1-p2)*maxY)
-    }
-  }
-  # compute 2nd round manski sd given prop, which bound, and mean
-  gen_var <- function(y2m_nm,s2_nm,p2,lower_bound=TRUE,minY,maxY) {
-    if (lower_bound==TRUE){
-      const <- minY
-    }else{
-      const <- maxY
-    }
-    wm <- gen_mean(y2m_nm,p2,lower_bound,minY,maxY)
-    # formula for combined var
-    return(p2*s2_nm^2 + p2*(y2m_nm-wm)^2 + (1-p2)*(const-wm)^2)
-
-  }
-
   y2m_t_L <- gen_mean(y2m_nm_t,p2_t,lower_bound=TRUE,minY,maxY)
   y2m_t_U <- gen_mean(y2m_nm_t,p2_t,lower_bound=FALSE,minY,maxY)
   y2m_c_L <- gen_mean(y2m_nm_c,p2_c,lower_bound=TRUE,minY,maxY)
@@ -85,12 +64,12 @@ ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
   upper_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_U,y1m_t,y2m_t_U),
                                    c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
 
-
-  im_crit <- function(ca) abs(pnorm(ca + (upper_bound_est-lower_bound_est)/
-                                      sqrt(max(upper_bound_var_est,lower_bound_var_est))
-  )-pnorm(-ca)-(1-alpha))
-
-  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
+  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
+               lower_bound_est = lower_bound_est,
+               upper_bound_est = upper_bound_est,
+               lower_bound_var_est = lower_bound_var_est,
+               upper_bound_var_est = upper_bound_var_est,
+               alpha = alpha)$par
 
   return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
            ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
@@ -246,49 +225,35 @@ manski_cis <- function(n1_t, n1_c,
                        s1_t, s1_c,
                        minY,maxY,alpha){
 
-  gen_mean <- function(y1m, p, lower_bound=TRUE, minY, maxY){
-    if (lower_bound == TRUE){
-      return(p*y1m + (1-p)*minY)
-    }else{
-      return(p*y1m+ (1-p)*maxY)
-    }
-  }
 
-  gen_var <- function(y1m, s1, p, lower_bound = TRUE, minY, maxY) {
-    if (lower_bound==TRUE){
-      const <- minY
-    }else{
-      const <- maxY
-    }
-    wm <- gen_mean(y1m,p,lower_bound,minY,maxY)
-    # formula for combined var
-    return(p*s1^2 + p*(y1m-wm)^2 + (1-p)*(const-wm)^2)
-  }
+  upper_bound_est <-
+    gen_mean(y1m_t, p1_t, lower_bound = FALSE, minY = minY, maxY = maxY) -
+    gen_mean(y1m_c, p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)
+  lower_bound_est <-
+    gen_mean(y1m_t, p1_t, lower_bound = TRUE, minY = minY, maxY = maxY) -
+    gen_mean(y1m_c, p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
 
-  est_u <-
-    gen_mean(y1m = y1m_t, p = p1_t, lower_bound = FALSE, minY = minY, maxY = maxY) -
-    gen_mean(y1m = y1m_c, p = p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)
-  est_l <-
-    gen_mean(y1m = y1m_t, p = p1_t, lower_bound = TRUE, minY = minY, maxY = maxY) -
-    gen_mean(y1m = y1m_c, p = p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
-
-  var_u <-
-    gen_var(y1m = y1m_t, s1 = s1_t, p = p1_t, lower_bound = FALSE, minY = minY, maxY = maxY) +
-    gen_var(y1m = y1m_c, s1 = s1_c, p = p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)
-  var_l <-
-    gen_var(y1m = y1m_t, s1 = s1_t, p = p1_t, lower_bound = TRUE, minY = minY, maxY = maxY) +
-    gen_var(y1m = y1m_c, s1 = s1_c, p = p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
+  upper_bound_var_est <-
+    gen_var(y1m_t, s1_t, p1_t, lower_bound = FALSE, minY = minY, maxY = maxY) +
+    gen_var(y1m_c, s1_c, p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)
+  lower_bound_var_est <-
+    gen_var(y1m_t, s1_t, p1_t, lower_bound = TRUE, minY = minY, maxY = maxY) +
+    gen_var(y1m_c, s1_c, p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
 
 
-  im_crit <- function(ca) abs(pnorm(ca + (est_u-est_l)/max(var_u,var_l))-pnorm(-ca)-(1-alpha))
-  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
+  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
+               lower_bound_est = lower_bound_est,
+               upper_bound_est = upper_bound_est,
+               lower_bound_var_est = lower_bound_var_est,
+               upper_bound_var_est = upper_bound_var_est,
+               alpha = alpha)$par
 
-  return(c(ci_lower=est_l - sig*var_l^.5,
-           ci_upper=est_u + sig*var_u^.5,
-           low_est=est_l,
-           upp_est=est_u,
-           low_var=var_l,
-           upp_var=var_u))
+  return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+           ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
+           low_est=lower_bound_est,
+           upp_est=upper_bound_est,
+           low_var=lower_bound_var_est,
+           upp_var=upper_bound_var_est))
 }
 
 
@@ -329,25 +294,8 @@ ds_manski_cis_2s_sens <- function(n1_t,n2_t,n1_c,n2_c,
   y_U_tilde_c <- (1-p)*y2m_nm_c + p*maxY
   y_L_tilde_c <- (1-p)*y2m_nm_c + p*minY
 
-  # compute 2nd round manski mean
-  gen_mean <- function(y2m_nm,p2,lower_bound=TRUE,minY,maxY){
-    if (lower_bound == TRUE){
-      return(p2*y2m_nm + (1-p2)*minY)
-    }else{
-      return(p2*y2m_nm+(1-p2)*maxY)
-    }
-  }
-  # compute 2nd round manski sd given prop, which bound, and mean
-  gen_var <- function(y2m_nm,s2_nm,p2,lower_bound=TRUE,minY,maxY) {
-    if (lower_bound==TRUE){
-      const <- minY
-    }else{
-      const <- maxY
-    }
-    wm <- gen_mean(y2m_nm,p2,lower_bound,minY,maxY)
-    # formula for combined var
-    return(p2*s2_nm^2 + p2*(y2m_nm-wm)^2 + (1-p2)*(const-wm)^2)
-  }
+
+
 
   y2m_t_L <- gen_mean(y2m_nm_t,p2_t,lower_bound=TRUE,minY = y_L_tilde_t, maxY = y_U_tilde_t)
   y2m_t_U <- gen_mean(y2m_nm_t,p2_t,lower_bound=FALSE,minY = y_L_tilde_t, maxY = y_U_tilde_t)
@@ -373,11 +321,12 @@ ds_manski_cis_2s_sens <- function(n1_t,n2_t,n1_c,n2_c,
                                    c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
 
 
-  im_crit <- function(ca) abs(pnorm(ca + (upper_bound_est-lower_bound_est)/
-                                      sqrt(max(upper_bound_var_est,lower_bound_var_est))
-  )-pnorm(-ca)-(1-alpha))
-
-  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
+  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
+               lower_bound_est = lower_bound_est,
+               upper_bound_est = upper_bound_est,
+               lower_bound_var_est = lower_bound_var_est,
+               upper_bound_var_est = upper_bound_var_est,
+               alpha = alpha)$par
 
   return(c(ci_lower= lower_bound_est - sig*lower_bound_var_est^.5,
            ci_upper= upper_bound_est + sig*upper_bound_var_est^.5,
@@ -464,22 +413,25 @@ sensitivity_ds_ci <- function(Y, Z, R1, Attempt, R2, minY, maxY, p, strata = NUL
       proportions[i] <- mean(strata == unique_strata[i])
     }
 
-    est_l <-  sum(m1_l_vec *proportions)
-    est_u <-  sum(m1_u_vec *proportions)
+    lower_bound_est <-  sum(m1_l_vec *proportions)
+    upper_bound_est <-  sum(m1_u_vec *proportions)
 
-    var_l <- sum(v1_l_vec *proportions^2)
-    var_u <- sum(v1_u_vec *proportions^2)
+    lower_bound_var_est <- sum(v1_l_vec *proportions^2)
+    upper_bound_var_est <- sum(v1_u_vec *proportions^2)
 
-    im_crit <- function(ca) abs(pnorm(ca + (est_u-est_l)/max(var_u,var_l))-pnorm(-ca)-(1-alpha))
+    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
+                 lower_bound_est = lower_bound_est,
+                 upper_bound_est = upper_bound_est,
+                 lower_bound_var_est = lower_bound_var_est,
+                 upper_bound_var_est = upper_bound_var_est,
+                 alpha = alpha)$par
 
-    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2)$par
-
-    return(c(ci_lower=est_l - sig*var_l^.5,
-             ci_upper=est_u + sig*var_u^.5,
-             low_est=est_l,
-             upp_est=est_u,
-             low_var=var_l,
-             upp_var=var_u))
+    return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+             ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
+             low_est=lower_bound_est,
+             upp_est=upper_bound_est,
+             low_var=lower_bound_var_est,
+             upp_var=upper_bound_var_est))
   }
 }
 
@@ -493,5 +445,34 @@ find_sign_changes <- function(x){
 
   return(1:length(x) %in% all_changes)
 
+}
+
+gen_mean <- function(y_m,p,lower_bound=TRUE,minY,maxY){
+  if (lower_bound == TRUE){
+    return(p*y_m + (1-p)*minY)
+  }else{
+    return(p*y_m+(1-p)*maxY)
+  }
+}
+
+# compute 2nd round manski sd given prop, which bound, and mean
+gen_var <- function(y_m,y_s,p,lower_bound=TRUE,minY,maxY) {
+  if (lower_bound==TRUE){
+    const <- minY
+  }else{
+    const <- maxY
+  }
+  wm <- gen_mean(y_m,p,lower_bound,minY,maxY)
+  # formula for combined var
+  return(p*y_s^2 + p*(y_m-wm)^2 + (1-p)*(const-wm)^2)
+
+}
+
+
+
+im_crit <- function(ca, upper_bound_est, lower_bound_est, upper_bound_var_est, lower_bound_var_est, alpha) {
+  return_value <-
+  abs(pnorm(ca + (upper_bound_est-lower_bound_est)/sqrt(max(upper_bound_var_est,lower_bound_var_est)))-pnorm(-ca)-(1-alpha))
+  return(return_value)
 }
 
