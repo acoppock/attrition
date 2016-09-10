@@ -15,11 +15,11 @@ manski_cis <- function(n1_t, n1_c,
     gen_mean(y1m_c, p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
 
   upper_bound_var_est <-
-    gen_var(y1m_t, s1_t, p1_t, lower_bound = FALSE, minY = minY, maxY = maxY) +
-    gen_var(y1m_c, s1_c, p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)
+    gen_var(y1m_t, s1_t, p1_t, lower_bound = FALSE, minY = minY, maxY = maxY)/n1_t +
+    gen_var(y1m_c, s1_c, p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)/n1_c
   lower_bound_var_est <-
-    gen_var(y1m_t, s1_t, p1_t, lower_bound = TRUE, minY = minY, maxY = maxY) +
-    gen_var(y1m_c, s1_c, p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
+    gen_var(y1m_t, s1_t, p1_t, lower_bound = TRUE, minY = minY, maxY = maxY)/n1_t +
+    gen_var(y1m_c, s1_c, p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)/n1_c
 
 
   sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,

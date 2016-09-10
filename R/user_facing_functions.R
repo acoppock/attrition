@@ -199,7 +199,7 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
     s1_t <- sd(Y[R==1 & Z==1])
 
 
-    cis_out <- manski_cis(n1_t = n1t, n1_c = n1_c,
+    cis_out <- manski_cis(n1_t = n1_t, n1_c = n1_c,
                           n1_t_s = n1_t_s, n1_c_s = n1_c_c,
                           p1_t = p1_t, p1_c = p1_c,
                           y1m_t = y1m_t, y1m_c = y1m_c,
