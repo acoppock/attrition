@@ -468,7 +468,7 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
   ps <- seq(0, 1, length.out = sims)
 
   sims_df <-
-    map(ps, ~estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,
+    map(ps, ~estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,alpha = alpha,
                                R2 = R2, minY=minY, maxY=maxY, data=df, delta = .x)) %>%
     do.call(rbind, .) %>%
     data.frame() %>%
@@ -481,7 +481,7 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
     ps <- seq(0, 1, length.out = sims)
 
     sims_df <-
-      map(ps, ~estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, strata = strata,
+      map(ps, ~estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, strata = strata,alpha = alpha,
                                  R2 = R2, minY=minY, maxY=maxY, data=df, delta = .x)) %>%
       do.call(rbind, .) %>%
       data.frame() %>%
