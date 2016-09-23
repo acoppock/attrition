@@ -508,7 +508,7 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
     geom_ribbon(aes(ymax = ci_upper, ymin = ci_lower), alpha = 0.2) +
     geom_point(data = points_df, aes(y = value)) +
     geom_text(data = points_df, aes(y = value, label = label, hjust = hjust, vjust = vjust)) +
-    ylab("Identification Regions and 95% Confidence Intervals") +
+    ylab(paste0("Identification Regions and ", round((1-alpha)*100), "% Confidence Intervals")) +
     xlab(expression(paste("Sensitivity Parameter ", delta, " (0 = Ignorability)"))) +
     geom_hline(yintercept = 0, linetype = "dashed") +
     theme_bw() +
