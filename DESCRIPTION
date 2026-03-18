@@ -1,16 +1,31 @@
 Package: attrition
-Title: What the Package Does (one line, title case)
-Version: 0.0.0.9000
-Authors@R: person("Alexander", "Coppock", email = "acoppock@gmail.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-Depends: 
-    R (>= 3.2.3)
-Imports: 
+Title: Addressing Nonignorable Attrition with Double Sampling and Bounds
+Version: 0.1.0
+Authors@R: c(
+    person("Alexander", "Coppock", email = "acoppock@gmail.com",
+           role = c("aut", "cre")),
+    person("Alan S.", "Gerber", role = "aut"),
+    person("Donald P.", "Green", role = "aut"),
+    person("Holger L.", "Kern", role = "aut"))
+Description: Implements the double-sampling bounds estimator of Coppock,
+    Gerber, Green, and Kern (2017) <doi:10.1017/pan.2016.6> for randomized
+    experiments with nonignorable missing outcomes. Provides worst-case
+    (Manski) bounds, double-sampling bounds with analytic variance and
+    Imbens-Manski confidence intervals, Lee (2009) trimming bounds, covariate
+    adjustment via poststratification, and a sensitivity analysis for
+    violations of the outcome stability assumption.
+Depends:
+    R (>= 4.1.0)
+Imports:
     dplyr,
+    generics,
     ggplot2,
     purrr,
-    reshape2
+    tibble
+Encoding: UTF-8
 License: GPL-3
 LazyData: true
-RoxygenNote: 5.0.1
-Suggests: testthat
+RoxygenNote: 7.3.3
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

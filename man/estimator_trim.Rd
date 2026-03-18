@@ -4,8 +4,17 @@
 \alias{estimator_trim}
 \title{Trimming Bounds}
 \usage{
-estimator_trim(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL,
-  strata = NULL, alpha = 0.05, data)
+estimator_trim(
+  Y,
+  Z,
+  R = NULL,
+  R1 = NULL,
+  Attempt = NULL,
+  R2 = NULL,
+  strata = NULL,
+  alpha = 0.05,
+  data
+)
 }
 \arguments{
 \item{Y}{The (unquoted) outcome variable. Must be numeric.}
@@ -32,4 +41,3 @@ A results matrix
 \description{
 Trimming Bounds
 }
-

@@ -98,7 +98,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
     s2_nm_c <- sd(Y[R2==1 & Z==0])
     s2_nm_t <- sd(Y[R2==1 & Z==1])
 
-    # c1a_t <- c1r_t <- c2a_t <- c2r_t <- -99 # irrelevant
+    c1a_t <- c1r_t <- c2a_t <- c2r_t <- NA_real_
 
     cis_out <- ds_manski_cis_2s(n1_t=n1_t,n2_t=n2_t,
                                 n1_c=n1_c,n2_c=n2_c,
@@ -112,7 +112,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
                                 c1a_t=c1a_t,c1r_t=c1r_t,c2a_t=c2a_t,c2r_t=c2r_t,
                                 p1_c=p1_c,p2_c=p2_c,
                                 minY=minY,maxY=maxY,alpha=alpha)
-    return(cis_out)
+    return(structure(cis_out, class = c("attrition_ds", "attrition_bounds", "numeric")))
   }else{
     # If there is a stratification variable, call estimator_ds recursively.
 
@@ -129,10 +129,10 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
                            Attempt = Attempt, R2 = R2,
                            minY = minY, maxY = maxY, alpha = alpha,
                            data=subset(ds_df, strata==unique_strata[i]))
-      m1_l_vec[i] <- ests[3]
-      m1_u_vec[i] <- ests[4]
-      v1_l_vec[i] <- ests[5]
-      v1_u_vec[i] <- ests[6]
+      m1_l_vec[i] <- ests["low_est"]
+      m1_u_vec[i] <- ests["upp_est"]
+      v1_l_vec[i] <- ests["low_var"]
+      v1_u_vec[i] <- ests["upp_var"]
       proportions[i] <- mean(strata == unique_strata[i])
     }
 
@@ -149,12 +149,13 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
                  upper_bound_var_est = upper_bound_var_est,
                  alpha = alpha)$par
 
-    return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+    out <- c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
              ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
              low_est=lower_bound_est,
              upp_est=upper_bound_est,
              low_var=lower_bound_var_est,
-             upp_var=upper_bound_var_est))
+             upp_var=upper_bound_var_est)
+    return(structure(out, class = c("attrition_ds", "attrition_bounds", "numeric")))
   }
 }
 
@@ -200,13 +201,13 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 
 
     cis_out <- manski_cis(n1_t = n1_t, n1_c = n1_c,
-                          n1_t_s = n1_t_s, n1_c_s = n1_c_c,
+                          n1_t_s = n1_t_s, n1_c_s = n1_c_s,
                           p1_t = p1_t, p1_c = p1_c,
                           y1m_t = y1m_t, y1m_c = y1m_c,
                           s1_t = s1_t, s1_c = s1_c,
                           minY = minY, maxY = maxY, alpha = alpha)
 
-    return(cis_out)
+    return(structure(cis_out, class = c("attrition_ev", "attrition_bounds", "numeric")))
   }else{
     # If there is a stratification variable, call estimator_ds recursively.
 
@@ -222,10 +223,10 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
       ests <- estimator_ev(Y = Y, Z = Z, R = R,
                            minY = minY, maxY = maxY, alpha = alpha,
                            data=subset(ds_df, strata==unique_strata[i]))
-      m1_l_vec[i] <- ests[3]
-      m1_u_vec[i] <- ests[4]
-      v1_l_vec[i] <- ests[5]
-      v1_u_vec[i] <- ests[6]
+      m1_l_vec[i] <- ests["low_est"]
+      m1_u_vec[i] <- ests["upp_est"]
+      v1_l_vec[i] <- ests["low_var"]
+      v1_u_vec[i] <- ests["upp_var"]
       proportions[i] <- mean(strata == unique_strata[i])
     }
 
@@ -242,12 +243,13 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
                  upper_bound_var_est = upper_bound_var_est,
                  alpha = alpha)$par
 
-    return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+    out <- c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
              ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
              low_est=lower_bound_est,
              upp_est=upper_bound_est,
              low_var=lower_bound_var_est,
-             upp_var=upper_bound_var_est))
+             upp_var=upper_bound_var_est)
+    return(structure(out, class = c("attrition_ev", "attrition_bounds", "numeric")))
   }
 
 }
@@ -300,7 +302,7 @@ estimator_trim <-
                              Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE)
     }
 
-    return(out)
+    return(structure(out, class = c("attrition_trim", "numeric")))
   }
 
 
@@ -318,9 +320,9 @@ estimator_trim <-
 #' @param strata A single (unquoted) variable that indicates which strata units are in.
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param data A dataframe
-#' @param sims Number of points at which to evaluate sensitivity test. Defaults to 100
+#' @param delta Sensitivity parameter in [0, 1]. At delta = 1 (default) worst-case bounds apply; at delta = 0 ignorability holds for all follow-up non-responders.
 #'
-#' @return A list containing a ggplot object, a dataframe of simulated bounds and cis, and a value of pstar, if it exists.
+#' @return A named numeric vector with elements ci_lower, ci_upper, low_est, upp_est, low_var, upp_var.
 #' @export
 #'
 estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata = NULL, alpha = 0.05, data){
@@ -364,7 +366,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
     s2_nm_c <- sd(Y[R2==1 & Z==0])
     s2_nm_t <- sd(Y[R2==1 & Z==1])
 
-    # c1a_t <- c1r_t <- c2a_t <- c2r_t <- -99 # irrelevant
+    c1a_t <- c1r_t <- c2a_t <- c2r_t <- NA_real_
 
     cis_out <- ds_manski_cis_2s_sens(n1_t=n1_t,n2_t=n2_t,
                                      n1_c=n1_c,n2_c=n2_c,
@@ -378,9 +380,9 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
                                      c1a_t=c1a_t,c1r_t=c1r_t,c2a_t=c2a_t,c2r_t=c2r_t,
                                      p1_c=p1_c,p2_c=p2_c,
                                      minY=minY,maxY=maxY,alpha=alpha, delta = delta)
-    return(cis_out)
+    return(structure(cis_out, class = c("attrition_ds_sens", "attrition_bounds", "numeric")))
   }else{
-    # If there is a stratification variable, call estimator_ds recursively.
+    # If there is a stratification variable, call estimator_ds_sens recursively.
 
     if(sum(is.na(strata))!=0){stop("The stratification variable (strata) must not contain any missing values.")}
 
@@ -395,10 +397,10 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
                                 Attempt = Attempt, R2 = R2,
                                 minY = minY, maxY = maxY, alpha = alpha,
                                 data=subset(ds_df, strata==unique_strata[i]), delta = delta)
-      m1_l_vec[i] <- ests[3]
-      m1_u_vec[i] <- ests[4]
-      v1_l_vec[i] <- ests[5]
-      v1_u_vec[i] <- ests[6]
+      m1_l_vec[i] <- ests["low_est"]
+      m1_u_vec[i] <- ests["upp_est"]
+      v1_l_vec[i] <- ests["low_var"]
+      v1_u_vec[i] <- ests["upp_var"]
       proportions[i] <- mean(strata == unique_strata[i])
     }
 
@@ -415,12 +417,13 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
                  upper_bound_var_est = upper_bound_var_est,
                  alpha = alpha)$par
 
-    return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
+    out <- c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
              ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
              low_est=lower_bound_est,
              upp_est=upper_bound_est,
              low_var=lower_bound_var_est,
-             upp_var=upper_bound_var_est))
+             upp_var=upper_bound_var_est)
+    return(structure(out, class = c("attrition_ds_sens", "attrition_bounds", "numeric")))
   }
 }
 
@@ -442,14 +445,14 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #' @param sims Number of points at which to evaluate sensitivity test. Defaults to 100
 #'
 #' @return A list containing a ggplot object, a dataframe of simulated bounds and cis, and a value of pstar, if it exists.
+#' @importFrom ggplot2 ggplot aes geom_line geom_ribbon geom_point geom_text
+#'   geom_hline xlab ylab theme_bw theme element_blank
+#' @importFrom grid unit
+#' @importFrom purrr map
+#' @importFrom stats optim pnorm sd weighted.mean
 #' @export
 #'
 sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata = NULL, alpha = 0.05, data){
-  require(ggplot2)
-  require(dplyr)
-  require(purrr)
-  require(reshape2)
-
   Y <-  eval(substitute(Y), data)
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
   Z <-  eval(substitute(Z), data)
@@ -463,32 +466,31 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
 
   strata <-  eval(substitute(strata), data)
 
-  if(is.null(strata)){
-  df <- data.frame(Y, Z, R1, R2, Attempt)
   ps <- seq(0, 1, length.out = sims)
 
-  sims_df <-
-    map(ps, ~estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,alpha = alpha,
-                               R2 = R2, minY=minY, maxY=maxY, data=df, delta = .x)) %>%
-    do.call(rbind, .) %>%
-    data.frame() %>%
-    mutate(p = ps,
-           change_lower = find_sign_changes(ci_lower),
-           change_upper = find_sign_changes(ci_upper),
-           change_any = change_lower | change_upper)
-  }else{
-    df <- data.frame(Y, Z, R1, R2, Attempt, strata)
-    ps <- seq(0, 1, length.out = sims)
-
+  if (is.null(strata)) {
+    df <- data.frame(Y, Z, R1, R2, Attempt)
     sims_df <-
-      map(ps, ~estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, strata = strata,alpha = alpha,
-                                 R2 = R2, minY=minY, maxY=maxY, data=df, delta = .x)) %>%
-      do.call(rbind, .) %>%
-      data.frame() %>%
-      mutate(p = ps,
-             change_lower = find_sign_changes(ci_lower),
-             change_upper = find_sign_changes(ci_upper),
-             change_any = change_lower | change_upper)
+      map(ps, \(d) estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, alpha = alpha,
+                                     R2 = R2, minY = minY, maxY = maxY, data = df, delta = d)) |>
+      (\(lst) do.call(rbind, lst))() |>
+      as.data.frame() |>
+      dplyr::mutate(p = ps,
+                    change_lower = find_sign_changes(ci_lower),
+                    change_upper = find_sign_changes(ci_upper),
+                    change_any = change_lower | change_upper)
+  } else {
+    df <- data.frame(Y, Z, R1, R2, Attempt, strata)
+    sims_df <-
+      map(ps, \(d) estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,
+                                     strata = strata, alpha = alpha,
+                                     R2 = R2, minY = minY, maxY = maxY, data = df, delta = d)) |>
+      (\(lst) do.call(rbind, lst))() |>
+      as.data.frame() |>
+      dplyr::mutate(p = ps,
+                    change_lower = find_sign_changes(ci_lower),
+                    change_upper = find_sign_changes(ci_upper),
+                    change_any = change_lower | change_upper)
   }
 
 

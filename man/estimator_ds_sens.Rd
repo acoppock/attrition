@@ -4,8 +4,19 @@
 \alias{estimator_ds_sens}
 \title{Extreme Value Bounds with Double Sampling with Sensitivity}
 \usage{
-estimator_ds_sens(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata = NULL,
-  alpha = 0.05, data)
+estimator_ds_sens(
+  Y,
+  Z,
+  R1,
+  Attempt,
+  R2,
+  minY,
+  maxY,
+  delta,
+  strata = NULL,
+  alpha = 0.05,
+  data
+)
 }
 \arguments{
 \item{Y}{The (unquoted) outcome variable. Must be numeric.}
@@ -22,18 +33,17 @@ estimator_ds_sens(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata = NULL,
 
 \item{maxY}{The maximum possible value of the outcome (Y) variable.}
 
+\item{delta}{Sensitivity parameter in [0, 1]. At delta = 1 (default) worst-case bounds apply; at delta = 0 ignorability holds for all follow-up non-responders.}
+
 \item{strata}{A single (unquoted) variable that indicates which strata units are in.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 
 \item{data}{A dataframe}
-
-\item{sims}{Number of points at which to evaluate sensitivity test. Defaults to 100}
 }
 \value{
-A list containing a ggplot object, a dataframe of simulated bounds and cis, and a value of pstar, if it exists.
+A named numeric vector with elements ci_lower, ci_upper, low_est, upp_est, low_var, upp_var.
 }
 \description{
 This function yields extreme value bounds under the assumption that the outcomes of 1-delta of the missing second-round units are ignorable, that is, that they are drawn from an unknown distribution with mean and variance equal to the observed second-round groups.
 }
-

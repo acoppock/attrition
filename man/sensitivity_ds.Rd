@@ -4,8 +4,19 @@
 \alias{sensitivity_ds}
 \title{Sensitivity Analysis}
 \usage{
-sensitivity_ds(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata = NULL,
-  alpha = 0.05, data)
+sensitivity_ds(
+  Y,
+  Z,
+  R1,
+  Attempt,
+  R2,
+  minY,
+  maxY,
+  sims = 100,
+  strata = NULL,
+  alpha = 0.05,
+  data
+)
 }
 \arguments{
 \item{Y}{The (unquoted) outcome variable. Must be numeric.}
@@ -36,4 +47,3 @@ A list containing a ggplot object, a dataframe of simulated bounds and cis, and 
 \description{
 This function performs a line search over values of delta, the sensitivity parameter, in order to find (if it exists) delta*, the value of delta where the confidence interval no longer includes zero.
 }
-

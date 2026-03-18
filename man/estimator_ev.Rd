@@ -29,4 +29,3 @@ A results matrix
 \description{
 Extreme Value (Manski) Bounds
 }
-

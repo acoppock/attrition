@@ -4,8 +4,18 @@
 \alias{estimator_ds}
 \title{Extreme Value Bounds with Double Sampling}
 \usage{
-estimator_ds(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha = 0.05,
-  data)
+estimator_ds(
+  Y,
+  Z,
+  R1,
+  Attempt,
+  R2,
+  minY,
+  maxY,
+  strata = NULL,
+  alpha = 0.05,
+  data
+)
 }
 \arguments{
 \item{Y}{The (unquoted) outcome variable. Must be numeric.}
@@ -78,4 +88,3 @@ estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, data=df)
 estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, strata=strata, data=df)
 
 }
-
