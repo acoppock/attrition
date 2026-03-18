@@ -493,6 +493,50 @@ test_that("estimator_trim errors when monotonicity is violated", {
                "Monotonicity appears to be violated")
 })
 
+# ── Formula interface ────────────────────────────────────────────────────────
+
+test_that("estimator_ev formula interface matches NSE interface", {
+  df  <- make_synthetic()
+  nse <- estimator_ev(Y, Z, R1, minY = 1, maxY = 5, data = df)
+  frm <- estimator_ev(Y ~ Z, R = "R1", minY = 1, maxY = 5, data = df)
+  expect_equal(as.numeric(nse), as.numeric(frm))
+  expect_s3_class(frm, "attrition_bounds")
+})
+
+test_that("estimator_ds formula interface matches NSE interface", {
+  df  <- make_synthetic()
+  nse <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = df)
+  frm <- estimator_ds(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+                      minY = 1, maxY = 5, data = df)
+  expect_equal(as.numeric(nse), as.numeric(frm))
+  expect_s3_class(frm, "attrition_bounds")
+})
+
+test_that("estimator_trim formula interface (single-stage) matches NSE interface", {
+  df  <- make_synthetic()
+  nse <- estimator_trim(Y, Z, R = R1, data = df)
+  frm <- estimator_trim(Y ~ Z, R = "R1", data = df)
+  expect_equal(as.numeric(nse), as.numeric(frm))
+  expect_s3_class(frm, "attrition_trim")
+})
+
+test_that("estimator_trim formula interface (double-sampling) matches NSE interface", {
+  df  <- make_synthetic()
+  nse <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2, data = df)
+  frm <- estimator_trim(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = df)
+  expect_equal(as.numeric(nse), as.numeric(frm))
+  expect_s3_class(frm, "attrition_trim")
+})
+
+test_that("estimator_ds_sens formula interface matches NSE interface", {
+  df  <- make_synthetic()
+  nse <- estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0.5, data = df)
+  frm <- estimator_ds_sens(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+                           minY = 1, maxY = 5, delta = 0.5, data = df)
+  expect_equal(as.numeric(nse), as.numeric(frm))
+  expect_s3_class(frm, "attrition_bounds")
+})
+
 # ── sensitivity_ds ───────────────────────────────────────────────────────────
 
 test_that("sensitivity_ds returns correct structure", {

@@ -1,10 +1,15 @@
 #' Extreme Value Bounds with Double Sampling
 #'
-#' @param Y The (unquoted) outcome variable. Must be numeric.
+#' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
+#'   for use with \code{declare_estimator(.method = estimator_ds)}. Must be numeric.
 #' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
-#' @param R1 The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.
-#' @param Attempt The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.
-#' @param R2 The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.
+#'   Ignored when \code{Y} is a formula.
+#' @param R1 The initial sample response indicator: unquoted column name, or a quoted string column
+#'   name when using the formula interface. Must be numeric and take values 0 or 1.
+#' @param Attempt The follow-up attempt indicator: unquoted column name, or quoted string.
+#'   Must be numeric and take values 0 or 1.
+#' @param R2 The follow-up response indicator: unquoted column name, or quoted string.
+#'   Must be numeric and take values 0 or 1.
 #' @param minY The minimum possible value of the outcome (Y) variable.
 #' @param maxY The maximum possible value of the outcome (Y) variable.
 #' @param strata A single (unquoted) variable that indicates which strata units are in.
@@ -58,15 +63,28 @@
 #' estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, strata=strata, data=df)
 #'
 estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha = 0.05, data){
-  Y <-  eval(substitute(Y), data)
+  # Formula interface: estimator_ds(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
+  # R1/Attempt/R2 may be unquoted column names (NSE) or quoted strings.
+  Y_expr <- substitute(Y)
+  Y_val  <- eval(Y_expr, data, parent.frame())
+  if (inherits(Y_val, "formula")) {
+    vars <- all.vars(Y_val)
+    Y    <- data[[vars[1L]]]
+    Z    <- data[[vars[2L]]]
+  } else {
+    Y <- Y_val
+    Z <- eval(substitute(Z), data)
+  }
+  R1_raw      <- eval(substitute(R1),      data, parent.frame())
+  Attempt_raw <- eval(substitute(Attempt), data, parent.frame())
+  R2_raw      <- eval(substitute(R2),      data, parent.frame())
+  R1      <- if (is.character(R1_raw))      data[[R1_raw]]      else R1_raw
+  Attempt <- if (is.character(Attempt_raw)) data[[Attempt_raw]] else Attempt_raw
+  R2      <- if (is.character(R2_raw))      data[[R2_raw]]      else R2_raw
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-  Z <-  eval(substitute(Z), data)
   if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
-  R1 <-  eval(substitute(R1), data)
   if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
-  R2 <-  eval(substitute(R2), data)
   if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
-  Attempt <-  eval(substitute(Attempt), data)
   if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
 
   if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
@@ -162,9 +180,12 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 
 #' Extreme Value (Manski) Bounds
 #'
-#' @param Y The (unquoted) outcome variable. Must be numeric.
+#' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
+#'   for use with \code{declare_estimator(.method = estimator_ev)}. Must be numeric.
 #' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
-#' @param R The (unquoted) respose indicator variable. Must be numeric and take values 0 or 1.
+#'   Ignored when \code{Y} is a formula.
+#' @param R The response indicator variable: unquoted column name, or a quoted string column name
+#'   when using the formula interface. Must be numeric and take values 0 or 1.
 #' @param minY The minimum possible value of the outcome (Y) variable.
 #' @param maxY The maximum possible value of the outcome (Y) variable.
 #' @param strata A single (unquoted) variable that indicates which strata units are in.
@@ -174,11 +195,21 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 #' @return A results matrix
 #' @export
 estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data){
-  Y <-  eval(substitute(Y), data)
+  # Formula interface: estimator_ev(outcome ~ treatment, R = "col_name", data = ., ...)
+  Y_expr <- substitute(Y)
+  Y_val  <- eval(Y_expr, data, parent.frame())
+  if (inherits(Y_val, "formula")) {
+    vars <- all.vars(Y_val)
+    Y    <- data[[vars[1L]]]
+    Z    <- data[[vars[2L]]]
+  } else {
+    Y <- Y_val
+    Z <- eval(substitute(Z), data)
+  }
+  R_raw <- eval(substitute(R), data, parent.frame())
+  R     <- if (is.character(R_raw)) data[[R_raw]] else R_raw
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-  Z <-  eval(substitute(Z), data)
   if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
-  R <-  eval(substitute(R), data)
   if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
 
   if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
@@ -256,12 +287,19 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 
 #' Trimming Bounds
 #'
-#' @param Y The (unquoted) outcome variable. Must be numeric.
+#' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
+#'   for use with \code{declare_estimator(.method = estimator_trim)}. Must be numeric.
 #' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
-#' @param R The (unquoted) respose indicator variable. Must be numeric and take values 0 or 1.
-#' @param R1 The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.
-#' @param Attempt The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.
-#' @param R2 The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.
+#'   Ignored when \code{Y} is a formula.
+#' @param R The single-stage response indicator: unquoted column name, or a quoted string column
+#'   name when using the formula interface. Must be numeric and take values 0 or 1.
+#'   Supply either \code{R} (single-stage) or \code{R1}/\code{Attempt}/\code{R2} (double-sampling).
+#' @param R1 The initial sample response indicator. Unquoted or quoted string column name.
+#'   Must be numeric and take values 0 or 1.
+#' @param Attempt The follow-up attempt indicator. Unquoted or quoted string column name.
+#'   Must be numeric and take values 0 or 1.
+#' @param R2 The follow-up response indicator. Unquoted or quoted string column name.
+#'   Must be numeric and take values 0 or 1.
 #' @param strata A single (unquoted) variable that indicates which strata units are in. DOES NOT WORK YET
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param data A dataframe
@@ -270,32 +308,52 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #' @export
 estimator_trim <-
   function(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL, strata = NULL, alpha = 0.05, data){
-    Y <-  eval(substitute(Y), data)
+    # Formula interface: estimator_trim(outcome ~ treatment, R = "col" | R1/Attempt/R2 = "col", data = .)
+    Y_expr <- substitute(Y)
+    Y_val  <- eval(Y_expr, data, parent.frame())
+    if (inherits(Y_val, "formula")) {
+      vars <- all.vars(Y_val)
+      Y    <- data[[vars[1L]]]
+      Z    <- data[[vars[2L]]]
+    } else {
+      Y  <- Y_val
+      Z  <- eval(substitute(Z), data)
+    }
+
+    # Resolve R / R1 / Attempt / R2 — each accepts NSE or quoted string
+    R_raw <- eval(substitute(R), data, parent.frame())
+    R     <- if (is.character(R_raw)) data[[R_raw]] else R_raw
+
+    R1_raw      <- eval(substitute(R1),      data, parent.frame())
+    R1_val      <- if (is.character(R1_raw))      data[[R1_raw]]      else R1_raw
+    Attempt_raw <- eval(substitute(Attempt), data, parent.frame())
+    Attempt_val <- if (is.character(Attempt_raw)) data[[Attempt_raw]] else Attempt_raw
+    R2_raw      <- eval(substitute(R2),      data, parent.frame())
+    R2_val      <- if (is.character(R2_raw))      data[[R2_raw]]      else R2_raw
+
     if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-    Z <-  eval(substitute(Z), data)
     if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
 
-    R <-  eval(substitute(R), data)
-    if(!is.null(R)){
+    if (!is.null(R)) {
       if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
-
       out <- trimming_bounds(Out = Y, Treat = Z, Fail = as.numeric(R == 0), Weight = rep(1, length(Y)), monotonicity = TRUE)
-    }else{
-      R1 <-  eval(substitute(R1), data)
+    } else {
+      if (is.null(R1_val) || is.null(Attempt_val) || is.null(R2_val)) {
+        stop("Supply either R (single-stage) or R1, Attempt, and R2 (double-sampling).")
+      }
+      R1      <- R1_val
+      Attempt <- Attempt_val
+      R2      <- R2_val
       if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
-      R2 <-  eval(substitute(R2), data)
       if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
-      Attempt <-  eval(substitute(Attempt), data)
       if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
 
       Weight <- rep(NA, length(Y))
-
       Weight[R1==1] <- 1
       Weight[Attempt==1 & Z ==1] <- sum(Z == 1 & R1 == 0)/sum(Z == 1 & Attempt == 1)
       Weight[Attempt==1 & Z ==0] <- sum(Z == 0 & R1 == 0)/sum(Z == 0 & Attempt == 1)
 
       Fail <- as.numeric(R1 == 0 & R2 == 0)
-
       Keep <- (R1 == 1 | Attempt == 1)
 
       out <- trimming_bounds(Out = Y[Keep], Treat = Z[Keep],
@@ -310,11 +368,16 @@ estimator_trim <-
 #'
 #' This function yields extreme value bounds under the assumption that the outcomes of 1-delta of the missing second-round units are ignorable, that is, that they are drawn from an unknown distribution with mean and variance equal to the observed second-round groups.
 #'
-#' @param Y The (unquoted) outcome variable. Must be numeric.
+#' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
+#'   for use with \code{declare_estimator(.method = estimator_ds_sens)}. Must be numeric.
 #' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
-#' @param R1 The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.
-#' @param Attempt The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.
-#' @param R2 The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.
+#'   Ignored when \code{Y} is a formula.
+#' @param R1 The initial sample response indicator: unquoted column name, or a quoted string column
+#'   name when using the formula interface. Must be numeric and take values 0 or 1.
+#' @param Attempt The follow-up attempt indicator: unquoted column name, or quoted string.
+#'   Must be numeric and take values 0 or 1.
+#' @param R2 The follow-up response indicator: unquoted column name, or quoted string.
+#'   Must be numeric and take values 0 or 1.
 #' @param minY The minimum possible value of the outcome (Y) variable.
 #' @param maxY The maximum possible value of the outcome (Y) variable.
 #' @param strata A single (unquoted) variable that indicates which strata units are in.
@@ -326,15 +389,27 @@ estimator_trim <-
 #' @export
 #'
 estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata = NULL, alpha = 0.05, data){
-  Y <-  eval(substitute(Y), data)
+  # Formula interface: estimator_ds_sens(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
+  Y_expr <- substitute(Y)
+  Y_val  <- eval(Y_expr, data, parent.frame())
+  if (inherits(Y_val, "formula")) {
+    vars <- all.vars(Y_val)
+    Y    <- data[[vars[1L]]]
+    Z    <- data[[vars[2L]]]
+  } else {
+    Y <- Y_val
+    Z <- eval(substitute(Z), data)
+  }
+  R1_raw      <- eval(substitute(R1),      data, parent.frame())
+  Attempt_raw <- eval(substitute(Attempt), data, parent.frame())
+  R2_raw      <- eval(substitute(R2),      data, parent.frame())
+  R1      <- if (is.character(R1_raw))      data[[R1_raw]]      else R1_raw
+  Attempt <- if (is.character(Attempt_raw)) data[[Attempt_raw]] else Attempt_raw
+  R2      <- if (is.character(R2_raw))      data[[R2_raw]]      else R2_raw
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-  Z <-  eval(substitute(Z), data)
   if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
-  R1 <-  eval(substitute(R1), data)
   if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
-  R2 <-  eval(substitute(R2), data)
   if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
-  Attempt <-  eval(substitute(Attempt), data)
   if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
 
   if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
