@@ -265,15 +265,15 @@ test_that("estimator_trim DS path (paper data)", {
   expect_equal(unname(out["lower_bound"]), -0.268142333620083,  tolerance = 1e-10)
 })
 
-test_that("estimator_trim R path errors on monotonicity violation (paper data)", {
+test_that("estimator_trim R path returns NA bounds on monotonicity violation (paper data)", {
   skip_if_not(file.exists(data_path), "replication data not found")
   dat <- read.csv(data_path)
   dat <- subset(dat, !is.na(Z1))
   # Control group has slightly higher attrition than treatment → violation
-  expect_error(
-    estimator_trim(Y = L_dif_w2, Z = Z1, R = R1, data = dat),
-    "Monotonicity appears to be violated"
-  )
+  out <- estimator_trim(Y = L_dif_w2, Z = Z1, R = R1, data = dat)
+  expect_s3_class(out, "attrition_trim")
+  expect_true(is.na(out["lower_bound"]))
+  expect_true(is.na(out["upper_bound"]))
 })
 
 test_that("estimator_ds_sens(delta=1) exactly matches estimator_ds (paper data)", {
@@ -486,11 +486,13 @@ test_that("estimator_trim validates inputs", {
   expect_error(estimator_trim(Y, Z, R = R1 + 0.5, data = df), "zero or one")
 })
 
-test_that("estimator_trim errors when monotonicity is violated", {
+test_that("estimator_trim returns NA bounds when monotonicity is violated", {
   df   <- make_synthetic()
   df$Z <- 1L - df$Z  # flip treatment — control now has higher response rate
-  expect_error(estimator_trim(Y, Z, R = R1, data = df),
-               "Monotonicity appears to be violated")
+  out  <- estimator_trim(Y, Z, R = R1, data = df)
+  expect_s3_class(out, "attrition_trim")
+  expect_true(is.na(out["lower_bound"]))
+  expect_true(is.na(out["upper_bound"]))
 })
 
 # ── Formula interface ────────────────────────────────────────────────────────

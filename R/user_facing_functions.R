@@ -336,9 +336,17 @@ estimator_trim <-
     if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
     if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
 
+    na_trim <- structure(
+      c(lower_bound = NA_real_, upper_bound = NA_real_, Q = NA_real_),
+      class = c("attrition_trim", "numeric")
+    )
+
     if (!is.null(R)) {
       if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
-      out <- trimming_bounds(Out = Y, Treat = Z, Fail = as.numeric(R == 0), Weight = rep(1, length(Y)), monotonicity = TRUE)
+      out <- tryCatch(
+        trimming_bounds(Out = Y, Treat = Z, Fail = as.numeric(R == 0), Weight = rep(1, length(Y)), monotonicity = TRUE),
+        error = \(e) na_trim
+      )
     } else {
       if (is.null(R1_val) || is.null(Attempt_val) || is.null(R2_val)) {
         stop("Supply either R (single-stage) or R1, Attempt, and R2 (double-sampling).")
@@ -358,10 +366,14 @@ estimator_trim <-
       Fail <- as.numeric(R1 == 0 & R2 == 0)
       Keep <- (R1 == 1 | Attempt == 1)
 
-      out <- trimming_bounds(Out = Y[Keep], Treat = Z[Keep],
-                             Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE)
+      out <- tryCatch(
+        trimming_bounds(Out = Y[Keep], Treat = Z[Keep],
+                        Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE),
+        error = \(e) na_trim
+      )
     }
 
+    if (inherits(out, "attrition_trim")) return(out)
     return(structure(out, class = c("attrition_trim", "numeric")))
   }
 
