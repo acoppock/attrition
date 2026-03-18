@@ -12,7 +12,7 @@
 #'   Must be numeric and take values 0 or 1.
 #' @param minY The minimum possible value of the outcome (Y) variable.
 #' @param maxY The maximum possible value of the outcome (Y) variable.
-#' @param strata A single (unquoted) variable that indicates which strata units are in.
+#' @param strata Stratification variable: unquoted column name or a quoted string column name.
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param data A dataframe
 #'
@@ -68,9 +68,8 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
   Y_expr <- substitute(Y)
   Y_val  <- eval(Y_expr, data, parent.frame())
   if (inherits(Y_val, "formula")) {
-    vars <- all.vars(Y_val)
-    Y    <- data[[vars[1L]]]
-    Z    <- data[[vars[2L]]]
+    yz <- parse_yz_formula(Y_val, data)
+    Y  <- yz$Y; Z <- yz$Z
   } else {
     Y <- Y_val
     Z <- eval(substitute(Z), data)
@@ -78,9 +77,9 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
   R1_raw      <- eval(substitute(R1),      data, parent.frame())
   Attempt_raw <- eval(substitute(Attempt), data, parent.frame())
   R2_raw      <- eval(substitute(R2),      data, parent.frame())
-  R1      <- if (is.character(R1_raw))      data[[R1_raw]]      else R1_raw
-  Attempt <- if (is.character(Attempt_raw)) data[[Attempt_raw]] else Attempt_raw
-  R2      <- if (is.character(R2_raw))      data[[R2_raw]]      else R2_raw
+  R1      <- if (is.character(R1_raw)      && length(R1_raw)      == 1L) data[[R1_raw]]      else R1_raw
+  Attempt <- if (is.character(Attempt_raw) && length(Attempt_raw) == 1L) data[[Attempt_raw]] else Attempt_raw
+  R2      <- if (is.character(R2_raw)      && length(R2_raw)      == 1L) data[[R2_raw]]      else R2_raw
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
   if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
   if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
@@ -89,7 +88,8 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 
   if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
 
-  strata <-  eval(substitute(strata), data)
+  strata_raw <- eval(substitute(strata), data, parent.frame())
+  strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
   if(is.null(strata)) {
     n1_c_s <- sum(R1==1 & Z==0)
     n1_t_s <- sum(R1==1 & Z==1)
@@ -188,7 +188,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 #'   when using the formula interface. Must be numeric and take values 0 or 1.
 #' @param minY The minimum possible value of the outcome (Y) variable.
 #' @param maxY The maximum possible value of the outcome (Y) variable.
-#' @param strata A single (unquoted) variable that indicates which strata units are in.
+#' @param strata Stratification variable: unquoted column name or a quoted string column name.
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param data A dataframe
 #'
@@ -199,22 +199,22 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
   Y_expr <- substitute(Y)
   Y_val  <- eval(Y_expr, data, parent.frame())
   if (inherits(Y_val, "formula")) {
-    vars <- all.vars(Y_val)
-    Y    <- data[[vars[1L]]]
-    Z    <- data[[vars[2L]]]
+    yz <- parse_yz_formula(Y_val, data)
+    Y  <- yz$Y; Z <- yz$Z
   } else {
     Y <- Y_val
     Z <- eval(substitute(Z), data)
   }
   R_raw <- eval(substitute(R), data, parent.frame())
-  R     <- if (is.character(R_raw)) data[[R_raw]] else R_raw
+  R     <- if (is.character(R_raw) && length(R_raw) == 1L) data[[R_raw]] else R_raw
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
   if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
   if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
 
   if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
 
-  strata <-  eval(substitute(strata), data)
+  strata_raw <- eval(substitute(strata), data, parent.frame())
+  strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
   if(is.null(strata)) {
     n1_c_s <- sum(R==1 & Z==0)
     n1_t_s <- sum(R==1 & Z==1)
@@ -300,7 +300,7 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #'   Must be numeric and take values 0 or 1.
 #' @param R2 The follow-up response indicator. Unquoted or quoted string column name.
 #'   Must be numeric and take values 0 or 1.
-#' @param strata A single (unquoted) variable that indicates which strata units are in. DOES NOT WORK YET
+#' @param strata Not supported; supplying any value raises an error.
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param data A dataframe
 #'
@@ -312,9 +312,8 @@ estimator_trim <-
     Y_expr <- substitute(Y)
     Y_val  <- eval(Y_expr, data, parent.frame())
     if (inherits(Y_val, "formula")) {
-      vars <- all.vars(Y_val)
-      Y    <- data[[vars[1L]]]
-      Z    <- data[[vars[2L]]]
+      yz <- parse_yz_formula(Y_val, data)
+      Y  <- yz$Y; Z <- yz$Z
     } else {
       Y  <- Y_val
       Z  <- eval(substitute(Z), data)
@@ -322,15 +321,18 @@ estimator_trim <-
 
     # Resolve R / R1 / Attempt / R2 — each accepts NSE or quoted string
     R_raw <- eval(substitute(R), data, parent.frame())
-    R     <- if (is.character(R_raw)) data[[R_raw]] else R_raw
+    R     <- if (is.character(R_raw)       && length(R_raw)       == 1L) data[[R_raw]]       else R_raw
 
     R1_raw      <- eval(substitute(R1),      data, parent.frame())
-    R1_val      <- if (is.character(R1_raw))      data[[R1_raw]]      else R1_raw
+    R1_val      <- if (is.character(R1_raw)      && length(R1_raw)      == 1L) data[[R1_raw]]      else R1_raw
     Attempt_raw <- eval(substitute(Attempt), data, parent.frame())
-    Attempt_val <- if (is.character(Attempt_raw)) data[[Attempt_raw]] else Attempt_raw
+    Attempt_val <- if (is.character(Attempt_raw) && length(Attempt_raw) == 1L) data[[Attempt_raw]] else Attempt_raw
     R2_raw      <- eval(substitute(R2),      data, parent.frame())
-    R2_val      <- if (is.character(R2_raw))      data[[R2_raw]]      else R2_raw
+    R2_val      <- if (is.character(R2_raw)      && length(R2_raw)      == 1L) data[[R2_raw]]      else R2_raw
 
+    strata_raw <- eval(substitute(strata), data, parent.frame())
+    strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
+    if (!is.null(strata)) stop("Stratification is not yet supported for trimming bounds.")
     if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
     if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
 
@@ -380,7 +382,7 @@ estimator_trim <-
 #'   Must be numeric and take values 0 or 1.
 #' @param minY The minimum possible value of the outcome (Y) variable.
 #' @param maxY The maximum possible value of the outcome (Y) variable.
-#' @param strata A single (unquoted) variable that indicates which strata units are in.
+#' @param strata Stratification variable: unquoted column name or a quoted string column name.
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param data A dataframe
 #' @param delta Sensitivity parameter in [0, 1]. At delta = 1 (default) worst-case bounds apply; at delta = 0 ignorability holds for all follow-up non-responders.
@@ -393,9 +395,8 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
   Y_expr <- substitute(Y)
   Y_val  <- eval(Y_expr, data, parent.frame())
   if (inherits(Y_val, "formula")) {
-    vars <- all.vars(Y_val)
-    Y    <- data[[vars[1L]]]
-    Z    <- data[[vars[2L]]]
+    yz <- parse_yz_formula(Y_val, data)
+    Y  <- yz$Y; Z <- yz$Z
   } else {
     Y <- Y_val
     Z <- eval(substitute(Z), data)
@@ -403,9 +404,9 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
   R1_raw      <- eval(substitute(R1),      data, parent.frame())
   Attempt_raw <- eval(substitute(Attempt), data, parent.frame())
   R2_raw      <- eval(substitute(R2),      data, parent.frame())
-  R1      <- if (is.character(R1_raw))      data[[R1_raw]]      else R1_raw
-  Attempt <- if (is.character(Attempt_raw)) data[[Attempt_raw]] else Attempt_raw
-  R2      <- if (is.character(R2_raw))      data[[R2_raw]]      else R2_raw
+  R1      <- if (is.character(R1_raw)      && length(R1_raw)      == 1L) data[[R1_raw]]      else R1_raw
+  Attempt <- if (is.character(Attempt_raw) && length(Attempt_raw) == 1L) data[[Attempt_raw]] else Attempt_raw
+  R2      <- if (is.character(R2_raw)      && length(R2_raw)      == 1L) data[[R2_raw]]      else R2_raw
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
   if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
   if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
@@ -414,7 +415,8 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 
   if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
 
-  strata <-  eval(substitute(strata), data)
+  strata_raw <- eval(substitute(strata), data, parent.frame())
+  strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
   if(is.null(strata)) {
     n1_c_s <- sum(R1==1 & Z==0)
     n1_t_s <- sum(R1==1 & Z==1)
@@ -514,7 +516,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #' @param R2 The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.
 #' @param minY The minimum possible value of the outcome (Y) variable.
 #' @param maxY The maximum possible value of the outcome (Y) variable.
-#' @param strata A single (unquoted) variable that indicates which strata units are in.
+#' @param strata Stratification variable: unquoted column name or a quoted string column name.
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param data A dataframe
 #' @param sims Number of points at which to evaluate sensitivity test. Defaults to 100
@@ -539,7 +541,8 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
   Attempt <-  eval(substitute(Attempt), data)
   if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
 
-  strata <-  eval(substitute(strata), data)
+  strata_raw <- eval(substitute(strata), data, parent.frame())
+  strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
 
   ps <- seq(0, 1, length.out = sims)
 

@@ -537,6 +537,31 @@ test_that("estimator_ds_sens formula interface matches NSE interface", {
   expect_s3_class(frm, "attrition_bounds")
 })
 
+test_that("strata accepts quoted string column name", {
+  df  <- make_synthetic()
+  nse <- estimator_ev(Y, Z, R1, strata = strata, minY = 1, maxY = 5, data = df)
+  str <- estimator_ev(Y, Z, R1, strata = "strata", minY = 1, maxY = 5, data = df)
+  expect_equal(as.numeric(nse), as.numeric(str))
+
+  nse <- estimator_ds(Y, Z, R1, Attempt, R2, strata = strata, minY = 1, maxY = 5, data = df)
+  str <- estimator_ds(Y, Z, R1, Attempt, R2, strata = "strata", minY = 1, maxY = 5, data = df)
+  expect_equal(as.numeric(nse), as.numeric(str))
+})
+
+test_that("estimator_trim errors when strata is supplied", {
+  df <- make_synthetic()
+  expect_error(estimator_trim(Y, Z, R = R1, strata = strata, data = df),
+               "not yet supported")
+})
+
+test_that("over-specified formulas are rejected with a clear error", {
+  df <- make_synthetic()
+  expect_error(estimator_ev(Y ~ Z + R1,              minY = 1, maxY = 5, data = df), "exactly two variables")
+  expect_error(estimator_ds(Y ~ Z + R1,              minY = 1, maxY = 5, data = df), "exactly two variables")
+  expect_error(estimator_trim(Y ~ Z + R1,            data = df),                     "exactly two variables")
+  expect_error(estimator_ds_sens(Y ~ Z + R1,         minY = 1, maxY = 5, delta = 0.5, data = df), "exactly two variables")
+})
+
 # ── sensitivity_ds ───────────────────────────────────────────────────────────
 
 test_that("sensitivity_ds returns correct structure", {

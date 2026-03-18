@@ -1,4 +1,19 @@
 
+# Parse a Y ~ Z formula, returning c(outcome_col, treatment_col).
+# Errors if the formula has more than two variables.
+parse_yz_formula <- function(f, data) {
+  if (!inherits(f, "formula")) stop("'Y' must be a formula or an unquoted column name.")
+  vars <- all.vars(f)
+  if (length(vars) != 2L) {
+    stop(
+      "Formula must be outcome ~ treatment with exactly two variables. ",
+      "Additional variables (R, R1, Attempt, R2) are passed as quoted ",
+      "column name strings, e.g. estimator_ev(Y ~ Z, R = \"R\", ...)."
+    )
+  }
+  list(Y = data[[vars[1L]]], Z = data[[vars[2L]]])
+}
+
 find_sign_changes <- function(x){
   first_pos <- Position(function(x) x > 0, x )
   first_neg <- Position(function(x) x < 0, x )
