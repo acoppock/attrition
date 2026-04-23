@@ -156,6 +156,14 @@ trimming_bounds <-
 
       Out0_mono <- weighted.mean(OutS0$Out, OutS0$Weight)
 
+      if (Q == 0) {
+        Out1_mean <- weighted.mean(OutS1$Out, OutS1$Weight)
+        return(c(upper_bound = Out1_mean - Out0_mono, lower_bound = Out1_mean - Out0_mono,
+                 Out0_mono = Out0_mono, Out1L_mono = Out1_mean, Out1U_mono = Out1_mean,
+                 control_group_N = nrow(OutS0), treat_group_N = nrow(OutS1),
+                 Q = 0, f1 = f1, f0 = f0, pi_r_1 = 1 - f1, pi_r_0 = 1 - f0))
+      }
+
       Out1U_mono <- weighted.mean(OutS1$Out[OutS1.CDF>Q], OutS1$Weight[OutS1.CDF>Q])
       Out1L_mono <- weighted.mean(OutS1$Out[OutS1.CDF<(1-Q)], OutS1$Weight[OutS1.CDF<(1-Q)])
 
