@@ -8,19 +8,49 @@ missing outcomes, implementing Coppock, Gerber, Green, and Kern (2017),
 [*Political Analysis*
 25(2):188-206](https://doi.org/10.1017/pan.2016.6).
 
-Attrition is the problem covariate adjustment cannot solve. If subjects
-leave your experiment for reasons related to the outcomes they would
-have reported, the respondents you are left with are not a random sample
-of the subjects you started with, and no regression on the covariates
-you happened to measure will put that right. The standard response is to
-assume the problem away: missingness is ignorable, conditional on
-treatment and a few covariates. The assumption is untestable, and when
-it fails it fails silently.
+## When you would use these estimators
 
-The package takes the other route. It reports the full range of
-treatment effects consistent with the data, and it implements a research
-design, double sampling, that makes that range narrow enough to be worth
-reporting.
+You ran a randomized experiment and some subjects have no outcome
+recorded. A two-wave survey where part of the sample never comes back
+for the second wave. A field experiment whose endline cannot reach
+everyone. A study where the outcome exists only for subjects who cleared
+an earlier hurdle, as wages do for the subset who found work.
+
+Each estimator reports the range of average treatment effects consistent
+with the data. Which one fits depends on what you are able to assume
+about the subjects you did not observe:
+
+- The outcome has a known minimum and maximum, such as a 0 to 6 scale, a
+  binary indicator, or a bounded index: `estimator_ev()`.
+- The same, and you also pursued a random sample of the nonrespondents
+  in a second round: `estimator_ds()`, which is what the paper is about.
+- You are unwilling to fix a minimum and maximum, but you are willing to
+  say that treatment could only have raised a subject’s chance of
+  responding, never lowered it: `estimator_trim()`.
+- You want to know how much of the ignorability assumption a result can
+  survive: `estimator_ds_sens()` and `sensitivity_ds()`.
+
+Poststratification on a discrete covariate is available for the first
+two, and tightens the estimates without changing what is being
+estimated.
+
+## When you would run a double-sampling design
+
+Decide before you field, because the design is the part that does the
+work. Double sampling is worth planning whenever you expect real
+attrition and could reach nonrespondents by spending more on them than
+you spent the first time: a larger incentive, more callbacks, an
+in-person visit, a switch from web to phone.
+
+The procedure is to close the first round, draw a random sample of
+whoever did not respond, and pursue that sample hard. Drawing at random
+is the whole point. It makes the recovered outcomes stand in for every
+nonrespondent rather than for the subset who happen to be easy to reach,
+so only the subjects who refuse twice remain unknown.
+
+Budget for it as design rather than analysis. A larger initial sample
+buys precision and does nothing about attrition; a follow-up sample
+attacks the attrition directly.
 
 ## Installation
 
@@ -72,7 +102,7 @@ estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
 The identification region shrinks by a factor of 3.6, from 3.25 points
 wide to 0.91. Chasing 100 subjects bought all of it.
 
-## The estimators
+## The estimators at a glance
 
 | Function | What it assumes |
 |----|----|
