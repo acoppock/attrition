@@ -19,21 +19,26 @@ sensitivity_ds(
 )
 }
 \arguments{
-\item{Y}{The (unquoted) outcome variable. Must be numeric.}
+\item{Y}{The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}.
+Must be numeric.}
 
-\item{Z}{The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.}
+\item{Z}{The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
+Ignored when \code{Y} is a formula.}
 
-\item{R1}{The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.}
+\item{R1}{The initial sample response indicator: unquoted column name, or a quoted string column
+name when using the formula interface. Must be numeric and take values 0 or 1.}
 
-\item{Attempt}{The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.}
+\item{Attempt}{The follow-up attempt indicator: unquoted column name, or quoted string.
+Must be numeric and take values 0 or 1.}
 
-\item{R2}{The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.}
+\item{R2}{The follow-up response indicator: unquoted column name, or quoted string.
+Must be numeric and take values 0 or 1.}
 
 \item{minY}{The minimum possible value of the outcome (Y) variable.}
 
 \item{maxY}{The maximum possible value of the outcome (Y) variable.}
 
-\item{sims}{Number of points at which to evaluate sensitivity test. Defaults to 100}
+\item{sims}{Number of values of delta at which to evaluate the bounds. Defaults to 100.}
 
 \item{strata}{Stratification variable: unquoted column name or a quoted string column name.}
 
@@ -42,8 +47,35 @@ sensitivity_ds(
 \item{data}{A dataframe}
 }
 \value{
-A list containing a ggplot object, a dataframe of simulated bounds and cis, and a value of pstar, if it exists.
+A list with three elements: \code{sensitivity_plot}, a ggplot object;
+  \code{sims_df}, a data frame of bounds and confidence intervals at each delta;
+  and \code{p_star}, a one-row data frame giving delta* when it exists and an
+  explanatory character string when it does not.
 }
 \description{
 This function performs a line search over values of delta, the sensitivity parameter, in order to find (if it exists) delta*, the value of delta where the confidence interval no longer includes zero.
+}
+\examples{
+set.seed(343)
+N <- 1000
+Y_0 <- sample(1:5, N, replace = TRUE, prob = c(0.1, 0.3, 0.3, 0.2, 0.1))
+Y_1 <- sample(1:5, N, replace = TRUE, prob = c(0.1, 0.1, 0.4, 0.3, 0.1))
+Z <- rbinom(N, 1, 0.5)
+Y_star <- Z * Y_1 + (1 - Z) * Y_0
+R1 <- rbinom(N, 1, prob = 0.7 + 0.1 * Z)
+Y <- Y_star
+Y[R1 == 0] <- NA
+
+# Follow up intensively with a random half of the initial non-responders
+Attempt <- rep(0, N)
+Attempt[R1 == 0] <- rbinom(sum(R1 == 0), 1, 0.5)
+R2 <- rep(0, N)
+R2[Attempt == 1] <- rbinom(sum(Attempt == 1), 1, 0.9)
+Y[Attempt == 1 & R2 == 1] <- Y_star[Attempt == 1 & R2 == 1]
+df <- data.frame(Y, Z, R1, Attempt, R2)
+
+sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
+                       sims = 20, data = df)
+sens$sensitivity_plot
+sens$p_star
 }

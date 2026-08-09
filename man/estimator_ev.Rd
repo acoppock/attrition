@@ -27,8 +27,30 @@ when using the formula interface. Must be numeric and take values 0 or 1.}
 \item{data}{A dataframe}
 }
 \value{
-A results matrix
+A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
+  the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
+  the bound point estimates; and \code{low_var} and \code{upp_var}, their variances.
+  Pass to \code{\link[=tidy.attrition_bounds]{tidy()}} for a data frame.
 }
 \description{
 Extreme Value (Manski) Bounds
+}
+\examples{
+set.seed(343)
+N <- 1000
+Y_0 <- sample(1:5, N, replace = TRUE, prob = c(0.1, 0.3, 0.3, 0.2, 0.1))
+Y_1 <- sample(1:5, N, replace = TRUE, prob = c(0.1, 0.1, 0.4, 0.3, 0.1))
+Z <- rbinom(N, 1, 0.5)
+Y_star <- Z * Y_1 + (1 - Z) * Y_0
+
+# Treated units respond at a higher rate, so the missingness is nonignorable
+R <- rbinom(N, 1, prob = 0.7 + 0.1 * Z)
+Y <- Y_star
+Y[R == 0] <- NA
+df <- data.frame(Y, Z, R)
+
+estimator_ev(Y, Z, R, minY = 1, maxY = 5, data = df)
+
+# Equivalently, via the formula interface
+estimator_ev(Y ~ Z, R = "R", minY = 1, maxY = 5, data = df)
 }

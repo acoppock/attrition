@@ -43,8 +43,28 @@ Must be numeric and take values 0 or 1.}
 \item{data}{A dataframe}
 }
 \value{
-A results matrix
+A named numeric vector containing \code{lower_bound} and \code{upper_bound},
+  the trimming bound estimates, alongside the intermediate quantities used to build
+  them. All elements are \code{NA} when monotonicity is violated. Pass to
+  \code{\link[=tidy.attrition_trim]{tidy()}} for a data frame.
 }
 \description{
 Trimming Bounds
+}
+\examples{
+set.seed(343)
+N <- 1000
+Y_0 <- sample(1:5, N, replace = TRUE, prob = c(0.1, 0.3, 0.3, 0.2, 0.1))
+Y_1 <- sample(1:5, N, replace = TRUE, prob = c(0.1, 0.1, 0.4, 0.3, 0.1))
+Z <- rbinom(N, 1, 0.5)
+Y_star <- Z * Y_1 + (1 - Z) * Y_0
+
+# Treated units respond at a higher rate, so the missingness is nonignorable
+R <- rbinom(N, 1, prob = 0.7 + 0.1 * Z)
+Y <- Y_star
+Y[R == 0] <- NA
+df <- data.frame(Y, Z, R)
+
+# Single-stage: trimming bounds under monotonicity
+estimator_trim(Y, Z, R = R, data = df)
 }

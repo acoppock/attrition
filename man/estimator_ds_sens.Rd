@@ -47,8 +47,36 @@ Must be numeric and take values 0 or 1.}
 \item{data}{A dataframe}
 }
 \value{
-A named numeric vector with elements ci_lower, ci_upper, low_est, upp_est, low_var, upp_var.
+A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
+  the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
+  the bound point estimates; and \code{low_var} and \code{upp_var}, their variances.
+  Pass to \code{\link[=tidy.attrition_bounds]{tidy()}} for a data frame.
 }
 \description{
 This function yields extreme value bounds under the assumption that the outcomes of 1-delta of the missing second-round units are ignorable, that is, that they are drawn from an unknown distribution with mean and variance equal to the observed second-round groups.
+}
+\examples{
+set.seed(343)
+N <- 1000
+Y_0 <- sample(1:5, N, replace = TRUE, prob = c(0.1, 0.3, 0.3, 0.2, 0.1))
+Y_1 <- sample(1:5, N, replace = TRUE, prob = c(0.1, 0.1, 0.4, 0.3, 0.1))
+Z <- rbinom(N, 1, 0.5)
+Y_star <- Z * Y_1 + (1 - Z) * Y_0
+R1 <- rbinom(N, 1, prob = 0.7 + 0.1 * Z)
+Y <- Y_star
+Y[R1 == 0] <- NA
+
+# Follow up intensively with a random half of the initial non-responders
+Attempt <- rep(0, N)
+Attempt[R1 == 0] <- rbinom(sum(R1 == 0), 1, 0.5)
+R2 <- rep(0, N)
+R2[Attempt == 1] <- rbinom(sum(Attempt == 1), 1, 0.9)
+Y[Attempt == 1 & R2 == 1] <- Y_star[Attempt == 1 & R2 == 1]
+df <- data.frame(Y, Z, R1, Attempt, R2)
+
+# delta = 1 reproduces the worst-case double-sampling bounds
+estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 1, data = df)
+
+# delta = 0 assumes ignorability among follow-up non-responders
+estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0, data = df)
 }

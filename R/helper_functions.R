@@ -1,4 +1,19 @@
 
+# A column argument is either a vector or a single string naming a column of
+# data. Anything else (a vector of column contents) is passed through as is.
+resolve_column <- function(x, data) {
+  if (is.character(x) && length(x) == 1L) data[[x]] else x
+}
+
+# Resolve the outcome and treatment arguments. Y is either an outcome vector or
+# a Y ~ Z formula; when it is a formula, Z is taken from the formula and the Z
+# argument is never evaluated, so callers may leave it missing.
+resolve_yz <- function(Y_expr, Z_expr, data, env) {
+  Y_val <- eval(Y_expr, data, env)
+  if (inherits(Y_val, "formula")) return(parse_yz_formula(Y_val, data))
+  list(Y = Y_val, Z = eval(Z_expr, data, env))
+}
+
 # Parse a Y ~ Z formula, returning c(outcome_col, treatment_col).
 # Errors if the formula has more than two variables.
 parse_yz_formula <- function(f, data) {
@@ -75,6 +90,28 @@ gen_var_sens <- function(y_m, y_s, p, delta, lower_bound = TRUE, minY, maxY) {
     mixture_weight*(1-mixture_weight)*(y_m - const)^2
 
   return(var_sens)
+}
+
+# Poststratified bounds: stratum bounds combined by stratum share, stratum
+# variances by squared share, with a joint Imbens-Manski interval computed on
+# the pooled quantities. Stratum shares are treated as fixed, not estimated.
+# strata_ests is a 6-row matrix, one column per stratum, as returned by the
+# unstratified estimators.
+pool_strata <- function(strata_ests, proportions, alpha) {
+  lower_bound_est <- sum(strata_ests["low_est", ] * proportions)
+  upper_bound_est <- sum(strata_ests["upp_est", ] * proportions)
+  lower_bound_var_est <- sum(strata_ests["low_var", ] * proportions^2)
+  upper_bound_var_est <- sum(strata_ests["upp_var", ] * proportions^2)
+
+  sig <- im_critical_value(lower_bound_est, upper_bound_est,
+                           lower_bound_var_est, upper_bound_var_est, alpha)
+
+  return(c(ci_lower = lower_bound_est - sig*lower_bound_var_est^.5,
+           ci_upper = upper_bound_est + sig*upper_bound_var_est^.5,
+           low_est = lower_bound_est,
+           upp_est = upper_bound_est,
+           low_var = lower_bound_var_est,
+           upp_var = upper_bound_var_est))
 }
 
 construct_manski_bounds <-

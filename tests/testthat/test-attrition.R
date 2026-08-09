@@ -689,6 +689,20 @@ test_that("sensitivity_ds detects delta* on synthetic data", {
   expect_true(out$p_star$p > 0 && out$p_star$p < 1)
 })
 
+test_that("sensitivity_ds formula interface matches NSE interface", {
+  df  <- make_synthetic()
+  nse <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 10, data = df)
+  frm <- sensitivity_ds(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+                        minY = 1, maxY = 5, sims = 10, data = df)
+  expect_equal(nse$sims_df, frm$sims_df)
+})
+
+test_that("sensitivity_ds validates sims", {
+  df <- make_synthetic()
+  expect_error(sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 1, data = df),
+               "at least two")
+})
+
 test_that("sensitivity_ds with strata returns correct structure", {
   df  <- make_synthetic()
   out <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 10,

@@ -4,6 +4,13 @@ First release.
 
 ## New features
 
+* Formula interface on all estimators: `estimator_ev(Y ~ Z, R = "R", ...)`,
+  `estimator_ds(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2", ...)`, and
+  likewise for `estimator_trim()`, `estimator_ds_sens()`, and
+  `sensitivity_ds()`. Response, attempt, and stratification arguments accept
+  either an unquoted column name or a quoted string. The formula form is what
+  `DeclareDesign::declare_estimator(.method = ...)` expects.
+
 * `tidy()` methods for all estimator output classes (`attrition_bounds`,
   `attrition_trim`) via the `generics` package. Each method returns a
   three-row tibble with rows `"bounds"`, `"lower_bound"`, and `"upper_bound"`,
@@ -27,11 +34,45 @@ First release.
 * `reshape2` dependency replaced by `tibble`; `generics` added for `tidy`
   re-export.
 
+* Worked examples on every exported function.
+
 ## Bug fixes
+
+* The Imbens-Manski critical value was found by minimising an absolute value
+  with `optim(..., method = "Brent", lower = 1, upper = 2)`. That interval only
+  covers alpha near 0.05, so at other significance levels the optimiser
+  returned a boundary value and the confidence intervals were silently wrong:
+  at `alpha = 0.01` it returned 2.000 against a correct 2.326, and at
+  `alpha = 0.001` it returned 2.000 against a correct 3.090. The search
+  interval is now derived from alpha, and the root is found with `uniroot()`
+  on the signed coverage excess rather than by minimising its absolute value.
+  Bound point estimates and variances are unaffected.
+
+* `estimator_trim()` reported every failure inside `trimming_bounds()` as a
+  monotonicity violation, because it caught all errors and returned `NA`
+  bounds. It now catches only a classed monotonicity condition.
+
+* The monotonicity violation message named the wrong group. `Q < 0` means the
+  treatment group is more likely to be missing than the control group.
+
+* `trimming_bounds()` built its weighted CDFs with a loop that counted
+  backwards when a treatment group had one observed outcome, silently
+  appending an `NA`, and threw an opaque error when a group had none. Both are
+  now `cumsum()`, with an explicit check for empty groups.
+
+* `sensitivity_ds()` could not detect a delta* at the last point of the delta
+  grid, reporting a genuine crossing near delta = 1 as no crossing at all.
+
+* `minY`, `maxY`, `alpha`, `delta`, and `sims` are validated. Previously a
+  reversed `minY`/`maxY` returned a lower bound above the upper bound, an
+  assumed support that did not cover the observed outcomes returned bounds
+  that are not bounds, and a `delta` outside `[0, 1]` returned `NaN`
+  variances.
 
 * `estimator_ev()`: fixed a copy-paste error where `n1_c_s` was incorrectly
   referenced as `n1_c_c` in the unstratified path.
 
 * `estimator_ds()` and `estimator_ds_sens()`: replaced a commented-out
   sentinel initialisation (`-99`) with `NA_real_` for `c1a_t`, `c1r_t`,
-  `c2a_t`, `c2r_t`.
+  `c2a_t`, `c2r_t`. These arguments were never used and have since been
+  removed from the internal estimators altogether.

@@ -44,7 +44,10 @@ Must be numeric and take values 0 or 1.}
 \item{data}{A dataframe}
 }
 \value{
-A results matrix
+A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
+  the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
+  the bound point estimates; and \code{low_var} and \code{upp_var}, their variances.
+  Pass to \code{\link[=tidy.attrition_bounds]{tidy()}} for a data frame.
 }
 \description{
 Extreme Value Bounds with Double Sampling
