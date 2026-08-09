@@ -301,12 +301,13 @@ puts the same information in a data frame.
 ``` r
 
 tidy(estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat))
-#> # A tibble: 3 × 7
-#>   term        estimate std.error conf.low conf.high estimate.low estimate.high
-#>   <chr>          <dbl>     <dbl>    <dbl>     <dbl>        <dbl>         <dbl>
-#> 1 bounds        NA        NA       -0.528     0.745       -0.342         0.572
-#> 2 lower_bound   -0.342     0.113   NA        NA           NA            NA    
-#> 3 upper_bound    0.572     0.105   NA        NA           NA            NA
+#> # A tibble: 3 × 9
+#>   term  estimate std.error conf.low conf.high estimate.low estimate.high outcome
+#>   <chr>    <dbl>     <dbl>    <dbl>     <dbl>        <dbl>         <dbl> <chr>  
+#> 1 boun…   NA        NA       -0.528     0.745       -0.342         0.572 L_dif_…
+#> 2 lowe…   -0.342     0.113   NA        NA           NA            NA     L_dif_…
+#> 3 uppe…    0.572     0.105   NA        NA           NA            NA     L_dif_…
+#> # ℹ 1 more variable: nobs <int>
 ```
 
 Bounds do not have a point estimate, so `estimate` is `NA` on the

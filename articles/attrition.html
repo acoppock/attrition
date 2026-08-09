@@ -40,6 +40,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/acoppock/attrition/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -56,14 +57,14 @@
       <h1>Bounding treatment effects when subjects go missing</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/acoppock/attrition/blob/master/vignettes/attrition.Rmd" class="external-link"><code>vignettes/attrition.Rmd</code></a></small>
       <div class="d-none name"><code>attrition.Rmd</code></div>
     </div>
 
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">attrition</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/attrition/">attrition</a></span><span class="op">)</span></span></code></pre></div>
 <p>This vignette works through a two-wave survey experiment in which 536
 of 1,980 subjects never answered the second wave. Everything runs on the
 replication study from Coppock, Gerber, Green, and Kern (2017), which
@@ -304,12 +305,13 @@ trimming of one group only.</p>
 frame.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 7</span></span></span>
-<span><span class="co">#&gt;   term        estimate std.error conf.low conf.high estimate.low estimate.high</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> bounds        <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       -<span style="color: #BB0000;">0.528</span>     0.745       -<span style="color: #BB0000;">0.342</span>         0.572</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lower_bound   -<span style="color: #BB0000;">0.342</span>     0.113   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> upper_bound    0.572     0.105   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 9</span></span></span>
+<span><span class="co">#&gt;   term  estimate std.error conf.low conf.high estimate.low estimate.high outcome</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> boun…   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       -<span style="color: #BB0000;">0.528</span>     0.745       -<span style="color: #BB0000;">0.342</span>         0.572 L_dif_…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lowe…   -<span style="color: #BB0000;">0.342</span>     0.113   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>     L_dif_…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> uppe…    0.572     0.105   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>     L_dif_…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: nobs &lt;int&gt;</span></span></span></code></pre></div>
 <p>Bounds do not have a point estimate, so <code>estimate</code> is
 <code>NA</code> on the <code>bounds</code> row and the identification
 region appears in <code>estimate.low</code> and

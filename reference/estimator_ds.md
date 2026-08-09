@@ -67,7 +67,8 @@ estimator_ds(
 
 - data:
 
-  A dataframe
+  A dataframe. Must be given by name: `data` is the last argument, so
+  passing it positionally assigns it to another argument.
 
 ## Value
 

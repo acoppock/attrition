@@ -20,6 +20,7 @@
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/acoppock/attrition/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -29,7 +30,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Extreme Value Bounds with Double Sampling</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/acoppock/attrition/blob/master/R/user_facing_functions.R" class="external-link"><code>R/user_facing_functions.R</code></a></small>
       <div class="d-none name"><code>estimator_ds.Rd</code></div>
     </div>
 
@@ -99,7 +100,8 @@ Must be numeric and take values 0 or 1.</p></dd>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A dataframe</p></dd>
+<dd><p>A dataframe. Must be given by name: <code>data</code> is the last
+argument, so passing it positionally assigns it to another argument.</p></dd>
 
 </dl></div>
     <div class="section level2">

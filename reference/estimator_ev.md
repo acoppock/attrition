@@ -46,7 +46,8 @@ estimator_ev(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 
 - data:
 
-  A dataframe
+  A dataframe. Must be given by name: `data` is the last argument, so
+  passing it positionally assigns it to another argument.
 
 ## Value
 

@@ -213,6 +213,9 @@ expects.
   : Print bounds
 - [`print(`*`<attrition_trim>`*`)`](https://alexandercoppock.com/attrition/reference/print.attrition_trim.md)
   : Print trimming bounds
+- [`nobs(`*`<attrition_bounds>`*`)`](https://alexandercoppock.com/attrition/reference/nobs.attrition_bounds.md)
+  [`nobs(`*`<attrition_trim>`*`)`](https://alexandercoppock.com/attrition/reference/nobs.attrition_bounds.md)
+  : Number of observations
 - [`reexports`](https://alexandercoppock.com/attrition/reference/reexports.md)
   [`tidy`](https://alexandercoppock.com/attrition/reference/reexports.md)
   : Objects exported from other packages
