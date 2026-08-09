@@ -1,6 +1,6 @@
 Package: attrition
 Title: Addressing Nonignorable Attrition with Double Sampling and Bounds
-Version: 0.1.0
+Version: 1.0.0
 Authors@R: c(
     person("Alexander", "Coppock", email = "acoppock@gmail.com",
            role = c("aut", "cre")),

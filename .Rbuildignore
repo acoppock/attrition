@@ -3,7 +3,6 @@
 ^docs$
 ^cran-comments\.md$
 ^README\.Rmd$
-^simulation_plot\.pdf$
 ^notes$
 ^\.github$
 ^data-raw$

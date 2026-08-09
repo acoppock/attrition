@@ -1,4 +1,4 @@
-# attrition 0.1.0
+# attrition 1.0.0
 
 First release.
 
