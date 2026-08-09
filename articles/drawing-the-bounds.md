@@ -12,11 +12,12 @@ The plot uses [vayr](https://cran.r-project.org/package=vayr) and the
 difference in means uses
 [estimatr](https://cran.r-project.org/package=estimatr). Both are
 suggested packages rather than required ones, so if either is missing
-the code below is shown but not run. `impute_extreme_values()` and the
-`attrition_experiment` data arrived in vayr 1.1.0, so the same is true
-against an earlier version. The requirement lives in the chunk guard
-rather than in `Suggests`, because a version constraint there cannot be
-satisfied from CRAN until 1.1.0 is released.
+the code below is shown but not run.
+[`impute_extreme_values()`](https://alexandercoppock.com/vayr/reference/impute_extreme_values.html)
+and the `attrition_experiment` data arrived in vayr 1.1.0, so the same
+is true against an earlier version. The requirement lives in the chunk
+guard rather than in `Suggests`, because a version constraint there
+cannot be satisfied from CRAN until 1.1.0 is released.
 
 ``` r
 
@@ -25,28 +26,43 @@ library(vayr)
 library(estimatr)
 library(ggplot2)
 library(dplyr)
+#> 
+#> Attaching package: 'dplyr'
+#> The following objects are masked from 'package:stats':
+#> 
+#>     filter, lag
+#> The following objects are masked from 'package:base':
+#> 
+#>     intersect, setdiff, setequal, union
 ```
 
 ## The experiment
 
-`vayr::attrition_experiment` is a simulated two-arm trial with 200
-subjects and a seven-point Likert outcome. Nineteen subjects have no
-outcome, and their missingness is related to the outcomes they would
-have reported, so dropping them conditions the analysis on a
-post-treatment variable.
+[`vayr::attrition_experiment`](https://alexandercoppock.com/vayr/reference/attrition_experiment.html)
+is a simulated two-arm trial with 200 subjects and a seven-point Likert
+outcome. Nineteen subjects have no outcome, and their missingness is
+related to the outcomes they would have reported, so dropping them
+conditions the analysis on a post-treatment variable.
 
 ``` r
 
 dat <- attrition_experiment
 
 dat |> count(Z, R)
+#> # A tibble: 4 × 3
+#>       Z     R     n
+#>   <dbl> <dbl> <int>
+#> 1     0     0    10
+#> 2     0     1    90
+#> 3     1     0     9
+#> 4     1     1    91
 ```
 
 ## The picture
 
-`vayr::impute_extreme_values()` does the imputation and nothing else. It
-returns both scenarios stacked, with a flag marking which points were
-reported and which were filled in.
+[`vayr::impute_extreme_values()`](https://alexandercoppock.com/vayr/reference/impute_extreme_values.html)
+does the imputation and nothing else. It returns both scenarios stacked,
+with a flag marking which points were reported and which were filled in.
 
 ``` r
 
@@ -95,6 +111,10 @@ ggplot(gg_df, aes(condition, Y)) +
   theme(legend.position = "none")
 ```
 
+![Two panels of the same 200 subjects, with the nineteen imputed
+outcomes piled at opposite ends of the scale in
+each](drawing-the-bounds_files/figure-html/unnamed-chunk-4-1.png)
+
 ## The estimates
 
 [`estimator_ev()`](https://alexandercoppock.com/attrition/reference/estimator_ev.md)
@@ -105,6 +125,8 @@ outcome, and returns the two bounds with a joint confidence interval.
 
 ev <- estimator_ev(Y, Z, R, minY = 1, maxY = 7, data = dat)
 ev
+#>   ci_lower   ci_upper    low_est    upp_est    low_var    upp_var 
+#> -3.170e-01  1.430e+00  8.882e-16  1.140e+00  3.715e-02  3.106e-02
 ```
 
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html) puts the same
@@ -114,6 +136,13 @@ which is the form the comparison below wants.
 ``` r
 
 tidy(ev)
+#> # A tibble: 3 × 8
+#>   term         estimate std.error conf.low conf.high estimate.low estimate.high
+#>   <chr>           <dbl>     <dbl>    <dbl>     <dbl>        <dbl>         <dbl>
+#> 1 bounds      NA           NA       -0.317      1.43     8.88e-16          1.14
+#> 2 lower_bound  8.88e-16     0.193   NA         NA       NA                NA   
+#> 3 upper_bound  1.14e+ 0     0.176   NA         NA       NA                NA   
+#> # ℹ 1 more variable: outcome <chr>
 ```
 
 The bounds are the two pictures. A difference in means run inside each
@@ -135,6 +164,11 @@ by_scenario |>
   left_join(tidy(ev) |> select(term, estimator_ev = estimate), by = "term") |>
   select(scenario, difference_in_means, estimator_ev) |>
   mutate(across(c(difference_in_means, estimator_ev), \(x) round(x, 12)))
+#> # A tibble: 2 × 3
+#>   scenario    difference_in_means estimator_ev
+#>   <fct>                     <dbl>        <dbl>
+#> 1 Lower bound                0            0   
+#> 2 Upper bound                1.14         1.14
 ```
 
 ## What the picture cannot show
@@ -162,6 +196,11 @@ bind_rows(
     transmute(interval = "Imbens-Manski", lower = conf.low, upper = conf.high)
 ) |>
   mutate(width = upper - lower)
+#> # A tibble: 2 × 4
+#>   interval                 lower upper width
+#>   <chr>                    <dbl> <dbl> <dbl>
+#> 1 Stacking the two panels -0.381  1.49  1.87
+#> 2 Imbens-Manski           -0.317  1.43  1.75
 ```
 
 ## Saying the range out loud

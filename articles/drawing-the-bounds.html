@@ -80,7 +80,7 @@ the same thing.</p>
 difference in means uses <a href="https://cran.r-project.org/package=estimatr" class="external-link">estimatr</a>. Both
 are suggested packages rather than required ones, so if either is
 missing the code below is shown but not run.
-<code>impute_extreme_values()</code> and the
+<code><a href="https://alexandercoppock.com/vayr/reference/impute_extreme_values.html" class="external-link">impute_extreme_values()</a></code> and the
 <code>attrition_experiment</code> data arrived in vayr 1.1.0, so the
 same is true against an earlier version. The requirement lives in the
 chunk guard rather than in <code>Suggests</code>, because a version
@@ -88,14 +88,22 @@ constraint there cannot be satisfied from CRAN until 1.1.0 is
 released.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/attrition/">attrition</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/vayr/index.html" class="external-link">vayr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/vayr/" class="external-link">vayr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://declaredesign.org/r/estimatr/" class="external-link">estimatr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     filter, lag</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="the-experiment">The experiment<a class="anchor" aria-label="anchor" href="#the-experiment"></a>
 </h2>
-<p><code>vayr::attrition_experiment</code> is a simulated two-arm trial
+<p><code><a href="https://alexandercoppock.com/vayr/reference/attrition_experiment.html" class="external-link">vayr::attrition_experiment</a></code> is a simulated two-arm trial
 with 200 subjects and a seven-point Likert outcome. Nineteen subjects
 have no outcome, and their missingness is related to the outcomes they
 would have reported, so dropping them conditions the analysis on a
@@ -103,16 +111,23 @@ post-treatment variable.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">attrition_experiment</span></span>
 <span></span>
-<span><span class="va">dat</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">Z</span>, <span class="va">R</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">dat</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">Z</span>, <span class="va">R</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
+<span><span class="co">#&gt;       Z     R     n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     0     0    10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     0     1    90</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     1     0     9</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>     1     1    91</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="the-picture">The picture<a class="anchor" aria-label="anchor" href="#the-picture"></a>
 </h2>
-<p><code>vayr::impute_extreme_values()</code> does the imputation and
+<p><code><a href="https://alexandercoppock.com/vayr/reference/impute_extreme_values.html" class="external-link">vayr::impute_extreme_values()</a></code> does the imputation and
 nothing else. It returns both scenarios stacked, with a flag marking
 which points were reported and which were filled in.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bounded</span> <span class="op">&lt;-</span> <span class="fu">impute_extreme_values</span><span class="op">(</span><span class="va">dat</span>, outcome <span class="op">=</span> <span class="st">"Y"</span>, assignment <span class="op">=</span> <span class="st">"Z"</span>, range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="va">bounded</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://alexandercoppock.com/vayr/reference/impute_extreme_values.html" class="external-link">impute_extreme_values</a></span><span class="op">(</span><span class="va">dat</span>, outcome <span class="op">=</span> <span class="st">"Y"</span>, assignment <span class="op">=</span> <span class="st">"Z"</span>, range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>condition <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">==</span> <span class="fl">1</span>, <span class="st">"Treatment"</span>, <span class="st">"Control"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">bound_means</span> <span class="op">&lt;-</span> <span class="va">bounded</span> <span class="op">|&gt;</span></span>
@@ -140,7 +155,7 @@ either way.</p>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">gg_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">condition</span>, <span class="va">Y</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="va">imputed</span>, shape <span class="op">=</span> <span class="va">imputed</span><span class="op">)</span>,</span>
-<span>             position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/vayr/man/position_sunflower.html" class="external-link">position_sunflower</a></span><span class="op">(</span>density <span class="op">=</span> <span class="fl">45</span>, aspect_ratio <span class="op">=</span> <span class="fl">0.45</span><span class="op">)</span>,</span>
+<span>             position <span class="op">=</span> <span class="fu"><a href="https://alexandercoppock.com/vayr/reference/position_sunflower.html" class="external-link">position_sunflower</a></span><span class="op">(</span>density <span class="op">=</span> <span class="fl">45</span>, aspect_ratio <span class="op">=</span> <span class="fl">0.45</span><span class="op">)</span>,</span>
 <span>             alpha <span class="op">=</span> <span class="fl">0.5</span>, stroke <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">bound_means</span>, size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_linerange.html" class="external-link">geom_errorbar</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">bound_means</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin <span class="op">=</span> <span class="va">conf.low</span>, ymax <span class="op">=</span> <span class="va">conf.high</span><span class="op">)</span>, width <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">+</span></span>
@@ -151,6 +166,7 @@ either way.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">7</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Outcome [1: strongly disagree, 7: strongly agree]"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="drawing-the-bounds_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="Two panels of the same 200 subjects, with the nineteen imputed outcomes piled at opposite ends of the scale in each" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="the-estimates">The estimates<a class="anchor" aria-label="anchor" href="#the-estimates"></a>
@@ -160,12 +176,21 @@ logical minimum and maximum of the outcome, and returns the two bounds
 with a joint confidence interval.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R</span>, minY <span class="op">=</span> <span class="fl">1</span>, maxY <span class="op">=</span> <span class="fl">7</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
-<span><span class="va">ev</span></span></code></pre></div>
+<span><span class="va">ev</span></span>
+<span><span class="co">#&gt;   ci_lower   ci_upper    low_est    upp_est    low_var    upp_var </span></span>
+<span><span class="co">#&gt; -3.170e-01  1.430e+00  8.882e-16  1.140e+00  3.715e-02  3.106e-02</span></span></code></pre></div>
 <p><code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> puts the same object in a data frame, one row for
 the interval and one for each bound, which is the form the comparison
 below wants.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">ev</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">ev</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 8</span></span></span>
+<span><span class="co">#&gt;   term         estimate std.error conf.low conf.high estimate.low estimate.high</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> bounds      <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>       <span style="color: #BB0000;">NA</span>       -<span style="color: #BB0000;">0.317</span>      1.43     8.88<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>          1.14</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lower_bound  8.88<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>     0.193   <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>            <span style="color: #BB0000;">NA</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> upper_bound  1.14<span style="color: #949494;">e</span>+ 0     0.176   <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>            <span style="color: #BB0000;">NA</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: outcome &lt;chr&gt;</span></span></span></code></pre></div>
 <p>The bounds are the two pictures. A difference in means run inside
 each panel recovers the two bound estimates to the twelfth decimal
 place, because filling in the missing outcomes and averaging is all the
@@ -182,7 +207,12 @@ calculation reached from two directions.</p>
 <span><span class="va">by_scenario</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">ev</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">term</span>, estimator_ev <span class="op">=</span> <span class="va">estimate</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"term"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">scenario</span>, <span class="va">difference_in_means</span>, <span class="va">estimator_ev</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">difference_in_means</span>, <span class="va">estimator_ev</span><span class="op">)</span>, \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">12</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">difference_in_means</span>, <span class="va">estimator_ev</span><span class="op">)</span>, \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">12</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 3</span></span></span>
+<span><span class="co">#&gt;   scenario    difference_in_means estimator_ev</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Lower bound                0            0   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Upper bound                1.14         1.14</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="what-the-picture-cannot-show">What the picture cannot show<a class="anchor" aria-label="anchor" href="#what-the-picture-cannot-show"></a>
@@ -206,7 +236,12 @@ true effect cannot sit at both ends at once.</p>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">term</span> <span class="op">==</span> <span class="st">"bounds"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span>interval <span class="op">=</span> <span class="st">"Imbens-Manski"</span>, lower <span class="op">=</span> <span class="va">conf.low</span>, upper <span class="op">=</span> <span class="va">conf.high</span><span class="op">)</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>width <span class="op">=</span> <span class="va">upper</span> <span class="op">-</span> <span class="va">lower</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>width <span class="op">=</span> <span class="va">upper</span> <span class="op">-</span> <span class="va">lower</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 4</span></span></span>
+<span><span class="co">#&gt;   interval                 lower upper width</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Stacking the two panels -<span style="color: #BB0000;">0.381</span>  1.49  1.87</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Imbens-Manski           -<span style="color: #BB0000;">0.317</span>  1.43  1.75</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="saying-the-range-out-loud">Saying the range out loud<a class="anchor" aria-label="anchor" href="#saying-the-range-out-loud"></a>
