@@ -18,6 +18,7 @@ A [tibble::tibble()] with columns `term`, `estimate`, `std.error`,
 }
 \description{
 Returns a three-row tibble matching the structure of [tidy.attrition_bounds()].
-Standard errors and confidence intervals are not available for trimming
-bounds, so those columns are `NA` throughout.
+Standard errors and the joint Imbens-Manski confidence interval are filled in
+when [estimator_trim()] was called with `se = "analytic"` or `se = "bootstrap"`,
+and are `NA` when it was called with `se = "none"` or when monotonicity failed.
 }

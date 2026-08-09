@@ -13,6 +13,8 @@ estimator_trim(
   R2 = NULL,
   strata = NULL,
   alpha = 0.05,
+  se = c("analytic", "bootstrap", "none"),
+  sims = 1000,
   data
 )
 }
@@ -40,16 +42,38 @@ Must be numeric and take values 0 or 1.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 
+\item{se}{How to obtain standard errors. \code{"analytic"} (the default) uses the
+closed-form asymptotic variance of Lee (2009), Proposition 3, and is available for
+the single-stage \code{R} path only. \code{"bootstrap"} resamples units within
+treatment arm and works for both paths. \code{"none"} returns bounds alone.}
+
+\item{sims}{Number of bootstrap replicates when \code{se = "bootstrap"}. 1000 by default.}
+
 \item{data}{A dataframe}
 }
 \value{
 A named numeric vector containing \code{lower_bound} and \code{upper_bound},
-  the trimming bound estimates, alongside the intermediate quantities used to build
-  them. All elements are \code{NA} when monotonicity is violated. Pass to
+  the trimming bound estimates; \code{lower_se} and \code{upper_se}, their standard
+  errors; \code{ci_lower} and \code{ci_upper}, the joint Imbens-Manski confidence
+  interval; and the intermediate quantities used to build them. All elements are
+  \code{NA} when monotonicity is violated. Pass to
   \code{\link[=tidy.attrition_trim]{tidy()}} for a data frame.
 }
 \description{
 Trimming Bounds
+}
+\details{
+The analytic variance has four contributions: the variance of the retained
+(trimmed) outcomes, the variance from estimating the trimming threshold, the
+variance from estimating the trimming proportion, and the variance of the
+control-group respondent mean. The third of these is often the largest, so
+treating the trimming proportion as known would understate the uncertainty
+substantially.
+
+Lee's derivation assumes the bounds are interior points, which fails when the
+two response rates are equal: the trimming proportion is then zero, the bounds
+collapse to a point, and the standard errors are not trustworthy. This case
+warns.
 }
 \examples{
 set.seed(343)
@@ -65,6 +89,16 @@ Y <- Y_star
 Y[R == 0] <- NA
 df <- data.frame(Y, Z, R)
 
-# Single-stage: trimming bounds under monotonicity
+# Single-stage: trimming bounds under monotonicity, with Lee (2009) standard errors
 estimator_trim(Y, Z, R = R, data = df)
+
+# Bootstrap standard errors instead
+estimator_trim(Y, Z, R = R, se = "bootstrap", sims = 200, data = df)
+}
+\references{
+Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating Sharp
+Bounds on Treatment Effects. \emph{Review of Economic Studies} 76(3):1071-1102.
+
+Tauchmann, Harald (2014). Lee (2009) Treatment-Effect Bounds for Nonrandom
+Sample Selection. \emph{Stata Journal} 14(4):884-894.
 }

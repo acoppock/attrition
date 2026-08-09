@@ -34,6 +34,30 @@ First release.
 * `reshape2` dependency replaced by `tibble`; `generics` added for `tidy`
   re-export.
 
+* `estimator_trim()` gains standard errors and confidence intervals, via a new
+  `se` argument. `se = "analytic"` (the default) uses the closed-form asymptotic
+  variance of Lee (2009), Proposition 3, and covers the single-stage `R` path.
+  `se = "bootstrap"` resamples units within treatment arm and covers both that
+  path and the weighted double-sampling path, for which no analytic variance
+  exists in the literature. `se = "none"` returns bounds alone. The bound
+  standard errors feed the existing Imbens-Manski machinery, so
+  `tidy.attrition_trim()` now returns `std.error`, `conf.low` and `conf.high`
+  instead of `NA` throughout.
+
+  The analytic variance was validated three ways: Lee's published term for the
+  estimated trimming proportion agrees to machine precision with the
+  algebraically distinct form used by Tauchmann's Stata `leebounds`; the mean
+  analytic standard error tracks the Monte Carlo standard deviation of the
+  estimator across sample sizes from 1,000 to 64,000; and a conventional 95%
+  interval around each bound endpoint covers the true population endpoint 95.4%
+  and 94.9% of the time.
+
+  Requesting `se = "analytic"` on the double-sampling path is an error rather
+  than a silent substitution, since Lee's derivation assumes i.i.d. sampling and
+  trimming of one group only. A zero trimming proportion warns, because the
+  bounds then collapse to a point on the boundary of the parameter space and
+  Lee's interior-point condition fails.
+
 * Worked examples on every exported function.
 
 ## Bug fixes

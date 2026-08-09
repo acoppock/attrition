@@ -114,6 +114,79 @@ ds_manski_cis_2s_sens <- function(n1_t,n2_t,n1_c,n2_c,
 }
 
 
+# Nonparametric bootstrap for the trimming bounds. Units are resampled within
+# treatment arm, holding the arm sizes fixed as complete random assignment does.
+# Works for both the single-stage and the weighted double-sampling estimator,
+# which is the reason it exists: Lee's analytic variance covers only the former.
+#
+# Replicates in which monotonicity fails contribute NA and are counted, since
+# silently dropping them would understate the variance without saying so.
+bootstrap_trim_variance <- function(compute_bounds, Z, sims) {
+  idx_t <- which(Z == 1)
+  idx_c <- which(Z == 0)
+
+  reps <- vapply(seq_len(sims), function(i) {
+    take <- c(sample(idx_t, length(idx_t), replace = TRUE),
+              sample(idx_c, length(idx_c), replace = TRUE))
+    out <- tryCatch(compute_bounds(take),
+                    attrition_monotonicity_violation = function(e) c(NA_real_, NA_real_),
+                    error = function(e) c(NA_real_, NA_real_))
+    c(lower = unname(out[1]), upper = unname(out[2]))
+  }, numeric(2))
+
+  n_ok <- sum(stats::complete.cases(t(reps)))
+  if (n_ok < 2) {
+    stop("Bootstrap failed: fewer than two replicates produced usable bounds.")
+  }
+  if (n_ok < sims) {
+    warning(sims - n_ok, " of ", sims,
+            " bootstrap replicates did not yield bounds (monotonicity violated in the resample). ",
+            "Standard errors are computed from the ", n_ok, " that did.",
+            call. = FALSE)
+  }
+
+  c(lower_var = stats::var(reps["lower", ], na.rm = TRUE),
+    upper_var = stats::var(reps["upper", ], na.rm = TRUE),
+    n_boot = n_ok)
+}
+
+# Asymptotic variance of the Lee (2009) trimming bounds, Proposition 3 (eq. 7).
+# Each bound estimate carries four independent contributions: the variance of
+# the retained (trimmed) treated outcomes; the variance from estimating the
+# trimming THRESHOLD, a quantile; the variance from estimating the trimming
+# PROPORTION, which in Lee's own Job Corps example is the largest of the three;
+# and the variance of the control-group respondent mean.
+#
+# The third term is written here in the algebraically equivalent form used by
+# Tauchmann (2014, Stata Journal 14(4):884-894). Lee's published expression,
+#   ((1 - p_c) - Q(1 - E[Z])) / (E[Z] p_c (1 - E[Z])),
+# is identical but can look negative; this form is manifestly non-negative.
+#
+# Applies only to the single-stage, unweighted, monotonicity case. Lee's
+# derivation assumes i.i.d. sampling and trimming of one group only.
+lee_variance <- function(trim_out, n_treat, n_control) {
+  Q   <- unname(trim_out["Q"])
+  p_t <- unname(trim_out["pi_r_1"])
+  p_c <- unname(trim_out["pi_r_0"])
+
+  # Variance of the estimated trimming proportion Q = (p_t - p_c)/p_t, by the
+  # delta method, scaled by the squared derivative of the trimmed mean in Q.
+  trim_prop_term <- (1 - p_t)/(p_t * n_treat) + (1 - p_c)/(p_c * n_control)
+
+  var_bound <- function(side) {
+    y        <- unname(trim_out[if (side == "upper") "yU" else "yL"])
+    mu       <- unname(trim_out[if (side == "upper") "Out1U_mono" else "Out1L_mono"])
+    var_keep <- unname(trim_out[if (side == "upper") "var_keep_U" else "var_keep_L"])
+    n_keep   <- unname(trim_out[if (side == "upper") "n_keep_U" else "n_keep_L"])
+    var_keep/n_keep +                            # trimmed distribution
+      (y - mu)^2 * Q/n_keep +                    # estimated threshold
+      (y - mu)^2 * trim_prop_term +              # estimated trimming proportion
+      unname(trim_out["var_control"])/unname(trim_out["control_group_N"])
+  }
+
+  c(lower_var = var_bound("lower"), upper_var = var_bound("upper"))
+}
+
 trimming_bounds <-
   function(Out, Treat, Fail, Weight, monotonicity = FALSE) {
 
@@ -150,21 +223,38 @@ trimming_bounds <-
 
       if (Q == 0) {
         Out1_mean <- weighted.mean(OutS1$Out, OutS1$Weight)
+        var_treat <- sum(OutS1$Weight * (OutS1$Out - Out1_mean)^2)
         return(c(upper_bound = Out1_mean - Out0_mono, lower_bound = Out1_mean - Out0_mono,
                  Out0_mono = Out0_mono, Out1L_mono = Out1_mean, Out1U_mono = Out1_mean,
                  control_group_N = nrow(OutS0), treat_group_N = nrow(OutS1),
-                 Q = 0, f1 = f1, f0 = f0, pi_r_1 = 1 - f1, pi_r_0 = 1 - f0))
+                 Q = 0, f1 = f1, f0 = f0, pi_r_1 = 1 - f1, pi_r_0 = 1 - f0,
+                 yU = min(OutS1$Out), yL = max(OutS1$Out),
+                 var_keep_U = var_treat, var_keep_L = var_treat,
+                 n_keep_U = nrow(OutS1), n_keep_L = nrow(OutS1),
+                 var_control = sum(OutS0$Weight * (OutS0$Out - Out0_mono)^2)))
       }
 
-      Out1U_mono <- weighted.mean(OutS1$Out[OutS1.CDF>Q], OutS1$Weight[OutS1.CDF>Q])
-      Out1L_mono <- weighted.mean(OutS1$Out[OutS1.CDF<(1-Q)], OutS1$Weight[OutS1.CDF<(1-Q)])
+      keep_U <- OutS1.CDF > Q
+      keep_L <- OutS1.CDF < (1-Q)
+      Out1U_mono <- weighted.mean(OutS1$Out[keep_U], OutS1$Weight[keep_U])
+      Out1L_mono <- weighted.mean(OutS1$Out[keep_L], OutS1$Weight[keep_L])
 
       upper_bound <- Out1U_mono - Out0_mono
       lower_bound <- Out1L_mono - Out0_mono
 
+      # Trimming thresholds actually used, and the variance of the retained
+      # outcomes on each side. Lee (2009) Proposition 3 needs both.
+      yU <- min(OutS1$Out[keep_U])
+      yL <- max(OutS1$Out[keep_L])
+
       return(c(upper_bound = upper_bound, lower_bound = lower_bound,
                Out0_mono = Out0_mono, Out1L_mono=Out1L_mono, Out1U_mono = Out1U_mono,
-               control_group_N = nrow(OutS0), treat_group_N = nrow(OutS1), Q = Q, f1 = f1, f0 = f0, pi_r_1 = 1 - f1, pi_r_0 = 1 - f0))
+               control_group_N = nrow(OutS0), treat_group_N = nrow(OutS1), Q = Q, f1 = f1, f0 = f0, pi_r_1 = 1 - f1, pi_r_0 = 1 - f0,
+               yU = yU, yL = yL,
+               var_keep_U = sum(OutS1$Weight[keep_U]/sum(OutS1$Weight[keep_U]) * (OutS1$Out[keep_U] - Out1U_mono)^2),
+               var_keep_L = sum(OutS1$Weight[keep_L]/sum(OutS1$Weight[keep_L]) * (OutS1$Out[keep_L] - Out1L_mono)^2),
+               n_keep_U = sum(keep_U), n_keep_L = sum(keep_L),
+               var_control = sum(OutS0$Weight * (OutS0$Out - Out0_mono)^2)))
 
     }else{
 

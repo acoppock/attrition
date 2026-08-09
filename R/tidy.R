@@ -32,8 +32,9 @@ tidy.attrition_bounds <- function(x, ...) {
 #' Tidy a trimming bounds object
 #'
 #' Returns a three-row tibble matching the structure of [tidy.attrition_bounds()].
-#' Standard errors and confidence intervals are not available for trimming
-#' bounds, so those columns are `NA` throughout.
+#' Standard errors and the joint Imbens-Manski confidence interval are filled in
+#' when [estimator_trim()] was called with `se = "analytic"` or `se = "bootstrap"`,
+#' and are `NA` when it was called with `se = "none"` or when monotonicity failed.
 #'
 #' @param x An object of class `"attrition_trim"` (produced by
 #'   [estimator_trim()]).
@@ -43,13 +44,15 @@ tidy.attrition_bounds <- function(x, ...) {
 #'   `conf.low`, `conf.high`, `estimate.low`, `estimate.high`.
 #' @export
 tidy.attrition_trim <- function(x, ...) {
+  # Elements are absent, not NA, when se = "none" was never wired in
+  element <- function(nm) if (nm %in% names(x)) unname(x[nm]) else NA_real_
   tibble::tibble(
-    term          = c("bounds",                      "lower_bound",              "upper_bound"),
-    estimate      = c(NA_real_,                      unname(x["lower_bound"]),   unname(x["upper_bound"])),
-    std.error     = c(NA_real_,                      NA_real_,                   NA_real_),
-    conf.low      = c(NA_real_,                      NA_real_,                   NA_real_),
-    conf.high     = c(NA_real_,                      NA_real_,                   NA_real_),
-    estimate.low  = c(unname(x["lower_bound"]),      NA_real_,                   NA_real_),
-    estimate.high = c(unname(x["upper_bound"]),      NA_real_,                   NA_real_)
+    term          = c("bounds",                 "lower_bound",            "upper_bound"),
+    estimate      = c(NA_real_,                 element("lower_bound"),   element("upper_bound")),
+    std.error     = c(NA_real_,                 element("lower_se"),      element("upper_se")),
+    conf.low      = c(element("ci_lower"),      NA_real_,                 NA_real_),
+    conf.high     = c(element("ci_upper"),      NA_real_,                 NA_real_),
+    estimate.low  = c(element("lower_bound"),   NA_real_,                 NA_real_),
+    estimate.high = c(element("upper_bound"),   NA_real_,                 NA_real_)
   )
 }

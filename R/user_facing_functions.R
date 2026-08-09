@@ -251,12 +251,39 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #'   Must be numeric and take values 0 or 1.
 #' @param strata Not supported; supplying any value raises an error.
 #' @param alpha The desired significance level. 0.05 by default.
+#' @param se How to obtain standard errors. \code{"analytic"} (the default) uses the
+#'   closed-form asymptotic variance of Lee (2009), Proposition 3, and is available for
+#'   the single-stage \code{R} path only. \code{"bootstrap"} resamples units within
+#'   treatment arm and works for both paths. \code{"none"} returns bounds alone.
+#' @param sims Number of bootstrap replicates when \code{se = "bootstrap"}. 1000 by default.
 #' @param data A dataframe
 #'
 #' @return A named numeric vector containing \code{lower_bound} and \code{upper_bound},
-#'   the trimming bound estimates, alongside the intermediate quantities used to build
-#'   them. All elements are \code{NA} when monotonicity is violated. Pass to
+#'   the trimming bound estimates; \code{lower_se} and \code{upper_se}, their standard
+#'   errors; \code{ci_lower} and \code{ci_upper}, the joint Imbens-Manski confidence
+#'   interval; and the intermediate quantities used to build them. All elements are
+#'   \code{NA} when monotonicity is violated. Pass to
 #'   \code{\link[=tidy.attrition_trim]{tidy()}} for a data frame.
+#'
+#' @details
+#' The analytic variance has four contributions: the variance of the retained
+#' (trimmed) outcomes, the variance from estimating the trimming threshold, the
+#' variance from estimating the trimming proportion, and the variance of the
+#' control-group respondent mean. The third of these is often the largest, so
+#' treating the trimming proportion as known would understate the uncertainty
+#' substantially.
+#'
+#' Lee's derivation assumes the bounds are interior points, which fails when the
+#' two response rates are equal: the trimming proportion is then zero, the bounds
+#' collapse to a point, and the standard errors are not trustworthy. This case
+#' warns.
+#'
+#' @references
+#' Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating Sharp
+#' Bounds on Treatment Effects. \emph{Review of Economic Studies} 76(3):1071-1102.
+#'
+#' Tauchmann, Harald (2014). Lee (2009) Treatment-Effect Bounds for Nonrandom
+#' Sample Selection. \emph{Stata Journal} 14(4):884-894.
 #' @export
 #'
 #' @examples
@@ -273,10 +300,14 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #' Y[R == 0] <- NA
 #' df <- data.frame(Y, Z, R)
 #'
-#' # Single-stage: trimming bounds under monotonicity
+#' # Single-stage: trimming bounds under monotonicity, with Lee (2009) standard errors
 #' estimator_trim(Y, Z, R = R, data = df)
+#'
+#' # Bootstrap standard errors instead
+#' estimator_trim(Y, Z, R = R, se = "bootstrap", sims = 200, data = df)
 estimator_trim <-
-  function(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL, strata = NULL, alpha = 0.05, data){
+  function(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL, strata = NULL,
+           alpha = 0.05, se = c("analytic", "bootstrap", "none"), sims = 1000, data){
     # Formula interface: estimator_trim(outcome ~ treatment, R = "col" | R1/Attempt/R2 = "col", data = .)
     yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
     Y  <- yz$Y
@@ -292,18 +323,29 @@ estimator_trim <-
     if (!is.null(strata)) stop("Stratification is not yet supported for trimming bounds.")
     if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
     if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
+    se <- match.arg(se)
+    if(!is.numeric(alpha) | length(alpha) != 1L){stop("The significance level (alpha) must be a single number.")}
+    if(alpha <= 0 | alpha >= 1){stop("The significance level (alpha) must be strictly between zero and one.")}
+    if(se == "bootstrap" && (!is.numeric(sims) | length(sims) != 1L | any(sims < 2))){
+      stop("The number of bootstrap replicates (sims) must be a single number of at least two.")
+    }
 
     na_trim <- structure(
-      c(lower_bound = NA_real_, upper_bound = NA_real_, Q = NA_real_),
+      c(lower_bound = NA_real_, upper_bound = NA_real_, Q = NA_real_,
+        lower_se = NA_real_, upper_se = NA_real_, ci_lower = NA_real_, ci_upper = NA_real_),
       class = c("attrition_trim", "numeric")
     )
 
+    # One estimation routine per path, taking row indices, so the point estimate
+    # and each bootstrap replicate go through identical code. The double-sampling
+    # weights are recomputed inside, since they depend on the resampled counts.
     if (!is.null(R)) {
       if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
-      out <- tryCatch(
-        trimming_bounds(Out = Y, Treat = Z, Fail = as.numeric(R == 0), Weight = rep(1, length(Y)), monotonicity = TRUE),
-        attrition_monotonicity_violation = \(e) na_trim
-      )
+      single_stage <- TRUE
+      estimate <- function(idx) {
+        trimming_bounds(Out = Y[idx], Treat = Z[idx], Fail = as.numeric(R[idx] == 0),
+                        Weight = rep(1, length(idx)), monotonicity = TRUE)
+      }
     } else {
       if (is.null(R1_val) || is.null(Attempt_val) || is.null(R2_val)) {
         stop("Supply either R (single-stage) or R1, Attempt, and R2 (double-sampling).")
@@ -314,21 +356,61 @@ estimator_trim <-
       if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
       if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
       if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
-
-      Weight <- rep(NA, length(Y))
-      Weight[R1==1] <- 1
-      Weight[Attempt==1 & Z ==1] <- sum(Z == 1 & R1 == 0)/sum(Z == 1 & Attempt == 1)
-      Weight[Attempt==1 & Z ==0] <- sum(Z == 0 & R1 == 0)/sum(Z == 0 & Attempt == 1)
-
-      Fail <- as.numeric(R1 == 0 & R2 == 0)
-      Keep <- (R1 == 1 | Attempt == 1)
-
-      out <- trimming_bounds(Out = Y[Keep], Treat = Z[Keep],
-                             Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE)
+      if (se == "analytic") {
+        stop("Analytic standard errors follow Lee (2009) Proposition 3, which covers the ",
+             "single-stage, unweighted, monotonicity case only. The double-sampling ",
+             "estimator trims both groups and carries sampling weights, so use ",
+             "se = \"bootstrap\" (or se = \"none\").")
+      }
+      single_stage <- FALSE
+      estimate <- function(idx) {
+        Yi <- Y[idx]; Zi <- Z[idx]; R1i <- R1[idx]; Ai <- Attempt[idx]; R2i <- R2[idx]
+        Weight <- rep(NA, length(idx))
+        Weight[R1i==1] <- 1
+        Weight[Ai==1 & Zi==1] <- sum(Zi == 1 & R1i == 0)/sum(Zi == 1 & Ai == 1)
+        Weight[Ai==1 & Zi==0] <- sum(Zi == 0 & R1i == 0)/sum(Zi == 0 & Ai == 1)
+        Fail <- as.numeric(R1i == 0 & R2i == 0)
+        Keep <- (R1i == 1 | Ai == 1)
+        trimming_bounds(Out = Yi[Keep], Treat = Zi[Keep],
+                        Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE)
+      }
     }
 
-    if (inherits(out, "attrition_trim")) return(out)
-    return(structure(out, class = c("attrition_trim", "numeric")))
+    all_rows <- seq_along(Y)
+    out <- tryCatch(estimate(all_rows),
+                    attrition_monotonicity_violation = \(e) NULL)
+    if (is.null(out)) return(na_trim)
+
+    variances <- c(lower_var = NA_real_, upper_var = NA_real_)
+    if (se == "analytic") {
+      if (unname(out["Q"]) <= 0) {
+        warning("The trimming proportion is zero, so the bounds collapse to a point and sit ",
+                "on the boundary of the parameter space. Lee (2009) Proposition 3 assumes an ",
+                "interior point; the standard errors below are not reliable here.", call. = FALSE)
+      }
+      variances <- lee_variance(out, n_treat = sum(Z == 1), n_control = sum(Z == 0))
+    } else if (se == "bootstrap") {
+      boot <- bootstrap_trim_variance(
+        function(idx) estimate(idx)[c("lower_bound", "upper_bound")], Z, sims)
+      variances <- boot[c("lower_var", "upper_var")]
+    }
+
+    ci <- c(ci_lower = NA_real_, ci_upper = NA_real_)
+    if (se != "none") {
+      sig <- im_critical_value(unname(out["lower_bound"]), unname(out["upper_bound"]),
+                               unname(variances["lower_var"]), unname(variances["upper_var"]), alpha)
+      ci <- c(ci_lower = unname(out["lower_bound"]) - sig*unname(variances["lower_var"])^.5,
+              ci_upper = unname(out["upper_bound"]) + sig*unname(variances["upper_var"])^.5)
+    }
+
+    # Drop the quantities that exist only to feed lee_variance
+    out <- out[!names(out) %in% c("var_keep_U", "var_keep_L", "n_keep_U", "n_keep_L", "var_control")]
+    out <- c(out,
+             lower_se = unname(variances["lower_var"])^.5,
+             upper_se = unname(variances["upper_var"])^.5,
+             ci)
+    return(structure(out, class = c("attrition_trim", "numeric"),
+                     se_method = se, single_stage = single_stage))
   }
 
 
@@ -489,7 +571,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #'   geom_hline xlab ylab theme_bw theme element_blank
 #' @importFrom grid unit
 #' @importFrom purrr map
-#' @importFrom stats pnorm qnorm sd uniroot weighted.mean
+#' @importFrom stats complete.cases pnorm qnorm sd uniroot var weighted.mean
 #' @export
 #'
 #' @examples

@@ -206,7 +206,7 @@ test_that("tidy.attrition_bounds works for estimator_ds", {
 
 test_that("tidy.attrition_trim works for estimator_trim", {
   df <- make_synthetic()
-  out <- estimator_trim(Y, Z, R = R1, data = df)
+  out <- estimator_trim(Y, Z, R = R1, se = "none", data = df)
   td  <- tidy(out)
   expect_s3_class(td, "tbl_df")
   expect_equal(nrow(td), 3L)
@@ -267,7 +267,7 @@ test_that("estimator_trim DS path (paper data)", {
   dat <- read.csv(data_path)
   dat <- subset(dat, !is.na(Z1))
   out <- estimator_trim(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
-                        data = dat)
+                        se = "none", data = dat)
   expect_equal(unname(out["upper_bound"]),  0.567599031583528,  tolerance = 1e-10)
   expect_equal(unname(out["lower_bound"]), -0.268142333620083,  tolerance = 1e-10)
 })
@@ -331,7 +331,7 @@ test_that("estimator_trim R path (monotonicity) produces stable results on synth
 
 test_that("estimator_trim DS path produces stable results on synthetic data", {
   df  <- make_synthetic()
-  out <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2, data = df)
+  out <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2, se = "none", data = df)
   expect_equal(unname(out["upper_bound"]),  0.544188162330423,  tolerance = 1e-10)
   expect_equal(unname(out["lower_bound"]),  0.0677009048063324, tolerance = 1e-10)
 })
@@ -594,6 +594,115 @@ test_that("estimator_trim returns NA bounds when monotonicity is violated", {
   expect_true(is.na(out["upper_bound"]))
 })
 
+# ── Trimming bound standard errors ───────────────────────────────────────────
+
+test_that("Lee (2009) analytic standard errors are produced and stable", {
+  df  <- make_synthetic()
+  out <- estimator_trim(Y, Z, R = R1, data = df)
+  expect_true(all(c("lower_se", "upper_se", "ci_lower", "ci_upper") %in% names(out)))
+  expect_true(all(out[c("lower_se", "upper_se")] > 0))
+  expect_equal(unname(out["lower_se"]), 0.108109837320316, tolerance = 1e-8)
+  expect_equal(unname(out["upper_se"]), 0.0939297066416204, tolerance = 1e-8)
+  # The Imbens-Manski interval must contain the identified set
+  expect_lte(unname(out["ci_lower"]), unname(out["lower_bound"]))
+  expect_gte(unname(out["ci_upper"]), unname(out["upper_bound"]))
+})
+
+test_that("Lee eq (7) term 3 equals the Tauchmann (2014) form it is written in", {
+  # Lee's published coefficient on the trimming-proportion term looks like it
+  # could go negative; the form used in lee_variance cannot. They are identical.
+  lee   <- function(pt, pc, e) { Q <- (pt-pc)/pt; ((1-pc) - Q*(1-e))/(e*pc*(1-e)) }
+  tauch <- function(pt, pc, e) (1-pt)/(pt*e) + (1-pc)/(pc*(1-e))
+  g <- expand.grid(pt = seq(0.55, 0.95, 0.1), pc = seq(0.35, 0.85, 0.1), e = c(0.3, 0.5, 0.7))
+  g <- subset(g, pt > pc)
+  expect_equal(mapply(lee, g$pt, g$pc, g$e), mapply(tauch, g$pt, g$pc, g$e))
+})
+
+test_that("analytic and bootstrap standard errors agree", {
+  df <- make_synthetic()
+  ana <- estimator_trim(Y, Z, R = R1, se = "analytic", data = df)
+  set.seed(11)
+  boo <- estimator_trim(Y, Z, R = R1, se = "bootstrap", sims = 600, data = df)
+  expect_equal(unname(boo["lower_bound"]), unname(ana["lower_bound"]))
+  expect_equal(unname(boo["upper_bound"]), unname(ana["upper_bound"]))
+  expect_equal(unname(boo["lower_se"]), unname(ana["lower_se"]), tolerance = 0.15)
+  expect_equal(unname(boo["upper_se"]), unname(ana["upper_se"]), tolerance = 0.15)
+})
+
+test_that("bootstrap standard errors work on the double-sampling path", {
+  df <- make_synthetic()
+  set.seed(12)
+  out <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                        se = "bootstrap", sims = 300, data = df)
+  expect_true(all(out[c("lower_se", "upper_se")] > 0))
+  expect_lte(unname(out["ci_lower"]), unname(out["lower_bound"]))
+  expect_gte(unname(out["ci_upper"]), unname(out["upper_bound"]))
+})
+
+test_that("analytic standard errors are refused on the double-sampling path", {
+  df <- make_synthetic()
+  expect_error(
+    estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2, se = "analytic", data = df),
+    "Lee \\(2009\\) Proposition 3")
+})
+
+test_that("se = 'none' leaves standard errors and CIs missing", {
+  df  <- make_synthetic()
+  out <- estimator_trim(Y, Z, R = R1, se = "none", data = df)
+  expect_true(all(is.na(out[c("lower_se", "upper_se", "ci_lower", "ci_upper")])))
+  expect_false(is.na(unname(out["lower_bound"])))
+})
+
+test_that("bootstrap validates sims and estimator_trim validates alpha", {
+  df <- make_synthetic()
+  expect_error(estimator_trim(Y, Z, R = R1, se = "bootstrap", sims = 1, data = df),
+               "at least two")
+  expect_error(estimator_trim(Y, Z, R = R1, alpha = 0, data = df),
+               "strictly between zero and one")
+})
+
+test_that("a zero trimming proportion warns that the asymptotics do not apply", {
+  # Equal response rates: Q = 0, the bounds collapse to a point, and Lee's
+  # interior-point condition fails
+  set.seed(4)
+  N <- 400
+  Z <- rep(0:1, each = N/2)
+  R <- rep(c(1, 1, 1, 0), length.out = N)   # identical response rate in both arms
+  Y <- ifelse(R == 1, rnorm(N), NA_real_)
+  df <- data.frame(Y, Z, R)
+  expect_warning(estimator_trim(Y, Z, R = R, data = df), "collapse to a point")
+})
+
+test_that("tidy.attrition_trim carries standard errors and the IM interval", {
+  df  <- make_synthetic()
+  out <- estimator_trim(Y, Z, R = R1, se = "analytic", data = df)
+  td  <- tidy(out)
+  expect_equal(td$std.error[2], unname(out["lower_se"]))
+  expect_equal(td$std.error[3], unname(out["upper_se"]))
+  expect_equal(td$conf.low[1],  unname(out["ci_lower"]))
+  expect_equal(td$conf.high[1], unname(out["ci_upper"]))
+  expect_true(is.na(td$std.error[1]))
+})
+
+test_that("analytic standard errors recover the sampling variability (Monte Carlo)", {
+  skip_on_cran()
+  set.seed(2026)
+  dgp <- function(n) {
+    Z <- rep(0:1, each = n/2)
+    Y_star <- rnorm(n, mean = 2 + 0.3*Z)
+    R <- rbinom(n, 1, plogis(-0.6 + 0.9*Z + 0.4*Y_star))
+    Y <- Y_star; Y[R == 0] <- NA
+    data.frame(Y, Z, R)
+  }
+  n <- 3000; reps <- 400
+  mc <- vapply(seq_len(reps), function(i)
+    unname(estimator_trim(Y, Z, R = R, se = "none", data = dgp(n))["upper_bound"]), numeric(1))
+  se <- vapply(seq_len(60), function(i)
+    unname(estimator_trim(Y, Z, R = R, se = "analytic", data = dgp(n))["upper_se"]), numeric(1))
+  # The mean analytic SE should track the Monte Carlo sd of the estimator
+  expect_equal(mean(se), sd(mc), tolerance = 0.12)
+})
+
 # ── Formula interface ────────────────────────────────────────────────────────
 
 test_that("estimator_ev formula interface matches NSE interface", {
@@ -623,8 +732,8 @@ test_that("estimator_trim formula interface (single-stage) matches NSE interface
 
 test_that("estimator_trim formula interface (double-sampling) matches NSE interface", {
   df  <- make_synthetic()
-  nse <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2, data = df)
-  frm <- estimator_trim(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = df)
+  nse <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2, se = "none", data = df)
+  frm <- estimator_trim(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2", se = "none", data = df)
   expect_equal(as.numeric(nse), as.numeric(frm))
   expect_s3_class(frm, "attrition_trim")
 })
