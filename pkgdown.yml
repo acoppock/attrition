@@ -3,7 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   attrition: attrition.html
-last_built: 2026-08-09T16:06Z
+last_built: 2026-08-09T16:09Z
 urls:
   reference: https://alexandercoppock.com/attrition/reference
   article: https://alexandercoppock.com/attrition/articles
