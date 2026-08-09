@@ -25,7 +25,9 @@ tidy.attrition_bounds <- function(x, ...) {
     conf.low      = c(unname(x["ci_lower"]),  NA_real_,                 NA_real_),
     conf.high     = c(unname(x["ci_upper"]),  NA_real_,                 NA_real_),
     estimate.low  = c(unname(x["low_est"]),   NA_real_,                 NA_real_),
-    estimate.high = c(unname(x["upp_est"]),   NA_real_,                 NA_real_)
+    estimate.high = c(unname(x["upp_est"]),   NA_real_,                 NA_real_),
+    outcome       = attr(x, "outcome") %||% NA_character_,
+    nobs          = attr(x, "nobs") %||% NA_integer_
   )
 }
 
@@ -53,6 +55,32 @@ tidy.attrition_trim <- function(x, ...) {
     conf.low      = c(element("ci_lower"),      NA_real_,                 NA_real_),
     conf.high     = c(element("ci_upper"),      NA_real_,                 NA_real_),
     estimate.low  = c(element("lower_bound"),   NA_real_,                 NA_real_),
-    estimate.high = c(element("upper_bound"),   NA_real_,                 NA_real_)
+    estimate.high = c(element("upper_bound"),   NA_real_,                 NA_real_),
+    outcome       = attr(x, "outcome") %||% NA_character_,
+    nobs          = attr(x, "nobs") %||% NA_integer_
   )
 }
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+#' Number of observations
+#'
+#' The number of units the estimator was given, counting those whose outcome is
+#' missing. Every variance in the package is an asymptotic result indexed to the
+#' full randomized sample rather than to the respondents: the worst-case bounds
+#' divide by the number assigned to each arm, and Lee (2009) Proposition 3 is a
+#' root-n result in which the response and trimming rates appear as proportions
+#' of that same n. Counts of respondents, of retained observations after
+#' trimming, and of the groups behind them are returned as named elements of the
+#' estimator output.
+#'
+#' @param object An object of class `"attrition_bounds"` or `"attrition_trim"`.
+#' @param ... Unused; included for S3 compatibility.
+#'
+#' @return An integer.
+#' @export
+nobs.attrition_bounds <- function(object, ...) attr(object, "nobs")
+
+#' @rdname nobs.attrition_bounds
+#' @export
+nobs.attrition_trim <- function(object, ...) attr(object, "nobs")

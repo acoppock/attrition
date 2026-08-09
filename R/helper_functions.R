@@ -1,8 +1,21 @@
 
-# A column argument is either a vector or a single string naming a column of
-# data. Anything else (a vector of column contents) is passed through as is.
+# A column argument may be given four ways: as a vector of the column contents,
+# as a single string naming a column, as a one-sided formula naming a column, or
+# as a bare column name under normal evaluation. The formula case is what
+# DeclareDesign produces: declare_estimator(..., R1 = R1) hands the method ~R1
+# rather than the symbol, so a method that does not understand formulas can only
+# be driven with strings there.
 resolve_column <- function(x, data) {
-  if (is.character(x) && length(x) == 1L) data[[x]] else x
+  if (inherits(x, "formula")) {
+    vars <- all.vars(x)
+    if (length(vars) != 1L) {
+      stop("A column given as a formula must name exactly one column, as in R1 = ~R1.")
+    }
+    if (!vars %in% names(data)) stop("Column '", vars, "' was not found in the data.")
+    return(data[[vars]])
+  }
+  if (is.character(x) && length(x) == 1L) return(data[[x]])
+  x
 }
 
 # Resolve the outcome and treatment arguments. Y is either an outcome vector or
@@ -10,8 +23,13 @@ resolve_column <- function(x, data) {
 # argument is never evaluated, so callers may leave it missing.
 resolve_yz <- function(Y_expr, Z_expr, data, env) {
   Y_val <- eval(Y_expr, data, env)
-  if (inherits(Y_val, "formula")) return(parse_yz_formula(Y_val, data))
-  list(Y = Y_val, Z = eval(Z_expr, data, env))
+  if (inherits(Y_val, "formula")) {
+    yz <- parse_yz_formula(Y_val, data)
+    yz$outcome <- all.vars(Y_val)[1L]
+    return(yz)
+  }
+  list(Y = Y_val, Z = eval(Z_expr, data, env),
+       outcome = if (is.symbol(Y_expr)) as.character(Y_expr) else NA_character_)
 }
 
 # Parse a Y ~ Z formula, returning c(outcome_col, treatment_col).

@@ -139,7 +139,7 @@ test_that("tidy.attrition_bounds works for estimator_ev", {
   expect_s3_class(td, "tbl_df")
   expect_equal(nrow(td), 3L)
   expect_named(td, c("term", "estimate", "std.error", "conf.low", "conf.high",
-                     "estimate.low", "estimate.high"))
+                     "estimate.low", "estimate.high", "outcome", "nobs"))
   expect_equal(td$term, c("bounds", "lower_bound", "upper_bound"))
   # bounds row
   expect_true(is.na(td$estimate[1]))
@@ -171,7 +171,7 @@ test_that("tidy.attrition_bounds works for estimator_ds", {
   expect_s3_class(td, "tbl_df")
   expect_equal(nrow(td), 3L)
   expect_named(td, c("term", "estimate", "std.error", "conf.low", "conf.high",
-                     "estimate.low", "estimate.high"))
+                     "estimate.low", "estimate.high", "outcome", "nobs"))
   expect_equal(td$term, c("bounds", "lower_bound", "upper_bound"))
   # bounds row
   expect_true(is.na(td$estimate[1]))
@@ -203,7 +203,7 @@ test_that("tidy.attrition_trim works for estimator_trim", {
   expect_s3_class(td, "tbl_df")
   expect_equal(nrow(td), 3L)
   expect_named(td, c("term", "estimate", "std.error", "conf.low", "conf.high",
-                     "estimate.low", "estimate.high"))
+                     "estimate.low", "estimate.high", "outcome", "nobs"))
   expect_equal(td$term, c("bounds", "lower_bound", "upper_bound"))
   # bounds row
   expect_true(is.na(td$estimate[1]))
@@ -578,6 +578,29 @@ test_that("estimator_trim returns NA bounds when monotonicity is violated", {
   expect_s3_class(out, "attrition_trim")
   expect_true(is.na(out["lower_bound"]))
   expect_true(is.na(out["upper_bound"]))
+})
+
+test_that("tidy carries the outcome name and the number of units", {
+  df  <- make_synthetic()
+  nse <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = df)
+  frm <- estimator_ds(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+                      minY = 1, maxY = 5, data = df)
+  # Both interfaces recover the outcome name
+  expect_equal(unique(tidy(nse)$outcome), "Y")
+  expect_equal(unique(tidy(frm)$outcome), "Y")
+
+  # nobs is every randomized unit, not the respondents. The nonrespondents are
+  # what the worst-case imputation is about, and the variances divide by the
+  # number assigned to each arm.
+  expect_equal(nobs(nse), nrow(df))
+  expect_gt(nrow(df), sum(df$R1))
+  expect_equal(unique(tidy(nse)$nobs), nrow(df))
+
+  # Trimming bounds index to the same n, including when monotonicity fails
+  trim <- estimator_trim(Y, Z, R = R1, se = "none", data = df)
+  expect_equal(nobs(trim), nrow(df))
+  flipped <- df; flipped$Z <- 1L - flipped$Z
+  expect_equal(nobs(estimator_trim(Y, Z, R = R1, data = flipped)), nrow(df))
 })
 
 # ── Trimming bound standard errors ───────────────────────────────────────────
