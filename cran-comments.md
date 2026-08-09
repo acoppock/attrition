@@ -2,12 +2,17 @@
 
 ## Test environments
 
-* macOS (local), R 4.4.x
-* R-hub: windows-x86_64-devel, ubuntu-gcc-release, fedora-clang-devel
+* macOS 26.5 (local), R 4.6.0
 
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 1 note
+
+* checking CRAN incoming feasibility ... NOTE
+  Maintainer: 'Alexander Coppock <acoppock@gmail.com>'
+  New submission
+
+This is the only note, and it is expected for a first submission.
 
 ## Reverse dependencies
 
