@@ -40,16 +40,15 @@ jobs:
 
       - uses: codecov/codecov-action@v5
         with:
-          # No upload has landed for this repo yet: Codecov's v2 API reports
-          # activated=false, which is what a repo looks like before its first
-          # one. Flip this to true once an upload succeeds, so that a later
-          # failure reads as a real regression.
+          # An upload has landed (2026-08-09, coverage 94.67%, and Codecov's
+          # v2 API now reports activated=true), so a failure here is a real
+          # regression rather than a first-run credential problem.
           # Codecov's errors mislead when debugging. With NO token it reports
           # "Token required because branch is protected" even on an unprotected
           # branch; with a WRONG token it reports "Repository not found". Check
           # api.codecov.io/api/v2/github/<owner>/repos/<repo>/, which reports
           # `activated` and `active` separately.
-          fail_ci_if_error: false
+          fail_ci_if_error: true
           files: ./cobertura.xml
           plugins: noop
           disable_search: true

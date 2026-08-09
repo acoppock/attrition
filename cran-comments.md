@@ -3,8 +3,10 @@
 ## Test environments
 
 * macOS 26.5 (local), R 4.6.0
-* GitHub Actions: macOS-latest (release), Windows-latest (release),
-  Ubuntu-latest (devel, release, oldrel-1)
+* GitHub Actions, all passing:
+  * macOS-latest (release)
+  * Windows-latest (release)
+  * Ubuntu-latest (R-devel, release, oldrel-1)
 * win-builder (R-devel)
 
 ## R CMD check results
