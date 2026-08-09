@@ -450,10 +450,14 @@ test_that("estimator CIs widen as alpha shrinks", {
   }
   widths <- vapply(c(0.20, 0.10, 0.05, 0.01, 0.001), ci_width, numeric(1))
   expect_true(all(diff(widths) > 0))
-  # Regression guard: alpha = 0.01 once returned the alpha = 0.05 critical value
+  # Regression guard: alpha = 0.01 once returned 2.000, the alpha = 0.05
+  # critical value, against a correct 2.326. sig is recovered here through a
+  # multiply and a divide, so it lands an ulp either side of the exact value
+  # depending on the platform. The tolerance is six orders of magnitude below
+  # the 0.33 defect this guards against.
   o01 <- estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = 0.01, data = df)
   sig <- unname((o01["low_est"] - o01["ci_lower"]) / sqrt(o01["low_var"]))
-  expect_gte(sig, qnorm(0.99))
+  expect_gt(sig, qnorm(0.99) - 1e-6)
 })
 
 test_that("find_sign_changes flags the first departure from the initial sign", {
