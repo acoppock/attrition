@@ -33,7 +33,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    vayr (>= 1.1.0)
+    vayr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
