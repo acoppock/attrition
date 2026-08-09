@@ -25,6 +25,9 @@ Imports:
     tibble
 Encoding: UTF-8
 License: GPL-3
+URL: https://alexandercoppock.com/attrition/,
+    https://github.com/acoppock/attrition
+BugReports: https://github.com/acoppock/attrition/issues
 Suggests:
     knitr,
     rmarkdown,

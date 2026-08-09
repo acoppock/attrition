@@ -64,6 +64,7 @@ reference:
       - tidy.attrition_trim
       - print.attrition_bounds
       - print.attrition_trim
+      - nobs.attrition_bounds
       - reexports
   - title: Data
     contents:
