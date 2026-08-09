@@ -14,7 +14,8 @@
 #' @param maxY The maximum possible value of the outcome (Y) variable.
 #' @param strata Stratification variable: unquoted column name or a quoted string column name.
 #' @param alpha The desired significance level. 0.05 by default.
-#' @param data A dataframe
+#' @param data A dataframe. Must be given by name: \code{data} is the last
+#'   argument, so passing it positionally assigns it to another argument.
 #'
 #' @return A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
 #'   the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
@@ -66,6 +67,7 @@
 #' estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, strata=strata, data=df)
 #'
 estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha = 0.05, data){
+  if (missing(data)) require_data("estimator_ds")
   # Formula interface: estimator_ds(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
   # R1/Attempt/R2 may be unquoted column names (NSE) or quoted strings.
   yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
@@ -155,7 +157,8 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 #' @param maxY The maximum possible value of the outcome (Y) variable.
 #' @param strata Stratification variable: unquoted column name or a quoted string column name.
 #' @param alpha The desired significance level. 0.05 by default.
-#' @param data A dataframe
+#' @param data A dataframe. Must be given by name: \code{data} is the last
+#'   argument, so passing it positionally assigns it to another argument.
 #'
 #' @return A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
 #'   the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
@@ -182,6 +185,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 #' # Equivalently, via the formula interface
 #' estimator_ev(Y ~ Z, R = "R", minY = 1, maxY = 5, data = df)
 estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data){
+  if (missing(data)) require_data("estimator_ev")
   # Formula interface: estimator_ev(outcome ~ treatment, R = "col_name", data = ., ...)
   yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
   Y  <- yz$Y
@@ -260,7 +264,8 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #'   the single-stage \code{R} path only. \code{"bootstrap"} resamples units within
 #'   treatment arm and works for both paths. \code{"none"} returns bounds alone.
 #' @param sims Number of bootstrap replicates when \code{se = "bootstrap"}. 1000 by default.
-#' @param data A dataframe
+#' @param data A dataframe. Must be given by name: \code{data} is the last
+#'   argument, so passing it positionally assigns it to another argument.
 #'
 #' @return A named numeric vector containing \code{lower_bound} and \code{upper_bound},
 #'   the trimming bound estimates; \code{lower_se} and \code{upper_se}, their standard
@@ -312,6 +317,7 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 estimator_trim <-
   function(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL, strata = NULL,
            alpha = 0.05, se = c("analytic", "bootstrap", "none"), sims = 1000, data){
+    if (missing(data)) require_data("estimator_trim")
     # Formula interface: estimator_trim(outcome ~ treatment, R = "col" | R1/Attempt/R2 = "col", data = .)
     yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
     Y  <- yz$Y
@@ -473,6 +479,7 @@ estimator_trim <-
 #' # delta = 0 assumes ignorability among follow-up non-responders
 #' estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0, data = df)
 estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata = NULL, alpha = 0.05, data){
+  if (missing(data)) require_data("estimator_ds_sens")
   # Formula interface: estimator_ds_sens(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
   yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
   Y  <- yz$Y
@@ -569,7 +576,8 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #' @param maxY The maximum possible value of the outcome (Y) variable.
 #' @param strata Stratification variable: unquoted column name or a quoted string column name.
 #' @param alpha The desired significance level. 0.05 by default.
-#' @param data A dataframe
+#' @param data A dataframe. Must be given by name: \code{data} is the last
+#'   argument, so passing it positionally assigns it to another argument.
 #' @param sims Number of values of delta at which to evaluate the bounds. Defaults to 100.
 #'
 #' @return A list with three elements: \code{sensitivity_plot}, a ggplot object;
@@ -607,6 +615,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #' sens$sensitivity_plot
 #' sens$p_star
 sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata = NULL, alpha = 0.05, data){
+  if (missing(data)) require_data("sensitivity_ds")
   # Formula interface: sensitivity_ds(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
   yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
   Y  <- yz$Y

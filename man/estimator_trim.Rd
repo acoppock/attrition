@@ -49,7 +49,8 @@ treatment arm and works for both paths. \code{"none"} returns bounds alone.}
 
 \item{sims}{Number of bootstrap replicates when \code{se = "bootstrap"}. 1000 by default.}
 
-\item{data}{A dataframe}
+\item{data}{A dataframe. Must be given by name: \code{data} is the last
+argument, so passing it positionally assigns it to another argument.}
 }
 \value{
 A named numeric vector containing \code{lower_bound} and \code{upper_bound},

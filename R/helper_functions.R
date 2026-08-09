@@ -1,4 +1,14 @@
 
+# `data` is this package's last argument rather than its second, so the call a
+# user reflexively types, estimator_ds(y ~ z, df, ...), binds df to the second
+# formal and R reports a missing `data` without saying why. The order is kept
+# for backward compatibility; this replaces the unhelpful message.
+require_data <- function(fn) {
+  stop("`data` must be given by name, as ", fn, "(y ~ z, ..., data = your_data).\n",
+       "  It is this function's last argument, so passing a data frame ",
+       "positionally assigns it to another argument instead.", call. = FALSE)
+}
+
 # A column argument may be given four ways: as a vector of the column contents,
 # as a single string naming a column, as a one-sided formula naming a column, or
 # as a bare column name under normal evaluation. The formula case is what

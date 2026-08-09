@@ -41,7 +41,8 @@ Must be numeric and take values 0 or 1.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 
-\item{data}{A dataframe}
+\item{data}{A dataframe. Must be given by name: \code{data} is the last
+argument, so passing it positionally assigns it to another argument.}
 }
 \value{
 A named numeric vector with elements \code{ci_lower} and \code{ci_upper},

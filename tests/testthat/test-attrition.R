@@ -712,6 +712,29 @@ test_that("analytic standard errors recover the sampling variability (Monte Carl
   expect_equal(mean(se), sd(mc), tolerance = 0.12)
 })
 
+test_that("omitting data by name gives an instructive error, not R's default", {
+  df <- make_synthetic()
+  # The call a user reflexively types, since every other R model is (formula, data)
+  expect_error(estimator_ds(Y ~ Z, df, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+                            minY = 1, maxY = 5), "must be given by name")
+  expect_error(estimator_ev(Y ~ Z, df, R = "R1", minY = 1, maxY = 5), "must be given by name")
+  expect_error(estimator_trim(Y ~ Z, df, R = "R1"), "must be given by name")
+  expect_error(estimator_ds_sens(Y ~ Z, df, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+                                 minY = 1, maxY = 5, delta = 0.5), "must be given by name")
+  expect_error(sensitivity_ds(Y ~ Z, df, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+                              minY = 1, maxY = 5), "must be given by name")
+})
+
+test_that("a column may be named with a one-sided formula", {
+  df  <- make_synthetic()
+  nse <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = df)
+  frm <- estimator_ds(Y ~ Z, R1 = ~R1, Attempt = ~Attempt, R2 = ~R2,
+                      minY = 1, maxY = 5, data = df)
+  expect_equal(as.numeric(nse), as.numeric(frm))
+  expect_error(estimator_ds(Y ~ Z, R1 = ~R1 + Attempt, Attempt = "Attempt", R2 = "R2",
+                            minY = 1, maxY = 5, data = df), "exactly one column")
+})
+
 # ── Formula interface ────────────────────────────────────────────────────────
 
 test_that("estimator_ev formula interface matches NSE interface", {
