@@ -5,23 +5,26 @@
 library(attrition)
 ```
 
-Attrition is the problem that covariate adjustment cannot solve. If
-subjects leave your experiment for reasons related to the outcomes they
-would have reported, then the respondents you are left with are not a
-random sample of the subjects you started with, and no regression on the
-covariates you happened to measure will put that right. The usual fix is
-an assumption: missingness is ignorable, conditional on treatment and a
-few covariates. The assumption is untestable, and when it fails it fails
-silently.
+This vignette works through a two-wave survey experiment in which 536 of
+1,980 subjects never answered the second wave. Everything runs on the
+replication study from Coppock, Gerber, Green, and Kern (2017), which
+ships with the package as `levendusky`.
 
-This package takes the other route. Instead of assuming the missing
-outcomes away, it reports the whole range of average treatment effects
-consistent with the data, and it implements a research design that makes
-that range narrow enough to be worth reporting. The design is double
-sampling: chase a random sample of your nonrespondents, hard.
+The situation is an ordinary one. You fielded an experiment, the outcome
+is missing for a substantial minority of subjects, and nothing in the
+data tells you whether they went missing for reasons connected to the
+outcomes they would have reported. Rather than settle that question by
+assumption, the estimators here report the range of average treatment
+effects consistent with what you did observe. The double-sampling design
+then shrinks that range, by recovering outcomes from a random sample of
+the nonrespondents and pursuing them harder than the first attempt.
 
-We work throughout with the replication study from Coppock, Gerber,
-Green, and Kern (2017), which ships with the package.
+We take the estimators in the order you would meet the problem: what the
+data look like, what can be said with no follow-up at all, what a
+follow-up buys, and how much of the remaining assumption a result
+survives. The short version is that chasing 100 of the 536
+nonrespondents shrinks the identification region by a factor of 3.6,
+from 3.25 points wide to 0.91 on an outcome scored from 0 to 6.
 
 ## The experiment
 
