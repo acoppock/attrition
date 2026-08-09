@@ -62,14 +62,14 @@ First release.
 
 ## Bug fixes
 
-* The Imbens-Manski critical value was found by minimising an absolute value
+* The Imbens-Manski critical value was found by minimizing an absolute value
   with `optim(..., method = "Brent", lower = 1, upper = 2)`. That interval only
-  covers alpha near 0.05, so at other significance levels the optimiser
+  covers alpha near 0.05, so at other significance levels the optimizer
   returned a boundary value and the confidence intervals were silently wrong:
   at `alpha = 0.01` it returned 2.000 against a correct 2.326, and at
   `alpha = 0.001` it returned 2.000 against a correct 3.090. The search
   interval is now derived from alpha, and the root is found with `uniroot()`
-  on the signed coverage excess rather than by minimising its absolute value.
+  on the signed coverage excess rather than by minimizing its absolute value.
   Bound point estimates and variances are unaffected.
 
 * `estimator_trim()` reported every failure inside `trimming_bounds()` as a
@@ -97,6 +97,6 @@ First release.
   referenced as `n1_c_c` in the unstratified path.
 
 * `estimator_ds()` and `estimator_ds_sens()`: replaced a commented-out
-  sentinel initialisation (`-99`) with `NA_real_` for `c1a_t`, `c1r_t`,
+  sentinel initialization (`-99`) with `NA_real_` for `c1a_t`, `c1r_t`,
   `c2a_t`, `c2r_t`. These arguments were never used and have since been
   removed from the internal estimators altogether.

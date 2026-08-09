@@ -11,7 +11,8 @@ Description: Implements the double-sampling bounds estimator of Coppock,
     Gerber, Green, and Kern (2017) <doi:10.1017/pan.2016.6> for randomized
     experiments with nonignorable missing outcomes. Provides worst-case
     (Manski) bounds, double-sampling bounds with analytic variance and
-    Imbens-Manski confidence intervals, Lee (2009) trimming bounds, covariate
+    Imbens-Manski confidence intervals, Lee (2009) <doi:10.1111/j.1467-937X.2009.00536.x> trimming
+    bounds with analytic and bootstrap standard errors, covariate
     adjustment via poststratification, and a sensitivity analysis for
     violations of the outcome stability assumption.
 Depends:
@@ -32,3 +33,4 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
 LazyData: true
+Language: en-US
