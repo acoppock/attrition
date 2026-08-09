@@ -11,13 +11,15 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4.5)
 options(digits = 4)
 knitr::opts_chunk$set(
-  eval = requireNamespace("vayr", quietly = TRUE) && requireNamespace("estimatr", quietly = TRUE)
+  eval = requireNamespace("vayr", quietly = TRUE) &&
+    requireNamespace("estimatr", quietly = TRUE) &&
+    utils::packageVersion("vayr") >= "1.1.0"
 )
 ```
 
 `estimator_ev()` reports a range of average treatment effects rather than a point, and the range comes from filling in the missing outcomes twice: once with the worst case for the treatment group, once with the best. That imputation can be drawn, and drawing it is the fastest way to see what the estimator is doing. This vignette puts the picture and the estimates side by side and checks that they are the same thing.
 
-The plot uses [vayr](https://cran.r-project.org/package=vayr) and the difference in means uses [estimatr](https://cran.r-project.org/package=estimatr). Both are suggested packages rather than required ones, so if either is missing the code below is shown but not run.
+The plot uses [vayr](https://cran.r-project.org/package=vayr) and the difference in means uses [estimatr](https://cran.r-project.org/package=estimatr). Both are suggested packages rather than required ones, so if either is missing the code below is shown but not run. `impute_extreme_values()` and the `attrition_experiment` data arrived in vayr 1.1.0, so the same is true against an earlier version.
 
 ```{r setup}
 library(attrition)
