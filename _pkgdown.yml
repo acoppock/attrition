@@ -1,0 +1,73 @@
+url: https://alexandercoppock.com/attrition/
+
+template:
+  bootstrap: 5
+  theme: gruvbox-light
+  includes:
+    in_header: |
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+  bslib:
+    primary: '#a72f5b'
+    body-bg: '#FBFAF7'
+    body-color: '#3C444C'
+    link-color: '#a72f5b'
+    link-hover-color: '#7d2244'
+    border-color: '#E4E0D8'
+    muted-color: '#6B7078'
+    rule-color: '#E4E0D8'
+    rule-strong: '#D6D1C6'
+    accent-teal: '#004c6d'
+    code-bg: '#F3EFE7'
+    border-radius: '2px'
+    btn-border-radius: '2px'
+    font-size-base: '1.0625rem'
+    line-height-base: '1.6'
+    font-family-sans-serif: '"Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif'
+    headings-font-family: '"Source Serif 4", Georgia, "Times New Roman", serif'
+    font-family-monospace: '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace'
+    headings-font-weight: '600'
+    code-color: '#004c6d'
+
+reference:
+  - title: Bounds on the average treatment effect
+    desc: >
+      Worst-case bounds from a single round of data collection, and the
+      double-sampling bounds that narrow them by chasing a random sample of the
+      nonrespondents. All three accept a stratification variable for
+      poststratification, which targets the same identification region and
+      estimates it more precisely.
+    contents:
+      - estimator_ev
+      - estimator_ds
+      - estimator_ds_sens
+  - title: Sensitivity analysis
+    desc: >
+      How far ignorability has to fail among the follow-up nonrespondents before
+      a finding stops holding.
+    contents:
+      - sensitivity_ds
+  - title: Trimming bounds
+    desc: >
+      Lee (2009) bounds, which assume treatment moves response in one direction
+      only and do not require the outcome to be bounded.
+    contents:
+      - estimator_trim
+  - title: Working with results
+    desc: >
+      Every estimator returns a named numeric vector. The tidy methods put the
+      same quantities in a data frame with the column names DeclareDesign
+      expects.
+    contents:
+      - tidy.attrition_bounds
+      - tidy.attrition_trim
+      - print.attrition_bounds
+      - print.attrition_trim
+      - reexports
+  - title: Data
+    contents:
+      - levendusky
+  - title: Package overview
+    contents:
+      - attrition-package

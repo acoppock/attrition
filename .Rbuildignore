@@ -9,3 +9,5 @@
 ^data-raw$
 ^\.claude$
 ^README\.html$
+^_pkgdown\.yml$
+^pkgdown$
