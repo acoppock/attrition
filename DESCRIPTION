@@ -29,9 +29,11 @@ URL: https://alexandercoppock.com/attrition/,
     https://github.com/acoppock/attrition
 BugReports: https://github.com/acoppock/attrition/issues
 Suggests:
+    estimatr,
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    vayr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
