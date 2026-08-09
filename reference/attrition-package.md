@@ -79,6 +79,16 @@ Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating
 Sharp Bounds on Treatment Effects. *Review of Economic Studies*
 76(3):1071-1102.
 
+## See also
+
+Useful links:
+
+- <https://alexandercoppock.com/attrition/>
+
+- <https://github.com/acoppock/attrition>
+
+- Report bugs at <https://github.com/acoppock/attrition/issues>
+
 ## Author
 
 **Maintainer**: Alexander Coppock <acoppock@gmail.com>
