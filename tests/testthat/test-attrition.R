@@ -4,7 +4,7 @@ library(testthat)
 # Expected values computed from replication data in:
 # Coppock, Gerber, Green, Kern (2017), Political Analysis
 # doi:10.1017/pan.2016.6
-# Data source: Harvard Dataverse doi:10.7910/DVN/AQB4MP
+# Data source: Harvard Dataverse doi:10.7910/DVN/AQB4MP, shipped as data(levendusky)
 #
 # The bound point estimates and variances below are the published quantities and
 # have never changed. The ci_lower/ci_upper expectations were refreshed when the
@@ -12,12 +12,8 @@ library(testthat)
 # signed coverage excess; the two agree to 9 decimal places and uniroot is the
 # more accurate of the two.
 
-data_path <- testthat::test_path("testdata", "levendusky_mturk_clean.csv")
-
 test_that("estimator_ev matches Table 3 column 1 (no double sampling)", {
-  skip_if_not(file.exists(data_path), "replication data not found")
-  dat <- read.csv(data_path)
-  dat <- subset(dat, !is.na(Z1))
+  dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_ev(Y = L_dif_w2, Z = Z1, R = R1,
                       minY = 0, maxY = 6, data = dat)
   expect_equal(unname(out["ci_lower"]), -1.66907903885775,   tolerance = 1e-10)
@@ -29,9 +25,7 @@ test_that("estimator_ev matches Table 3 column 1 (no double sampling)", {
 })
 
 test_that("estimator_ds matches Table 3 column 2 (double sampling)", {
-  skip_if_not(file.exists(data_path), "replication data not found")
-  dat <- read.csv(data_path)
-  dat <- subset(dat, !is.na(Z1))
+  dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_ds(Y = L_dif_w2, Z = Z1, R1 = R1,
                       Attempt = Attempt, R2 = R2,
                       minY = 0, maxY = 6, data = dat)
@@ -44,9 +38,7 @@ test_that("estimator_ds matches Table 3 column 2 (double sampling)", {
 })
 
 test_that("estimator_ds matches Table 3 column 3 (DS + poststratification)", {
-  skip_if_not(file.exists(data_path), "replication data not found")
-  dat <- read.csv(data_path)
-  dat <- subset(dat, !is.na(Z1))
+  dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_ds(Y = L_dif_w2, Z = Z1, R1 = R1,
                       Attempt = Attempt, R2 = R2,
                       strata = pid_3_recoded,
@@ -249,9 +241,7 @@ test_that("output classes are set correctly", {
 # ── Additional paper benchmarks ──────────────────────────────────────────────
 
 test_that("estimator_ev with strata (paper data)", {
-  skip_if_not(file.exists(data_path), "replication data not found")
-  dat <- read.csv(data_path)
-  dat <- subset(dat, !is.na(Z1))
+  dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_ev(Y = L_dif_w2, Z = Z1, R = R1, strata = pid_3_recoded,
                       minY = 0, maxY = 6, data = dat)
   expect_equal(unname(out["ci_lower"]), -1.66862420646393,  tolerance = 1e-10)
@@ -263,9 +253,7 @@ test_that("estimator_ev with strata (paper data)", {
 })
 
 test_that("estimator_trim DS path (paper data)", {
-  skip_if_not(file.exists(data_path), "replication data not found")
-  dat <- read.csv(data_path)
-  dat <- subset(dat, !is.na(Z1))
+  dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_trim(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
                         se = "none", data = dat)
   expect_equal(unname(out["upper_bound"]),  0.567599031583528,  tolerance = 1e-10)
@@ -273,9 +261,7 @@ test_that("estimator_trim DS path (paper data)", {
 })
 
 test_that("estimator_trim R path returns NA bounds on monotonicity violation (paper data)", {
-  skip_if_not(file.exists(data_path), "replication data not found")
-  dat <- read.csv(data_path)
-  dat <- subset(dat, !is.na(Z1))
+  dat <- subset(levendusky, !is.na(Z1))
   # Control group has slightly higher attrition than treatment → violation
   out <- estimator_trim(Y = L_dif_w2, Z = Z1, R = R1, data = dat)
   expect_s3_class(out, "attrition_trim")
@@ -284,9 +270,7 @@ test_that("estimator_trim R path returns NA bounds on monotonicity violation (pa
 })
 
 test_that("estimator_ds_sens(delta=1) exactly matches estimator_ds (paper data)", {
-  skip_if_not(file.exists(data_path), "replication data not found")
-  dat <- read.csv(data_path)
-  dat <- subset(dat, !is.na(Z1))
+  dat <- subset(levendusky, !is.na(Z1))
   ds   <- estimator_ds(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
                        minY = 0, maxY = 6, data = dat)
   sens <- estimator_ds_sens(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
@@ -295,9 +279,7 @@ test_that("estimator_ds_sens(delta=1) exactly matches estimator_ds (paper data)"
 })
 
 test_that("estimator_ds_sens delta=0.5 (paper data)", {
-  skip_if_not(file.exists(data_path), "replication data not found")
-  dat <- read.csv(data_path)
-  dat <- subset(dat, !is.na(Z1))
+  dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_ds_sens(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
                            delta = 0.5, minY = 0, maxY = 6, data = dat)
   expect_equal(unname(out["ci_lower"]), -0.263141039257175,  tolerance = 1e-10)

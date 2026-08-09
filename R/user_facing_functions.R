@@ -571,7 +571,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #'   geom_hline xlab ylab theme_bw theme element_blank
 #' @importFrom grid unit
 #' @importFrom purrr map
-#' @importFrom stats complete.cases pnorm qnorm sd uniroot var weighted.mean
+#' @importFrom stats complete.cases pnorm qnorm sd setNames uniroot var weighted.mean
 #' @export
 #'
 #' @examples
