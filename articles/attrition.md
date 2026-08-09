@@ -1,0 +1,367 @@
+# Bounding treatment effects when subjects go missing
+
+``` r
+
+library(attrition)
+```
+
+Attrition is the problem that covariate adjustment cannot solve. If
+subjects leave your experiment for reasons related to the outcomes they
+would have reported, then the respondents you are left with are not a
+random sample of the subjects you started with, and no regression on the
+covariates you happened to measure will put that right. The usual fix is
+an assumption: missingness is ignorable, conditional on treatment and a
+few covariates. The assumption is untestable, and when it fails it fails
+silently.
+
+This package takes the other route. Instead of assuming the missing
+outcomes away, it reports the whole range of average treatment effects
+consistent with the data, and it implements a research design that makes
+that range narrow enough to be worth reporting. The design is double
+sampling: chase a random sample of your nonrespondents, hard.
+
+We work throughout with the replication study from Coppock, Gerber,
+Green, and Kern (2017), which ships with the package.
+
+## The experiment
+
+`levendusky` holds a two-wave survey experiment run on Mechanical Turk,
+replicating Levendusky and Malhotra (2016). Subjects read a news article
+describing the electorate as sharply divided (the polarized condition)
+or as focused on common ground (the moderate condition). A third group
+read nothing on the topic and is not analyzed. The outcome, perceived
+polarization, was measured immediately and again ten days later.
+
+``` r
+
+dat <- subset(levendusky, !is.na(Z1))
+with(dat, table(Z_lev, R1))
+#>            R1
+#> Z_lev         0   1
+#>   Placebo     0   0
+#>   Moderate  264 731
+#>   Polarized 272 713
+```
+
+Of 1,980 subjects, 1,444 answered the second-wave survey and 536 did
+not. A naive difference in means among those 1,444 respondents puts the
+effect of the polarized article at 0.126 points (standard error 0.066),
+which is significant at the 10 percent level and not at the 5 percent
+level.
+
+``` r
+
+summary(lm(L_dif_w2 ~ Z1, data = subset(dat, R1 == 1)))$coefficients
+#>             Estimate Std. Error t value Pr(>|t|)
+#> (Intercept)   3.5421    0.04647  76.220  0.00000
+#> Z1            0.1259    0.06613   1.903  0.05718
+```
+
+The subset matters. Restricting to `R1 == 1` is what makes the estimate
+naive: it is the analysis you would run if the double sampling had never
+happened.
+
+That estimate is consistent only if the 536 missing subjects are missing
+for reasons unrelated to their outcomes. Nothing in the data tells us
+whether they are.
+
+## Worst-case bounds
+
+Suppose we refuse the assumption entirely. The outcome runs from 0 to 6,
+so we know something about the missing values even without knowing what
+they are: whatever they were, they were between 0 and 6. Fill in every
+missing outcome in the treatment group with 0 and every missing outcome
+in the control group with 6, and you get the lowest average effect the
+data can support. Reverse the fills and you get the highest.
+
+`estimator_ev` does that, and reports an Imbens-Manski confidence
+interval around the resulting identification region.
+
+``` r
+
+estimator_ev(L_dif_w2, Z1, R1, minY = 0, maxY = 6, data = dat)
+#>  ci_lower  ci_upper   low_est   upp_est   low_var   upp_var 
+#> -1.669079  1.835881 -1.539145  1.709668  0.006240  0.005888
+```
+
+The effect lies between -1.54 and 1.71. The bounds are honest and nearly
+useless: they are wide enough to contain a large negative effect, a
+large positive effect, and everything in between. Notice how little the
+sampling uncertainty contributes. The confidence interval runs from
+-1.67 to 1.84, barely wider than the bounds themselves. The problem here
+is not that the sample is small. The problem is that 536 outcomes are
+unknown, and no sample size fixes that.
+
+## Double sampling
+
+Now the design. After the initial round of data collection, draw a
+random sample of the nonrespondents and pursue them with more effort
+than you spent the first time. In this study, 50 nonrespondents were
+drawn at random from each condition and offered \$4.00 instead of the
+original \$1.00. Of those 100 subjects, 72 answered.
+
+``` r
+
+with(dat, table(Z_lev, Attempt, R2))
+#> , , R2 = 0
+#> 
+#>            Attempt
+#> Z_lev         0   1
+#>   Placebo     0   0
+#>   Moderate  945  11
+#>   Polarized 935  17
+#> 
+#> , , R2 = 1
+#> 
+#>            Attempt
+#> Z_lev         0   1
+#>   Placebo     0   0
+#>   Moderate    0  39
+#>   Polarized   0  33
+```
+
+The 72 recovered outcomes do more work than their number suggests.
+Because the follow-up sample was drawn at random from the
+nonrespondents, the outcomes it recovers estimate the mean outcome among
+*all* nonrespondents. Only the subjects who refused twice, and there are
+28 of them, still need worst-case imputation.
+
+``` r
+
+estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
+#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
+#> -0.52831  0.74517 -0.34175  0.57182  0.01286  0.01111
+```
+
+The identification region is now -0.34 to 0.57, against -1.54 to 1.71
+before. It has shrunk by a factor of 3.6, and the confidence interval
+has narrowed from 3.50 points wide to 1.27. Chasing 100 subjects out of
+536 bought all of that.
+
+To be sure, the interval still contains zero, so the study does not
+establish that the polarized article changed perceived polarization.
+What it does establish is a bound on how large any such effect could be,
+and that bound is now tight enough to be substantively informative.
+
+## Poststratification
+
+If you measured a discrete covariate that predicts the outcome, use it.
+Estimating the bounds within each stratum and averaging by stratum share
+targets the same identification region, so nothing is assumed away, but
+it estimates that region more precisely. The reason is that the stratum
+shares Pr(B = k) can be pinned down using the whole sample, while the
+unadjusted estimator effectively uses Pr(B = k \| Z = z), one arm at a
+time. By the law of total variance the asymptotic variance is guaranteed
+to be no larger. Here the covariate is three-category party
+identification.
+
+``` r
+
+estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, strata = pid_3_recoded,
+             minY = 0, maxY = 6, data = dat)
+#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
+#>  -0.5290   0.6966  -0.3444   0.5257   0.0126   0.0108
+```
+
+The upper bound estimate falls from 0.57 to 0.53 and the confidence
+interval from 1.27 to 1.23 points wide. The gain is real but modest,
+which is what to expect when the covariate is only moderately
+prognostic. Bear in mind what moved and what did not: the estimand is
+the same identification region in both rows, and poststratification only
+estimates it better.
+
+These three sets of numbers are Table 3 of the published paper.
+
+## Sensitivity analysis
+
+Worst-case bounds assume nothing about the 28 subjects who refused
+twice. Ignorability assumes everything: that their outcomes look like
+those of the follow-up respondents. Neither extreme is a natural place
+to stand, and `estimator_ds_sens` interpolates between them. Set delta
+to the fraction of follow-up nonrespondents whose outcomes you are
+unwilling to model, and the remaining 1 - delta are treated as
+ignorable.
+
+At delta = 1 the estimator reproduces the worst-case bounds above. At
+delta = 0 it returns a point estimate.
+
+``` r
+
+estimator_ds_sens(L_dif_w2, Z1, R1, Attempt, R2, delta = 0.5,
+                  minY = 0, maxY = 6, data = dat)
+#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
+#> -0.26314  0.52733 -0.09162  0.36516  0.01087  0.00972
+```
+
+`sensitivity_ds` sweeps delta from 0 to 1 and looks for delta\*, the
+smallest value at which the confidence interval starts to include zero.
+A delta\* near zero means the finding rests on assuming away nearly all
+of the missingness; a delta\* near one means it survives almost any
+amount.
+
+``` r
+
+sens <- sensitivity_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6,
+                       alpha = 0.10, data = dat)
+sens$sensitivity_plot
+```
+
+![Identification regions and confidence intervals as a function of the
+sensitivity parameter
+delta](attrition_files/figure-html/unnamed-chunk-9-1.png)
+
+``` r
+
+sens$p_star$p
+#> [1] 0.07071
+```
+
+At the 10 percent level, delta\* is 0.07. The naive result is fragile:
+allowing ignorability to fail for 7 percent of the follow-up
+nonrespondents is enough to erase it. At the 5 percent level there is no
+delta\* at all, because the interval around the naive estimate already
+includes zero.
+
+``` r
+
+sensitivity_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6,
+               alpha = 0.05, data = dat)$p_star
+#> [1] "No value of the sensitivity parameter yields a statistically significant result."
+```
+
+## Trimming bounds
+
+Everything so far leans on the outcome having known lower and upper
+limits. When it does not, or when the limits are so far apart that
+worst-case bounds say nothing, Lee (2009) offers a different trade:
+assume instead that treatment moves selection in one direction only. If
+treatment can only make subjects more likely to respond, never less,
+then the extra respondents it produces are a known fraction of the
+treated respondents, and trimming that fraction off either tail of the
+treated distribution bounds the effect among subjects who would have
+responded either way.
+
+Monotonicity is an assumption about the world, not about the measurement
+scale, so it is not nested with the bounded-support assumption. Neither
+dominates.
+
+Monotonicity is checkable in one direction, at least: it implies the
+treated respond at least as often as the controls. In this experiment
+they do not.
+
+``` r
+
+with(dat, tapply(R1, Z1, mean))
+#>      0      1 
+#> 0.7347 0.7239
+```
+
+The treated responded at 0.724 and the controls at 0.735. The gap is
+small and could easily be noise, but the trimming proportion it implies
+is negative, so the assumption fails in the direction the estimator
+needs and `estimator_trim` returns `NA` rather than a number built on
+it.
+
+``` r
+
+estimator_trim(L_dif_w2, Z1, R = R1, data = dat)[c("lower_bound", "upper_bound")]
+#> lower_bound upper_bound 
+#>          NA          NA
+```
+
+Applied to the double-sampled data, where both groups are trimmed and
+the follow-up respondents carry sampling weights, the bounds exist:
+
+``` r
+
+estimator_trim(L_dif_w2, Z1, R1 = R1, Attempt = Attempt, R2 = R2,
+               se = "bootstrap", sims = 500, data = dat)[c("lower_bound", "upper_bound", "lower_se", "upper_se")]
+#> lower_bound upper_bound    lower_se    upper_se 
+#>     -0.2681      0.5676      0.1078      0.1065
+```
+
+Standard errors come two ways. `se = "analytic"`, the default, uses the
+closed-form variance in Lee (2009, Proposition 3), which covers the
+single-stage case only. `se = "bootstrap"` resamples units within
+treatment arm and works for both, which is why the double-sampling call
+above asks for it. Requesting analytic standard errors on the
+double-sampling path is an error rather than a silent substitution,
+since Lee’s derivation assumes independent sampling and trimming of one
+group only.
+
+## Reading the output
+
+Every estimator returns a named vector, and every one has a
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html) method that
+puts the same information in a data frame.
+
+``` r
+
+tidy(estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat))
+#> # A tibble: 3 × 7
+#>   term        estimate std.error conf.low conf.high estimate.low estimate.high
+#>   <chr>          <dbl>     <dbl>    <dbl>     <dbl>        <dbl>         <dbl>
+#> 1 bounds        NA        NA       -0.528     0.745       -0.342         0.572
+#> 2 lower_bound   -0.342     0.113   NA        NA           NA            NA    
+#> 3 upper_bound    0.572     0.105   NA        NA           NA            NA
+```
+
+Bounds do not have a point estimate, so `estimate` is `NA` on the
+`bounds` row and the identification region appears in `estimate.low` and
+`estimate.high`. The joint Imbens-Manski interval sits in `conf.low` and
+`conf.high`. The two rows below carry the bound estimates and their
+standard errors separately, for the cases where you want one endpoint at
+a time.
+
+Each estimator also takes a formula, which is what
+`DeclareDesign::declare_estimator()` expects. Response and attempt
+indicators are named as strings:
+
+``` r
+
+estimator_ds(L_dif_w2 ~ Z1, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+             minY = 0, maxY = 6, data = dat)
+#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
+#> -0.52831  0.74517 -0.34175  0.57182  0.01286  0.01111
+```
+
+## What the design costs and what it buys
+
+Double sampling is not free. Someone has to find the nonrespondents and
+pay them more, and the budget for that effort competes with the budget
+for a larger initial sample. The trade is usually worth making, because
+a larger initial sample does nothing about attrition bias while a
+follow-up sample attacks it directly. In this study the initial-sample
+confidence interval was 3.50 points wide and no realistic increase in
+sample size would have narrowed it much, since almost all of that width
+came from the 536 unknown outcomes rather than from sampling error.
+Chasing 100 of them narrowed it to 1.23.
+
+The design decision that remains open is how to split a fixed budget
+between the initial sample and the follow-up, and it depends on
+quantities you do not know until the data are in: the response rate in
+each round, the outcome variance among respondents and nonrespondents,
+and the relative cost of a first and second contact. Coppock, Gerber,
+Green, and Kern (2017) sketch the optimization; the package does not yet
+implement it.
+
+## References
+
+Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern
+(2017). Combining Double Sampling and Bounds to Address Nonignorable
+Missing Outcomes in Randomized Experiments. *Political Analysis*
+25(2):188-206.
+
+Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
+Partially Identified Parameters. *Econometrica* 72(6):1845-1857.
+
+Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating
+Sharp Bounds on Treatment Effects. *Review of Economic Studies*
+76(3):1071-1102.
+
+Levendusky, Matthew, and Neil Malhotra (2016). Does Media Coverage of
+Partisan Polarization Affect Political Attitudes? *Political
+Communication* 33(2):283-301.
+
+Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
+*American Economic Review Papers and Proceedings* 80(2):319-323.
