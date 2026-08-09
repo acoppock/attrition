@@ -22,12 +22,8 @@ manski_cis <- function(n1_t, n1_c,
     gen_var(y1m_c, s1_c, p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)/n1_c
 
 
-  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
-               lower_bound_est = lower_bound_est,
-               upper_bound_est = upper_bound_est,
-               lower_bound_var_est = lower_bound_var_est,
-               upper_bound_var_est = upper_bound_var_est,
-               alpha = alpha)$par
+  sig <- im_critical_value(lower_bound_est, upper_bound_est,
+                           lower_bound_var_est, upper_bound_var_est, alpha)
 
   return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
            ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
@@ -69,12 +65,8 @@ ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
   upper_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_U,y1m_t,y2m_t_U),
                                    c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
 
-  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
-               lower_bound_est = lower_bound_est,
-               upper_bound_est = upper_bound_est,
-               lower_bound_var_est = lower_bound_var_est,
-               upper_bound_var_est = upper_bound_var_est,
-               alpha = alpha)$par
+  sig <- im_critical_value(lower_bound_est, upper_bound_est,
+                           lower_bound_var_est, upper_bound_var_est, alpha)
 
   return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
            ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
@@ -115,12 +107,8 @@ ds_manski_cis_2s_sens <- function(n1_t,n2_t,n1_c,n2_c,
                                    c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
 
 
-  sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
-               lower_bound_est = lower_bound_est,
-               upper_bound_est = upper_bound_est,
-               lower_bound_var_est = lower_bound_var_est,
-               upper_bound_var_est = upper_bound_var_est,
-               alpha = alpha)$par
+  sig <- im_critical_value(lower_bound_est, upper_bound_est,
+                           lower_bound_var_est, upper_bound_var_est, alpha)
 
   return(c(ci_lower= lower_bound_est - sig*lower_bound_var_est^.5,
            ci_upper= upper_bound_est + sig*upper_bound_var_est^.5,
@@ -138,21 +126,28 @@ trimming_bounds <-
     OutS0 <- datafsort[datafsort$Fail==0 & datafsort$Treat==0,]
     OutS1 <- datafsort[datafsort$Fail==0 & datafsort$Treat==1,]
 
+    if(nrow(OutS0) == 0 | nrow(OutS1) == 0){
+      stop("Trimming bounds require at least one observed outcome in each treatment group.")
+    }
+
     OutS0$Weight <- OutS0$Weight/sum(OutS0$Weight)
     OutS1$Weight <- OutS1$Weight/sum(OutS1$Weight)
 
-    OutS0.CDF <- OutS0$Weight
-    OutS1.CDF <- OutS1$Weight
-
-    for(i in 2:length(OutS0.CDF)) OutS0.CDF[i] <- OutS0.CDF[i] + OutS0.CDF[i-1]
-    for(i in 2:length(OutS1.CDF)) OutS1.CDF[i] <- OutS1.CDF[i] + OutS1.CDF[i-1]
+    OutS0.CDF <- cumsum(OutS0$Weight)
+    OutS1.CDF <- cumsum(OutS1$Weight)
 
     f0 <- sum(Weight[Fail==1 & Treat==0])/sum(Weight[Treat==0])
     f1 <- sum(Weight[Fail==1 & Treat==1])/sum(Weight[Treat==1])
 
     if(monotonicity){
       Q <- ((1 - f1) - (1 - f0))/(1-f1)
-      if(Q < 0){stop("Monotonicity appears to be violated: The control group is more likely to be missing than the treatment group.")}
+      if(Q < 0){
+        stop(structure(
+          class = c("attrition_monotonicity_violation", "error", "condition"),
+          list(message = "Monotonicity appears to be violated: the treatment group is more likely to be missing than the control group.",
+               call = NULL)
+        ))
+      }
 
       Out0_mono <- weighted.mean(OutS0$Out, OutS0$Weight)
 

@@ -17,19 +17,26 @@ estimator_trim(
 )
 }
 \arguments{
-\item{Y}{The (unquoted) outcome variable. Must be numeric.}
+\item{Y}{The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
+for use with \code{declare_estimator(.method = estimator_trim)}. Must be numeric.}
 
-\item{Z}{The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.}
+\item{Z}{The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
+Ignored when \code{Y} is a formula.}
 
-\item{R}{The (unquoted) respose indicator variable. Must be numeric and take values 0 or 1.}
+\item{R}{The single-stage response indicator: unquoted column name, or a quoted string column
+name when using the formula interface. Must be numeric and take values 0 or 1.
+Supply either \code{R} (single-stage) or \code{R1}/\code{Attempt}/\code{R2} (double-sampling).}
 
-\item{R1}{The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.}
+\item{R1}{The initial sample response indicator. Unquoted or quoted string column name.
+Must be numeric and take values 0 or 1.}
 
-\item{Attempt}{The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.}
+\item{Attempt}{The follow-up attempt indicator. Unquoted or quoted string column name.
+Must be numeric and take values 0 or 1.}
 
-\item{R2}{The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.}
+\item{R2}{The follow-up response indicator. Unquoted or quoted string column name.
+Must be numeric and take values 0 or 1.}
 
-\item{strata}{A single (unquoted) variable that indicates which strata units are in. DOES NOT WORK YET}
+\item{strata}{Not supported; supplying any value raises an error.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 

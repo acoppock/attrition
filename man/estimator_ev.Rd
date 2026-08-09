@@ -7,17 +7,20 @@
 estimator_ev(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 }
 \arguments{
-\item{Y}{The (unquoted) outcome variable. Must be numeric.}
+\item{Y}{The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
+for use with \code{declare_estimator(.method = estimator_ev)}. Must be numeric.}
 
-\item{Z}{The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.}
+\item{Z}{The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
+Ignored when \code{Y} is a formula.}
 
-\item{R}{The (unquoted) respose indicator variable. Must be numeric and take values 0 or 1.}
+\item{R}{The response indicator variable: unquoted column name, or a quoted string column name
+when using the formula interface. Must be numeric and take values 0 or 1.}
 
 \item{minY}{The minimum possible value of the outcome (Y) variable.}
 
 \item{maxY}{The maximum possible value of the outcome (Y) variable.}
 
-\item{strata}{A single (unquoted) variable that indicates which strata units are in.}
+\item{strata}{Stratification variable: unquoted column name or a quoted string column name.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 

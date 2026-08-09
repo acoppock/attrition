@@ -13,14 +13,13 @@
 \item{...}{Unused; included for S3 compatibility.}
 }
 \value{
-A [tibble::tibble()] with columns `term`, `estimate`,
-  `std.error`, `conf.low`, `conf.high`.
+A [tibble::tibble()] with columns `term`, `estimate`, `std.error`,
+  `conf.low`, `conf.high`, `estimate.low`, `estimate.high`.
 }
 \description{
-Returns a two-row tibble with one row per bound (lower / upper).
-The Imbens-Manski confidence interval is a joint interval: `conf.low` is
-only defined for the lower-bound row (the CI's lower limit) and `conf.high`
-only for the upper-bound row (the CI's upper limit). The other sides are
-`NA` because the IM procedure does not produce a one-sided CI for each
-bound independently.
+Returns a one-row tibble representing the identified interval. Designed for
+use with DeclareDesign: `estimate` and `std.error` are `NA` because bounds
+do not yield a single point estimate, while `conf.low`/`conf.high` hold the
+Imbens-Manski joint confidence interval and `estimate.low`/`estimate.high`
+hold the bound point estimates.
 }

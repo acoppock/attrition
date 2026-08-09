@@ -86,7 +86,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
   if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
   if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
 
-  if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
+  validate_support(Y, minY, maxY, alpha)
 
   strata_raw <- eval(substitute(strata), data, parent.frame())
   strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
@@ -160,12 +160,8 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
     lower_bound_var_est <- sum(v1_l_vec *proportions^2)
     upper_bound_var_est <- sum(v1_u_vec *proportions^2)
 
-    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
-                 lower_bound_est = lower_bound_est,
-                 upper_bound_est = upper_bound_est,
-                 lower_bound_var_est = lower_bound_var_est,
-                 upper_bound_var_est = upper_bound_var_est,
-                 alpha = alpha)$par
+    sig <- im_critical_value(lower_bound_est, upper_bound_est,
+                             lower_bound_var_est, upper_bound_var_est, alpha)
 
     out <- c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
              ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
@@ -211,7 +207,7 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
   if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
   if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
 
-  if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
+  validate_support(Y, minY, maxY, alpha)
 
   strata_raw <- eval(substitute(strata), data, parent.frame())
   strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
@@ -267,12 +263,8 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
     lower_bound_var_est <- sum(v1_l_vec *proportions^2)
     upper_bound_var_est <- sum(v1_u_vec *proportions^2)
 
-    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
-                 lower_bound_est = lower_bound_est,
-                 upper_bound_est = upper_bound_est,
-                 lower_bound_var_est = lower_bound_var_est,
-                 upper_bound_var_est = upper_bound_var_est,
-                 alpha = alpha)$par
+    sig <- im_critical_value(lower_bound_est, upper_bound_est,
+                             lower_bound_var_est, upper_bound_var_est, alpha)
 
     out <- c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
              ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
@@ -345,7 +337,7 @@ estimator_trim <-
       if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
       out <- tryCatch(
         trimming_bounds(Out = Y, Treat = Z, Fail = as.numeric(R == 0), Weight = rep(1, length(Y)), monotonicity = TRUE),
-        error = \(e) na_trim
+        attrition_monotonicity_violation = \(e) na_trim
       )
     } else {
       if (is.null(R1_val) || is.null(Attempt_val) || is.null(R2_val)) {
@@ -366,11 +358,8 @@ estimator_trim <-
       Fail <- as.numeric(R1 == 0 & R2 == 0)
       Keep <- (R1 == 1 | Attempt == 1)
 
-      out <- tryCatch(
-        trimming_bounds(Out = Y[Keep], Treat = Z[Keep],
-                        Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE),
-        error = \(e) na_trim
-      )
+      out <- trimming_bounds(Out = Y[Keep], Treat = Z[Keep],
+                             Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE)
     }
 
     if (inherits(out, "attrition_trim")) return(out)
@@ -425,7 +414,9 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
   if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
   if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
 
-  if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
+  validate_support(Y, minY, maxY, alpha)
+  if(!is.numeric(delta) | length(delta) != 1L){stop("The sensitivity parameter (delta) must be a single number.")}
+  if(delta < 0 | delta > 1){stop("The sensitivity parameter (delta) must be between zero and one.")}
 
   strata_raw <- eval(substitute(strata), data, parent.frame())
   strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
@@ -499,12 +490,8 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
     lower_bound_var_est <- sum(v1_l_vec *proportions^2)
     upper_bound_var_est <- sum(v1_u_vec *proportions^2)
 
-    sig <- optim(1.60,im_crit,method="Brent",lower=1,upper=2,
-                 lower_bound_est = lower_bound_est,
-                 upper_bound_est = upper_bound_est,
-                 lower_bound_var_est = lower_bound_var_est,
-                 upper_bound_var_est = upper_bound_var_est,
-                 alpha = alpha)$par
+    sig <- im_critical_value(lower_bound_est, upper_bound_est,
+                             lower_bound_var_est, upper_bound_var_est, alpha)
 
     out <- c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
              ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
@@ -538,7 +525,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #'   geom_hline xlab ylab theme_bw theme element_blank
 #' @importFrom grid unit
 #' @importFrom purrr map
-#' @importFrom stats optim pnorm sd weighted.mean
+#' @importFrom stats pnorm qnorm sd uniroot weighted.mean
 #' @export
 #'
 sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata = NULL, alpha = 0.05, data){
@@ -552,6 +539,8 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
   if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
   Attempt <-  eval(substitute(Attempt), data)
   if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
+  validate_support(Y, minY, maxY, alpha)
+  if(!is.numeric(sims) | length(sims) != 1L | any(sims < 2)){stop("The number of simulations (sims) must be a single number of at least two.")}
 
   strata_raw <- eval(substitute(strata), data, parent.frame())
   strata     <- if (is.character(strata_raw) && length(strata_raw) == 1L) data[[strata_raw]] else strata_raw
@@ -612,7 +601,8 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
   p_star_df <- "No value of the sensitivity parameter yields a statistically significant result."
 
   p_star <- with(sims_df, p[change_any])
-  if(length(p_star) == 1){
+  if(length(p_star) >= 1){
+    p_star <- min(p_star)
     p_star_df <- data.frame(p = p_star,
                             value = 0,
                             label = paste0("delta^'*' == ", round(p_star, 2)),

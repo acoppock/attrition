@@ -18,21 +18,26 @@ estimator_ds(
 )
 }
 \arguments{
-\item{Y}{The (unquoted) outcome variable. Must be numeric.}
+\item{Y}{The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
+for use with \code{declare_estimator(.method = estimator_ds)}. Must be numeric.}
 
-\item{Z}{The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.}
+\item{Z}{The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
+Ignored when \code{Y} is a formula.}
 
-\item{R1}{The (unquoted) initial sample respose indicator variable. Must be numeric and take values 0 or 1.}
+\item{R1}{The initial sample response indicator: unquoted column name, or a quoted string column
+name when using the formula interface. Must be numeric and take values 0 or 1.}
 
-\item{Attempt}{The (unquoted) follow-up sample attempt indicator variable. Must be numeric and take values 0 or 1.}
+\item{Attempt}{The follow-up attempt indicator: unquoted column name, or quoted string.
+Must be numeric and take values 0 or 1.}
 
-\item{R2}{The (unquoted) follow-up sample respose indicator variable. Must be numeric and take values 0 or 1.}
+\item{R2}{The follow-up response indicator: unquoted column name, or quoted string.
+Must be numeric and take values 0 or 1.}
 
 \item{minY}{The minimum possible value of the outcome (Y) variable.}
 
 \item{maxY}{The maximum possible value of the outcome (Y) variable.}
 
-\item{strata}{A single (unquoted) variable that indicates which strata units are in.}
+\item{strata}{Stratification variable: unquoted column name or a quoted string column name.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 

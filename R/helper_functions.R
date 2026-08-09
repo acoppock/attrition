@@ -14,15 +14,23 @@ parse_yz_formula <- function(f, data) {
   list(Y = data[[vars[1L]]], Z = data[[vars[2L]]])
 }
 
+# Flag the first element whose sign differs from the first element's, treating a
+# zero as a change. Position 1 can never be flagged; the last position can.
 find_sign_changes <- function(x){
-  first_pos <- Position(function(x) x > 0, x )
-  first_neg <- Position(function(x) x < 0, x )
-  position_zero <- Position(function(x) x == 0,x)
-  all_changes <- c(first_pos, first_neg, position_zero)
-  all_changes <- all_changes[!all_changes %in% c(1, length(x))]
+  first_change <- Position(function(xi) sign(xi) != sign(x[1]), x)
+  out <- rep(FALSE, length(x))
+  if(!is.na(first_change)){out[first_change] <- TRUE}
+  return(out)
+}
 
-  return(1:length(x) %in% all_changes)
-
+# Shared argument checks for the bounding estimators. The assumed support of Y
+# has to cover the observed outcomes, or the bounds it produces are not bounds.
+validate_support <- function(Y, minY, maxY, alpha){
+  if(!is.numeric(minY) | !is.numeric(maxY)){stop("The minimum and maximum possible values of Y (minY and maxY) must be numeric")}
+  if(minY > maxY){stop("The minimum possible value of Y (minY) must not be greater than the maximum (maxY).")}
+  if(any(Y < minY | Y > maxY, na.rm = TRUE)){stop("Some observed outcomes fall outside the assumed support of Y: widen minY and maxY.")}
+  if(!is.numeric(alpha) | length(alpha) != 1L){stop("The significance level (alpha) must be a single number.")}
+  if(alpha <= 0 | alpha >= 1){stop("The significance level (alpha) must be strictly between zero and one.")}
 }
 
 gen_mean <- function(y_m,p,lower_bound=TRUE,minY,maxY){
@@ -100,8 +108,26 @@ ds_var_2s <- function(treatment_vec,control_vec) {
   return(ts_var)
 }
 
+# Coverage of the Imbens-Manski interval at critical value ca, in excess of the
+# 1 - alpha target: zero at the solution, negative below it, positive above.
 im_crit <- function(ca, upper_bound_est, lower_bound_est, upper_bound_var_est, lower_bound_var_est, alpha) {
   return_value <-
-    abs(pnorm(ca + (upper_bound_est-lower_bound_est)/sqrt(max(upper_bound_var_est,lower_bound_var_est)))-pnorm(-ca)-(1-alpha))
+    pnorm(ca + (upper_bound_est-lower_bound_est)/sqrt(max(upper_bound_var_est,lower_bound_var_est)))-pnorm(-ca)-(1-alpha)
   return(return_value)
+}
+
+# The Imbens-Manski critical value solves im_crit(ca) == 0. Its root always lies
+# between z_(1-alpha/2), the value when the bounds coincide, and z_(1-alpha), the
+# limit as the bounds separate, so the bracket is derived from alpha rather than
+# fixed. im_crit is increasing in ca, so uniroot solves it to machine precision.
+im_critical_value <- function(lower_bound_est, upper_bound_est,
+                              lower_bound_var_est, upper_bound_var_est, alpha) {
+  z_lower <- qnorm(1 - alpha)
+  z_upper <- qnorm(1 - alpha/2)
+  excess <- function(ca) im_crit(ca, upper_bound_est, lower_bound_est,
+                                 upper_bound_var_est, lower_bound_var_est, alpha)
+  if(is.na(excess(z_lower))){return(NA_real_)}
+  if(excess(z_lower) >= 0){return(z_lower)}
+  if(excess(z_upper) <= 0){return(z_upper)}
+  uniroot(excess, lower = z_lower, upper = z_upper, tol = .Machine$double.eps^0.5)$root
 }

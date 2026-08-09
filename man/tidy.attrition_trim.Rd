@@ -13,10 +13,11 @@
 \item{...}{Unused; included for S3 compatibility.}
 }
 \value{
-A [tibble::tibble()] with columns `term` and `estimate`.
+A [tibble::tibble()] with columns `term`, `estimate`, `std.error`,
+  `conf.low`, `conf.high`, `estimate.low`, `estimate.high`.
 }
 \description{
-Returns a two-row tibble with one row per bound (lower / upper).
+Returns a three-row tibble matching the structure of [tidy.attrition_bounds()].
 Standard errors and confidence intervals are not available for trimming
-bounds.
+bounds, so those columns are `NA` throughout.
 }

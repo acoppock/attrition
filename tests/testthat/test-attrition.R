@@ -5,6 +5,12 @@ library(testthat)
 # Coppock, Gerber, Green, Kern (2017), Political Analysis
 # doi:10.1017/pan.2016.6
 # Data source: Harvard Dataverse doi:10.7910/DVN/AQB4MP
+#
+# The bound point estimates and variances below are the published quantities and
+# have never changed. The ci_lower/ci_upper expectations were refreshed when the
+# Imbens-Manski critical value moved from optim() on abs() to uniroot() on the
+# signed coverage excess; the two agree to 9 decimal places and uniroot is the
+# more accurate of the two.
 
 data_path <- testthat::test_path("testdata", "levendusky_mturk_clean.csv")
 
@@ -14,8 +20,8 @@ test_that("estimator_ev matches Table 3 column 1 (no double sampling)", {
   dat <- subset(dat, !is.na(Z1))
   out <- estimator_ev(Y = L_dif_w2, Z = Z1, R = R1,
                       minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -1.66907903866295,   tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  1.83588114535676,   tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]), -1.66907903885775,   tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  1.83588114554598,   tolerance = 1e-10)
   expect_equal(unname(out["low_est"]), -1.53914496339566,    tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),  1.70966762747749,    tolerance = 1e-10)
   expect_equal(unname(out["low_var"]),  0.00624010083468930, tolerance = 1e-10)
@@ -29,8 +35,8 @@ test_that("estimator_ds matches Table 3 column 2 (double sampling)", {
   out <- estimator_ds(Y = L_dif_w2, Z = Z1, R1 = R1,
                       Attempt = Attempt, R2 = R2,
                       minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -0.528309673828183,  tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.745174826173985,  tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]), -0.52830967410789,  tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  0.745174826433894,  tolerance = 1e-10)
   expect_equal(unname(out["low_est"]), -0.34174537662934,    tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),  0.571815728388134,   tolerance = 1e-10)
   expect_equal(unname(out["low_var"]),  0.0128647858310974,  tolerance = 1e-10)
@@ -45,8 +51,8 @@ test_that("estimator_ds matches Table 3 column 3 (DS + poststratification)", {
                       Attempt = Attempt, R2 = R2,
                       strata = pid_3_recoded,
                       minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -0.529010551043845,  tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.696600306767075,  tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]), -0.529010551320638,  tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  0.696600307023322,  tolerance = 1e-10)
   expect_equal(unname(out["low_est"]), -0.344389910863888,   tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),  0.525683688852529,   tolerance = 1e-10)
   expect_equal(unname(out["low_var"]),  0.0125981273119329,  tolerance = 1e-10)
@@ -81,8 +87,8 @@ make_synthetic <- function() {
 test_that("estimator_ds produces stable results on synthetic data", {
   df  <- make_synthetic()
   out <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = df)
-  expect_equal(unname(out["ci_lower"]), -0.082302939127751, tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.624972549561357, tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]), -0.0823029393291099, tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  0.624972549760316, tolerance = 1e-10)
   expect_equal(unname(out["low_est"]),   0.0572167798040737, tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),   0.487115989508957, tolerance = 1e-10)
 })
@@ -91,8 +97,8 @@ test_that("estimator_ds with poststratification produces stable results on synth
   df  <- make_synthetic()
   out <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
                       strata = strata, data = df)
-  expect_equal(unname(out["ci_lower"]),  0.00420597365836781, tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.662950557239635,   tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]),  0.00420597347763489, tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  0.662950557416964,   tolerance = 1e-10)
   expect_equal(unname(out["low_est"]),   0.124794503861406,   tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),   0.544633130143652,   tolerance = 1e-10)
 })
@@ -126,9 +132,10 @@ test_that("EV bound width equals (maxY - minY) * (frac_missing_t + frac_missing_
   R  <- rbinom(N, 1, prob = ifelse(Z == 1, 0.8, 0.6))
   Y  <- ifelse(R == 1, rnorm(N, mean = 2), NA_real_)
   df <- data.frame(Y, Z, R)
-  out <- estimator_ev(Y, Z, R, minY = -2, maxY = 6, data = df)
-  # Expected width ≈ 8 * ((1 - 0.8) + (1 - 0.6)) = 8 * 0.6 = 4.8
-  expect_equal(unname(out["upp_est"] - out["low_est"]), 4.8, tolerance = 0.1)
+  # Support must actually cover the draws: 10,000 normals reach roughly 4 sd out
+  out <- estimator_ev(Y, Z, R, minY = -4, maxY = 8, data = df)
+  # Expected width ≈ 12 * ((1 - 0.8) + (1 - 0.6)) = 12 * 0.6 = 7.2
+  expect_equal(unname(out["upp_est"] - out["low_est"]), 7.2, tolerance = 0.1)
 })
 
 # ── tidy() method tests ──────────────────────────────────────────────────────
@@ -247,8 +254,8 @@ test_that("estimator_ev with strata (paper data)", {
   dat <- subset(dat, !is.na(Z1))
   out <- estimator_ev(Y = L_dif_w2, Z = Z1, R = R1, strata = pid_3_recoded,
                       minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -1.66862420626897,  tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  1.83541087597583,  tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]), -1.66862420646393,  tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  1.83541087616497,  tolerance = 1e-10)
   expect_equal(unname(out["low_est"]), -1.53858804710012,   tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),  1.70925509076352,   tolerance = 1e-10)
   expect_equal(unname(out["low_var"]),  0.00624990987170985, tolerance = 1e-10)
@@ -293,8 +300,8 @@ test_that("estimator_ds_sens delta=0.5 (paper data)", {
   dat <- subset(dat, !is.na(Z1))
   out <- estimator_ds_sens(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
                            delta = 0.5, minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -0.263141038742824,  tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.527330962796225,  tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]), -0.263141039257175,  tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  0.527330963282511,  tolerance = 1e-10)
   expect_equal(unname(out["low_est"]), -0.0916157282335379,  tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),  0.365164824275198,   tolerance = 1e-10)
   expect_equal(unname(out["low_var"]),  0.0108743150646462,  tolerance = 1e-10)
@@ -306,8 +313,8 @@ test_that("estimator_ds_sens delta=0.5 (paper data)", {
 test_that("estimator_ev with strata produces stable results on synthetic data", {
   df  <- make_synthetic()
   out <- estimator_ev(Y, Z, R1, strata = strata, minY = 1, maxY = 5, data = df)
-  expect_equal(unname(out["ci_lower"]), -0.82832827570243,   tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  1.35051577794482,   tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]), -0.828328275895711,   tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  1.3505157781213,   tolerance = 1e-10)
   expect_equal(unname(out["low_est"]), -0.699410333729967,   tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),  1.23280497665065,    tolerance = 1e-10)
   expect_equal(unname(out["low_var"]),  0.00614288260167931, tolerance = 1e-10)
@@ -333,8 +340,8 @@ test_that("estimator_ds_sens delta=0.5 produces stable results on synthetic data
   df  <- make_synthetic()
   out <- estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0.5,
                            data = df)
-  expect_equal(unname(out["ci_lower"]),  0.028842141946206, tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.514219909406511, tolerance = 1e-10)
+  expect_equal(unname(out["ci_lower"]),  0.0288421426106519, tolerance = 1e-10)
+  expect_equal(unname(out["ci_upper"]),  0.514219908745877, tolerance = 1e-10)
   expect_equal(unname(out["low_est"]),   0.164445203836863, tolerance = 1e-10)
   expect_equal(unname(out["upp_est"]),   0.379394808689304, tolerance = 1e-10)
   expect_equal(unname(out["low_var"]),   0.00679563956699848, tolerance = 1e-10)
@@ -433,18 +440,110 @@ test_that("im_crit is near zero at standard normal critical value (point-ID case
                               upper_bound_est = 0, lower_bound_est = 0,
                               upper_bound_var_est = 1, lower_bound_var_est = 1,
                               alpha = 0.05)
-  expect_lt(val, 1e-4)
+  expect_equal(val, 0, tolerance = 1e-4)
 })
 
-test_that("find_sign_changes detects interior sign changes only", {
-  # Sign change at interior position 2
+test_that("im_critical_value is correct at every alpha, not just 0.05", {
+  # The IM critical value lies in [z_(1-alpha), z_(1-alpha/2)]: it equals
+  # z_(1-alpha/2) when the bounds coincide and z_(1-alpha) as they separate.
+  for (a in c(0.20, 0.10, 0.05, 0.01, 0.001)) {
+    # Coincident bounds: the two-sided critical value
+    tight <- attrition:::im_critical_value(0, 0, 1, 1, alpha = a)
+    expect_equal(tight, qnorm(1 - a/2), tolerance = 1e-6)
+    # Widely separated bounds: the one-sided critical value
+    wide <- attrition:::im_critical_value(-10, 10, 1, 1, alpha = a)
+    expect_equal(wide, qnorm(1 - a), tolerance = 1e-6)
+    # Intermediate: strictly inside the bracket
+    mid <- attrition:::im_critical_value(-1, 1, 1, 1, alpha = a)
+    expect_gte(mid, qnorm(1 - a))
+    expect_lte(mid, qnorm(1 - a/2))
+  }
+})
+
+test_that("estimator CIs widen as alpha shrinks", {
+  df <- make_synthetic()
+  ci_width <- function(a) {
+    o <- estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = a, data = df)
+    unname(o["ci_upper"] - o["ci_lower"])
+  }
+  widths <- vapply(c(0.20, 0.10, 0.05, 0.01, 0.001), ci_width, numeric(1))
+  expect_true(all(diff(widths) > 0))
+  # Regression guard: alpha = 0.01 once returned the alpha = 0.05 critical value
+  o01 <- estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = 0.01, data = df)
+  sig <- unname((o01["low_est"] - o01["ci_lower"]) / sqrt(o01["low_var"]))
+  expect_gte(sig, qnorm(0.99))
+})
+
+test_that("find_sign_changes flags the first departure from the initial sign", {
   expect_equal(attrition:::find_sign_changes(c(-1,  1, -1)), c(FALSE, TRUE, FALSE))
-  # Zero crossing at interior position
+  # A zero counts as a change
   expect_equal(attrition:::find_sign_changes(c(-1,  0,  1)), c(FALSE, TRUE, FALSE))
-  # No interior change (all positive; first_pos = 1 is excluded)
+  # No change at all
   expect_equal(attrition:::find_sign_changes(c( 1,  2,  3)), c(FALSE, FALSE, FALSE))
-  # No interior change (all negative; first_neg = 1 is excluded)
   expect_equal(attrition:::find_sign_changes(c(-3, -2, -1)), c(FALSE, FALSE, FALSE))
+  # A change at the LAST position is a real change: previously missed, so a
+  # delta* near 1 was reported as "no significant value of delta exists"
+  expect_equal(attrition:::find_sign_changes(c(-1, -1,  1)), c(FALSE, FALSE, TRUE))
+  # Only the first departure is flagged
+  expect_equal(attrition:::find_sign_changes(c(-1,  1,  1, -1)), c(FALSE, TRUE, FALSE, FALSE))
+})
+
+test_that("trimming_bounds names the correct group in the monotonicity error", {
+  set.seed(1); n <- 200
+  Out   <- rnorm(2 * n)
+  Treat <- rep(0:1, each = n)
+  # Treatment much MORE likely to be missing than control: f1 > f0, so Q < 0
+  Fail  <- c(rbinom(n, 1, 0.10), rbinom(n, 1, 0.60))
+  expect_gt(mean(Fail[Treat == 1]), mean(Fail[Treat == 0]))
+  expect_error(
+    attrition:::trimming_bounds(Out, Treat, Fail, rep(1, 2 * n), monotonicity = TRUE),
+    "treatment group is more likely to be missing",
+    class = "attrition_monotonicity_violation"
+  )
+})
+
+test_that("trimming_bounds handles single-observation and empty groups", {
+  # One observed outcome in the treatment group: the CDF loop used to run
+  # backwards here and corrupt the vector or throw
+  out <- attrition:::trimming_bounds(
+    Out = c(1, 2, 3, 4), Treat = c(0, 0, 0, 1), Fail = c(0, 0, 0, 0),
+    Weight = rep(1, 4), monotonicity = TRUE)
+  expect_false(any(is.na(out[c("lower_bound", "upper_bound")])))
+
+  expect_error(
+    attrition:::trimming_bounds(Out = c(1, 2), Treat = c(0, 1), Fail = c(0, 1),
+                                Weight = rep(1, 2), monotonicity = TRUE),
+    "at least one observed outcome in each treatment group")
+})
+
+test_that("estimator_trim surfaces non-monotonicity errors instead of returning NA", {
+  # Every unit in the treatment group is missing: not a monotonicity violation,
+  # so it must not be silently converted to NA bounds
+  df <- data.frame(Y = c(1, 2, 3, NA, NA), Z = c(0, 0, 0, 1, 1), R = c(1, 1, 1, 0, 0))
+  expect_error(estimator_trim(Y, Z, R = R, data = df),
+               "at least one observed outcome in each treatment group")
+})
+
+test_that("estimators validate minY, maxY, and alpha", {
+  df <- make_synthetic()
+  expect_error(estimator_ev(Y, Z, R1, minY = 5, maxY = 1, data = df),
+               "must not be greater than the maximum")
+  expect_error(estimator_ev(Y, Z, R1, minY = 2, maxY = 5, data = df),
+               "outside the assumed support")
+  expect_error(estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = 0, data = df),
+               "strictly between zero and one")
+  expect_error(estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = 1, data = df),
+               "strictly between zero and one")
+  expect_error(estimator_ds(Y, Z, R1, Attempt, R2, minY = 5, maxY = 1, data = df),
+               "must not be greater than the maximum")
+})
+
+test_that("estimator_ds_sens validates delta", {
+  df <- make_synthetic()
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
+                                 delta = 5, data = df), "between zero and one")
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
+                                 delta = -1, data = df), "between zero and one")
 })
 
 # ── Input validation ─────────────────────────────────────────────────────────

@@ -35,7 +35,7 @@ sensitivity_ds(
 
 \item{sims}{Number of points at which to evaluate sensitivity test. Defaults to 100}
 
-\item{strata}{A single (unquoted) variable that indicates which strata units are in.}
+\item{strata}{Stratification variable: unquoted column name or a quoted string column name.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 
