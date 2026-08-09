@@ -17,6 +17,10 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/attrition.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/drawing-the-bounds.html">Drawing the extreme value bounds</a></li>
+  </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -50,6 +54,7 @@
 <p>Requesting <code>se = "analytic"</code> on the double-sampling path is an error rather than a silent substitution, since Lee’s derivation assumes i.i.d. sampling and trimming of one group only. A zero trimming proportion warns, because the bounds then collapse to a point on the boundary of the parameter space and Lee’s interior-point condition fails.</p>
 </li>
 <li><p>Worked examples on every exported function.</p></li>
+<li><p>A second vignette, “Drawing the extreme value bounds”, which draws the imputation that <code><a href="../reference/estimator_ev.html">estimator_ev()</a></code> averages over using <code>vayr</code> and checks that a difference in means inside each imputed scenario recovers the two bound estimates. It also shows why the Imbens-Manski interval is narrower than stacking a confidence interval on each bound. <code>vayr</code> and <code>estimatr</code> are suggested packages and the vignette does not evaluate without them.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-0-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0"></a></h3>

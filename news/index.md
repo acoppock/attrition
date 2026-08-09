@@ -78,6 +78,15 @@ First release.
 
 - Worked examples on every exported function.
 
+- A second vignette, “Drawing the extreme value bounds”, which draws the
+  imputation that
+  [`estimator_ev()`](https://alexandercoppock.com/attrition/reference/estimator_ev.md)
+  averages over using `vayr` and checks that a difference in means
+  inside each imputed scenario recovers the two bound estimates. It also
+  shows why the Imbens-Manski interval is narrower than stacking a
+  confidence interval on each bound. `vayr` and `estimatr` are suggested
+  packages and the vignette does not evaluate without them.
+
 ### Bug fixes
 
 - The Imbens-Manski critical value was found by minimizing an absolute
