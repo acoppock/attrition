@@ -71,6 +71,15 @@ Partially Identified Parameters. \emph{Econometrica} 72(6):1845-1857.
 Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating Sharp
 Bounds on Treatment Effects. \emph{Review of Economic Studies} 76(3):1071-1102.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://alexandercoppock.com/attrition/}
+  \item \url{https://github.com/acoppock/attrition}
+  \item Report bugs at \url{https://github.com/acoppock/attrition/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Alexander Coppock \email{acoppock@gmail.com}
 

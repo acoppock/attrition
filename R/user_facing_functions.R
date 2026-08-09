@@ -121,7 +121,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
                                 p1_c=p1_c,p2_c=p2_c,
                                 minY=minY,maxY=maxY,alpha=alpha)
     return(structure(cis_out, class = c("attrition_ds", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome, nobs = length(Y)))
+                   outcome = yz$outcome))
   }else{
     # With a stratification variable, estimate within each stratum by calling
     # this function recursively, then poststratify.
@@ -140,7 +140,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 
     out <- pool_strata(strata_ests, proportions, alpha)
     return(structure(out, class = c("attrition_ds", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome, nobs = length(Y)))
+                   outcome = yz$outcome))
   }
 }
 
@@ -218,7 +218,7 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
                           minY = minY, maxY = maxY, alpha = alpha)
 
     return(structure(cis_out, class = c("attrition_ev", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome, nobs = length(Y)))
+                   outcome = yz$outcome))
   }else{
     # With a stratification variable, estimate within each stratum by calling
     # this function recursively, then poststratify.
@@ -237,7 +237,7 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 
     out <- pool_strata(strata_ests, proportions, alpha)
     return(structure(out, class = c("attrition_ev", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome, nobs = length(Y)))
+                   outcome = yz$outcome))
   }
 
 }
@@ -390,7 +390,7 @@ estimator_trim <-
     out <- tryCatch(estimate(all_rows),
                     attrition_monotonicity_violation = \(e) NULL)
     if (is.null(out)) {
-      return(structure(na_trim, outcome = yz$outcome, nobs = length(Y)))
+      return(structure(na_trim, outcome = yz$outcome))
     }
 
     variances <- c(lower_var = NA_real_, upper_var = NA_real_)
@@ -423,7 +423,7 @@ estimator_trim <-
              ci)
     return(structure(out, class = c("attrition_trim", "numeric"),
                      se_method = se, single_stage = single_stage,
-                     outcome = yz$outcome, nobs = length(Y)))
+                     outcome = yz$outcome))
   }
 
 
@@ -534,7 +534,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
                                      p1_c=p1_c,p2_c=p2_c,
                                      minY=minY,maxY=maxY,alpha=alpha, delta = delta)
     return(structure(cis_out, class = c("attrition_ds_sens", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome, nobs = length(Y)))
+                   outcome = yz$outcome))
   }else{
     # With a stratification variable, estimate within each stratum by calling
     # this function recursively, then poststratify.
@@ -553,7 +553,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 
     out <- pool_strata(strata_ests, proportions, alpha)
     return(structure(out, class = c("attrition_ds_sens", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome, nobs = length(Y)))
+                   outcome = yz$outcome))
   }
 }
 
@@ -588,7 +588,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #'   geom_hline xlab ylab theme_bw theme element_blank
 #' @importFrom grid unit
 #' @importFrom purrr map
-#' @importFrom stats complete.cases nobs pnorm qnorm sd setNames uniroot var weighted.mean
+#' @importFrom stats complete.cases pnorm qnorm sd setNames uniroot var weighted.mean
 #' @export
 #'
 #' @examples
