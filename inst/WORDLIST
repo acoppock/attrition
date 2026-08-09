@@ -5,6 +5,7 @@ DeclareDesign
 doi
 ds
 Econometrica
+endline
 estimand
 ev
 ggplot
