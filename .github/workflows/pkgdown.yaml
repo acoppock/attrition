@@ -32,13 +32,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # vayr from GitHub, not CRAN. The drawing-the-bounds vignette needs
-          # impute_extreme_values() and the attrition_experiment data, both new
-          # in vayr 1.1.0 and not yet released, and its chunks are guarded on
-          # that version. Without this the published article is code with no
-          # picture. Only the site build takes the dev version; the package
-          # itself still resolves vayr from CRAN everywhere else.
-          extra-packages: any::pkgdown, local::., acoppock/vayr
+          extra-packages: any::pkgdown, local::.
           needs: website
 
       - name: Build site
