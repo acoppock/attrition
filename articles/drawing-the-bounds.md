@@ -15,9 +15,7 @@ suggested packages rather than required ones, so if either is missing
 the code below is shown but not run.
 [`impute_extreme_values()`](https://alexandercoppock.com/vayr/reference/impute_extreme_values.html)
 and the `attrition_experiment` data arrived in vayr 1.1.0, so the same
-is true against an earlier version. The requirement lives in the chunk
-guard rather than in `Suggests`, because a version constraint there
-cannot be satisfied from CRAN until 1.1.0 is released.
+is true against an earlier version.
 
 ``` r
 
