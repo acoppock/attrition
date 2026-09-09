@@ -81,12 +81,13 @@ estimator_ds_sens(
 
 ## Value
 
-A named numeric vector with elements `ci_lower` and `ci_upper`, the
-joint Imbens-Manski confidence interval; `low_est` and `upp_est`, the
-bound point estimates; and `low_var` and `upp_var`, their variances.
-Pass to
-[`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_bounds.md)
-for a data frame.
+A named numeric vector with elements `estimate_lower` and
+`estimate_upper`, the two ends of the identification region;
+`std.error_lower` and `std.error_upper`, their standard errors; and
+`conf.low` and `conf.high`, the joint Imbens-Manski confidence interval.
+The names are those of the `bounds` row of
+[`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_bounds.md),
+which returns the same quantities as a data frame.
 
 ## Examples
 
@@ -111,13 +112,15 @@ df <- data.frame(Y, Z, R1, Attempt, R2)
 
 # delta = 1 reproduces the worst-case double-sampling bounds
 estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 1, data = df)
-#>      ci_lower      ci_upper       low_est       upp_est       low_var 
-#> -0.0003261488  0.5435113299  0.1356982015  0.4100265693  0.0068387546 
-#>       upp_var 
-#>  0.0065857778 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>    0.1356982015    0.4100265693    0.0826967632    0.0811528054   -0.0003261488 
+#>       conf.high 
+#>    0.5435113299 
 
 # delta = 0 assumes ignorability among follow-up non-responders
 estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0, data = df)
-#>    ci_lower    ci_upper     low_est     upp_est     low_var     upp_var 
-#> 0.128264350 0.433193885 0.280729118 0.280729118 0.006051218 0.006051218 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>      0.28072912      0.28072912      0.07778958      0.07778958      0.12826435 
+#>       conf.high 
+#>      0.43319388 
 ```

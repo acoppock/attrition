@@ -83,11 +83,14 @@ estimator_trim(
 
 ## Value
 
-A named numeric vector containing `lower_bound` and `upper_bound`, the
-trimming bound estimates; `lower_se` and `upper_se`, their standard
-errors; `ci_lower` and `ci_upper`, the joint Imbens-Manski confidence
-interval; and the intermediate quantities used to build them. All
-elements are `NA` when monotonicity is violated. Pass to
+A named numeric vector leading with the same six elements as the
+bounding estimators, in the same order whichever path was taken:
+`estimate_lower` and `estimate_upper`, the two trimming bounds;
+`std.error_lower` and `std.error_upper`, their standard errors; and
+`conf.low` and `conf.high`, the joint Imbens-Manski confidence interval.
+The intermediate quantities used to build them follow, and differ
+between the two paths. All six lead elements are `NA` when monotonicity
+is violated. Pass to
 [`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_trim.md)
 for a data frame.
 
@@ -132,23 +135,23 @@ df <- data.frame(Y, Z, R)
 
 # Single-stage: trimming bounds under monotonicity, with Lee (2009) standard errors
 estimator_trim(Y, Z, R = R, data = df)
-#>     upper_bound     lower_bound       Out0_mono      Out1L_mono      Out1U_mono 
-#>      0.64239649      0.01761468      2.93353474      2.95114943      3.57593123 
-#> control_group_N   treat_group_N               Q              f1              f0 
-#>    331.00000000    417.00000000      0.16385742      0.18713450      0.32032854 
-#>          pi_r_1          pi_r_0              yU              yL        lower_se 
-#>      0.81286550      0.67967146      2.00000000      4.00000000      0.09007908 
-#>        upper_se        ci_lower        ci_upper 
-#>      0.09972250     -0.13055222      0.80642541 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>      0.01761468      0.64239649      0.09007908      0.09972250     -0.13055222 
+#>       conf.high       Out0_mono      Out1L_mono      Out1U_mono control_group_N 
+#>      0.80642541      2.93353474      2.95114943      3.57593123    331.00000000 
+#>   treat_group_N               Q              f1              f0          pi_r_1 
+#>    417.00000000      0.16385742      0.18713450      0.32032854      0.81286550 
+#>          pi_r_0              yU              yL 
+#>      0.67967146      2.00000000      4.00000000 
 
 # Bootstrap standard errors instead
 estimator_trim(Y, Z, R = R, se = "bootstrap", sims = 200, data = df)
-#>     upper_bound     lower_bound       Out0_mono      Out1L_mono      Out1U_mono 
-#>      0.64239649      0.01761468      2.93353474      2.95114943      3.57593123 
-#> control_group_N   treat_group_N               Q              f1              f0 
-#>    331.00000000    417.00000000      0.16385742      0.18713450      0.32032854 
-#>          pi_r_1          pi_r_0              yU              yL        lower_se 
-#>      0.81286550      0.67967146      2.00000000      4.00000000      0.08467663 
-#>        upper_se        ci_lower        ci_upper 
-#>      0.09880524     -0.12166598      0.80491665 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>      0.01761468      0.64239649      0.08467663      0.09880524     -0.12166598 
+#>       conf.high       Out0_mono      Out1L_mono      Out1U_mono control_group_N 
+#>      0.80491665      2.93353474      2.95114943      3.57593123    331.00000000 
+#>   treat_group_N               Q              f1              f0          pi_r_1 
+#>    417.00000000      0.16385742      0.18713450      0.32032854      0.81286550 
+#>          pi_r_0              yU              yL 
+#>      0.67967146      2.00000000      4.00000000 
 ```

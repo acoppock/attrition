@@ -89,10 +89,13 @@ argument, so passing it positionally assigns it to another argument.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named numeric vector with elements <code>ci_lower</code> and <code>ci_upper</code>,
-  the joint Imbens-Manski confidence interval; <code>low_est</code> and <code>upp_est</code>,
-  the bound point estimates; and <code>low_var</code> and <code>upp_var</code>, their variances.
-  Pass to <code><a href="tidy.attrition_bounds.html">tidy()</a></code> for a data frame.</p>
+    <p>A named numeric vector with elements <code>estimate_lower</code> and
+  <code>estimate_upper</code>, the two ends of the identification region;
+  <code>std.error_lower</code> and <code>std.error_upper</code>, their standard errors;
+  and <code>conf.low</code> and <code>conf.high</code>, the joint Imbens-Manski
+  confidence interval. The names are those of the <code>bounds</code> row of
+  <code><a href="tidy.attrition_bounds.html">tidy()</a></code>, which returns the same
+  quantities as a data frame.</p>
     </div>
 
     <div class="section level2">
@@ -111,13 +114,17 @@ argument, so passing it positionally assigns it to another argument.</p></dd>
 <span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">estimator_ev</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R</span>, minY <span class="op">=</span> <span class="fl">1</span>, maxY <span class="op">=</span> <span class="fl">5</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     ci_lower     ci_upper      low_est      upp_est      low_var      upp_var </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.918861985  1.375461565 -0.782617049  1.247235131  0.006860981  0.006077159 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     -0.78261705      1.24723513      0.08283104      0.07795614     -0.91886198 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      1.37546156 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Equivalently, via the formula interface</span></span></span>
 <span class="r-in"><span><span class="fu">estimator_ev</span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="st">"R"</span>, minY <span class="op">=</span> <span class="fl">1</span>, maxY <span class="op">=</span> <span class="fl">5</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     ci_lower     ci_upper      low_est      upp_est      low_var      upp_var </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.918861985  1.375461565 -0.782617049  1.247235131  0.006860981  0.006077159 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     -0.78261705      1.24723513      0.08283104      0.07795614     -0.91886198 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      1.37546156 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

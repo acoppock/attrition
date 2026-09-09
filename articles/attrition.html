@@ -99,12 +99,65 @@ polarized condition) or as focused on common ground (the moderate
 condition). A third group read nothing on the topic and is not analyzed.
 The outcome, perceived polarization, was measured immediately and again
 ten days later.</p>
+<p>Seven of its twelve columns do the work below.
+<code><a href="../reference/levendusky.html">?levendusky</a></code> documents them all.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Column</th>
+<th>What it holds</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>L_dif_w2</code></td>
+<td>Perceived polarization at Wave 2, scored 0 to 6. The outcome, and
+the only column with missing values.</td>
+</tr>
+<tr class="even">
+<td><code>Z_lev</code></td>
+<td>The condition as assigned: <code>Placebo</code>,
+<code>Moderate</code>, or <code>Polarized</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>Z1</code></td>
+<td>Polarized (1) versus moderate (0), and <code>NA</code> in the
+placebo condition. The contrast the paper analyzes.</td>
+</tr>
+<tr class="even">
+<td><code>R1</code></td>
+<td>Answered the second wave on the first attempt.</td>
+</tr>
+<tr class="odd">
+<td><code>Attempt</code></td>
+<td>Drawn into the follow-up sample and offered the larger
+incentive.</td>
+</tr>
+<tr class="even">
+<td><code>R2</code></td>
+<td>Answered the follow-up attempt.</td>
+</tr>
+<tr class="odd">
+<td><code>pid_3_recoded</code></td>
+<td>Party identification in three categories, used below for
+poststratification.</td>
+</tr>
+</tbody>
+</table>
+<p>Every analysis in the paper is the polarized-versus-moderate
+contrast, so the placebo group goes first. Dropping it is what
+<code>!is.na(Z1)</code> does: <code>Z1</code> is defined only for the
+two conditions being compared, so filtering on its missingness removes
+the placebo group and nothing else. <code><a href="https://rdrr.io/r/base/droplevels.html" class="external-link">droplevels()</a></code> then
+clears the emptied factor level, which would otherwise print as a row of
+zeroes in every table that follows.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">levendusky</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">Z1</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/droplevels.html" class="external-link">droplevels</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">levendusky</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">Z1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">dat</span>, <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">Z_lev</span>, <span class="va">R1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;            R1</span></span>
 <span><span class="co">#&gt; Z_lev         0   1</span></span>
-<span><span class="co">#&gt;   Placebo     0   0</span></span>
 <span><span class="co">#&gt;   Moderate  264 731</span></span>
 <span><span class="co">#&gt;   Polarized 272 713</span></span></code></pre></div>
 <p>Of 1,980 subjects, 1,444 answered the second-wave survey and 536 did
@@ -134,12 +187,25 @@ every missing outcome in the treatment group with 0 and every missing
 outcome in the control group with 6, and you get the lowest average
 effect the data can support. Reverse the fills and you get the
 highest.</p>
-<p><code>estimator_ev</code> does that, and reports an Imbens-Manski
-confidence interval around the resulting identification region.</p>
+<p>Those two numbers do all the work below, so it is worth being clear
+about where they come from. They are properties of the measurement
+instrument rather than of this sample. Perceived polarization is an
+average of absolute differences between two ratings of the same policy
+question, and such a difference can be neither negative nor wider than
+the rating scale, which fixes the limits at 0 and 6 whatever the data
+happen to contain. Here the data happen to contain both.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">L_dif_w2</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0 6</span></span></code></pre></div>
+<p><code>estimator_ev</code> does the filling, and reports an
+Imbens-Manski confidence interval around the resulting identification
+region.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  ci_lower  ci_upper   low_est   upp_est   low_var   upp_var </span></span>
-<span><span class="co">#&gt; -1.669079  1.835881 -1.539145  1.709668  0.006240  0.005888</span></span></code></pre></div>
+<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
+<span><span class="co">#&gt;        -1.53914         1.70967         0.07899         0.07673        -1.66908 </span></span>
+<span><span class="co">#&gt;       conf.high </span></span>
+<span><span class="co">#&gt;         1.83588</span></span></code></pre></div>
 <p>The effect lies between -1.54 and 1.71. The bounds are honest and
 nearly useless: they are wide enough to contain a large negative effect,
 a large positive effect, and everything in between. Notice how little
@@ -147,6 +213,9 @@ the sampling uncertainty contributes. The confidence interval runs from
 -1.67 to 1.84, barely wider than the bounds themselves. The problem here
 is not that the sample is small. The problem is that 536 outcomes are
 unknown, and no sample size fixes that.</p>
+<p>The companion vignette, <code><a href="../articles/drawing-the-bounds.html">vignette("drawing-the-bounds")</a></code>,
+draws the imputation this estimator averages over, on a smaller
+simulated experiment where the picture fits on one page.</p>
 </div>
 <div class="section level2">
 <h2 id="double-sampling">Double sampling<a class="anchor" aria-label="anchor" href="#double-sampling"></a>
@@ -156,13 +225,12 @@ random sample of the nonrespondents and pursue them with more effort
 than you spent the first time. In this study, 50 nonrespondents were
 drawn at random from each condition and offered $4.00 instead of the
 original $1.00. Of those 100 subjects, 72 answered.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">dat</span>, <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">Z_lev</span>, <span class="va">Attempt</span>, <span class="va">R2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; , , R2 = 0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;            Attempt</span></span>
 <span><span class="co">#&gt; Z_lev         0   1</span></span>
-<span><span class="co">#&gt;   Placebo     0   0</span></span>
 <span><span class="co">#&gt;   Moderate  945  11</span></span>
 <span><span class="co">#&gt;   Polarized 935  17</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -170,7 +238,6 @@ original $1.00. Of those 100 subjects, 72 answered.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;            Attempt</span></span>
 <span><span class="co">#&gt; Z_lev         0   1</span></span>
-<span><span class="co">#&gt;   Placebo     0   0</span></span>
 <span><span class="co">#&gt;   Moderate    0  39</span></span>
 <span><span class="co">#&gt;   Polarized   0  33</span></span></code></pre></div>
 <p>The 72 recovered outcomes do more work than their number suggests.
@@ -178,10 +245,12 @@ Because the follow-up sample was drawn at random from the
 nonrespondents, the outcomes it recovers estimate the mean outcome among
 <em>all</em> nonrespondents. Only the subjects who refused twice, and
 there are 28 of them, still need worst-case imputation.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ci_lower ci_upper  low_est  upp_est  low_var  upp_var </span></span>
-<span><span class="co">#&gt; -0.52831  0.74517 -0.34175  0.57182  0.01286  0.01111</span></span></code></pre></div>
+<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
+<span><span class="co">#&gt;         -0.3417          0.5718          0.1134          0.1054         -0.5283 </span></span>
+<span><span class="co">#&gt;       conf.high </span></span>
+<span><span class="co">#&gt;          0.7452</span></span></code></pre></div>
 <p>The identification region is now -0.34 to 0.57, against -1.54 to 1.71
 before. It has shrunk by a factor of 3.6, and the confidence interval
 has narrowed from 3.50 points wide to 1.27. Chasing 100 subjects out of
@@ -195,26 +264,33 @@ and that bound is now tight enough to be substantively informative.</p>
 <h2 id="poststratification">Poststratification<a class="anchor" aria-label="anchor" href="#poststratification"></a>
 </h2>
 <p>If you measured a discrete covariate that predicts the outcome, use
-it. Estimating the bounds within each stratum and averaging by stratum
-share targets the same identification region, so nothing is assumed
-away, but it estimates that region more precisely. The reason is that
-the stratum shares Pr(B = k) can be pinned down using the whole sample,
-while the unadjusted estimator effectively uses Pr(B = k | Z = z), one
-arm at a time. By the law of total variance the asymptotic variance is
-guaranteed to be no larger. Here the covariate is three-category party
-identification.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+it. Estimate the bounds separately inside each of its categories, then
+average those bounds using the share of the sample falling in each. The
+estimand does not change, so nothing is assumed away, but the estimate
+of it gets more precise.</p>
+<p>The precision comes from where the category shares are estimated.
+Write <code>B</code> for the covariate and Pr(B = k) for the share of
+the whole sample in category k. Poststratification weights by that
+whole-sample share, which every subject helps to pin down. The
+unadjusted estimator effectively weights by Pr(B = k | Z = z), the share
+within one arm at a time, and each arm is half the sample. By the law of
+total variance, trading the arm-specific shares for the whole-sample
+ones is guaranteed not to raise the asymptotic variance. Here the
+covariate is three-category party identification.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, strata <span class="op">=</span> <span class="va">pid_3_recoded</span>,</span>
 <span>             minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ci_lower ci_upper  low_est  upp_est  low_var  upp_var </span></span>
-<span><span class="co">#&gt;  -0.5290   0.6966  -0.3444   0.5257   0.0126   0.0108</span></span></code></pre></div>
+<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
+<span><span class="co">#&gt;         -0.3444          0.5257          0.1122          0.1039         -0.5290 </span></span>
+<span><span class="co">#&gt;       conf.high </span></span>
+<span><span class="co">#&gt;          0.6966</span></span></code></pre></div>
 <p>The upper bound estimate falls from 0.57 to 0.53 and the confidence
 interval from 1.27 to 1.23 points wide. The gain is real but modest,
 which is what to expect when the covariate is only moderately
 prognostic. Bear in mind what moved and what did not: the estimand is
 the same identification region in both rows, and poststratification only
 estimates it better.</p>
-<p>These three sets of numbers are Table 3 of the published paper.</p>
+<p>These three sets of numbers are Table 3 of <a href="https://doi.org/10.1017/pan.2016.6" class="external-link">the published paper</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="sensitivity-analysis">Sensitivity analysis<a class="anchor" aria-label="anchor" href="#sensitivity-analysis"></a>
@@ -223,38 +299,51 @@ estimates it better.</p>
 twice. Ignorability assumes everything: that their outcomes look like
 those of the follow-up respondents. Neither extreme is a natural place
 to stand, and <code>estimator_ds_sens</code> interpolates between them.
-Set delta to the fraction of follow-up nonrespondents whose outcomes you
-are unwilling to model, and the remaining 1 - delta are treated as
-ignorable.</p>
-<p>At delta = 1 the estimator reproduces the worst-case bounds above. At
-delta = 0 it returns a point estimate.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+Set <code>delta</code> to the fraction of follow-up nonrespondents whose
+outcomes you are unwilling to model, and the remaining 1 -
+<code>delta</code> are treated as ignorable.</p>
+<p>At <code>delta = 1</code> the estimator reproduces the
+double-sampling bounds above, -0.34 to 0.57, since refusing to model any
+of the follow-up nonrespondents is exactly what
+<code>estimator_ds</code> does. At <code>delta = 0</code> it returns a
+point estimate.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds_sens.html">estimator_ds_sens</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, delta <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>                  minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ci_lower ci_upper  low_est  upp_est  low_var  upp_var </span></span>
-<span><span class="co">#&gt; -0.26314  0.52733 -0.09162  0.36516  0.01087  0.00972</span></span></code></pre></div>
-<p><code>sensitivity_ds</code> sweeps delta from 0 to 1 and looks for
-delta*, the smallest value at which the confidence interval starts to
-include zero. A delta* near zero means the finding rests on assuming
-away nearly all of the missingness; a delta* near one means it survives
-almost any amount.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
+<span><span class="co">#&gt;        -0.09162         0.36516         0.10428         0.09859        -0.26314 </span></span>
+<span><span class="co">#&gt;       conf.high </span></span>
+<span><span class="co">#&gt;         0.52733</span></span></code></pre></div>
+<p><code>sensitivity_ds</code> sweeps <code>delta</code> from 0 to 1 and
+looks for delta*, the smallest value at which the confidence interval
+starts to include zero. A delta* near zero means the finding rests on
+assuming away nearly all of the missingness; a delta* near one means it
+survives almost any amount.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sensitivity_ds.html">sensitivity_ds</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>                       alpha <span class="op">=</span> <span class="fl">0.10</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
 <span><span class="va">sens</span><span class="op">$</span><span class="va">sensitivity_plot</span></span></code></pre></div>
-<p><img src="attrition_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="Identification regions and confidence intervals as a function of the sensitivity parameter delta" width="672"></p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sens</span><span class="op">$</span><span class="va">p_star</span><span class="op">$</span><span class="va">p</span></span>
+<p><img src="attrition_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="Identification regions and confidence intervals as a function of the sensitivity parameter delta" width="672"></p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sens</span><span class="op">$</span><span class="va">delta_star</span></span>
 <span><span class="co">#&gt; [1] 0.07071</span></span></code></pre></div>
+<p>The plot reads left to right, from ignorability at
+<code>delta = 0</code> to the worst case at <code>delta = 1</code>. The
+two lines are the lower and upper bound estimates, which coincide at the
+left edge, where the estimator returns a point, and separate as more of
+the follow-up nonrespondents are left unmodeled. The shaded band is the
+confidence interval around them, and delta* is marked at the point where
+that band first reaches the dashed line at zero.</p>
 <p>At the 10 percent level, delta* is 0.07. The naive result is fragile:
 allowing ignorability to fail for 7 percent of the follow-up
 nonrespondents is enough to erase it. At the 5 percent level there is no
 delta* at all, because the interval around the naive estimate already
-includes zero.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+includes zero, and <code>delta_star</code> is <code>NA</code> to say
+so.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sensitivity_ds.html">sensitivity_ds</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>,</span>
-<span>               alpha <span class="op">=</span> <span class="fl">0.05</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span><span class="op">$</span><span class="va">p_star</span></span>
-<span><span class="co">#&gt; [1] "No value of the sensitivity parameter yields a statistically significant result."</span></span></code></pre></div>
+<span>               alpha <span class="op">=</span> <span class="fl">0.05</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span><span class="op">$</span><span class="va">delta_star</span></span>
+<span><span class="co">#&gt; [1] NA</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="trimming-bounds">Trimming bounds<a class="anchor" aria-label="anchor" href="#trimming-bounds"></a>
@@ -274,7 +363,7 @@ assumption. Neither dominates.</p>
 <p>Monotonicity is checkable in one direction, at least: it implies the
 treated respond at least as often as the controls. In this experiment
 they do not.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">dat</span>, <span class="fu"><a href="https://rdrr.io/r/base/tapply.html" class="external-link">tapply</a></span><span class="op">(</span><span class="va">R1</span>, <span class="va">Z1</span>, <span class="va">mean</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      0      1 </span></span>
 <span><span class="co">#&gt; 0.7347 0.7239</span></span></code></pre></div>
@@ -283,55 +372,86 @@ small and could easily be noise, but the trimming proportion it implies
 is negative, so the assumption fails in the direction the estimator
 needs and <code>estimator_trim</code> returns <code>NA</code> rather
 than a number built on it.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, R <span class="op">=</span> <span class="va">R1</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lower_bound"</span>, <span class="st">"upper_bound"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; lower_bound upper_bound </span></span>
-<span><span class="co">#&gt;          NA          NA</span></span></code></pre></div>
-<p>Applied to the double-sampled data, where both groups are trimmed and
-the follow-up respondents carry sampling weights, the bounds exist:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
-<span>               se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">500</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lower_bound"</span>, <span class="st">"upper_bound"</span>, <span class="st">"lower_se"</span>, <span class="st">"upper_se"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; lower_bound upper_bound    lower_se    upper_se </span></span>
-<span><span class="co">#&gt;     -0.2681      0.5676      0.1078      0.1065</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, R <span class="op">=</span> <span class="va">R1</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"estimate_lower"</span>, <span class="st">"estimate_upper"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; estimate_lower estimate_upper </span></span>
+<span><span class="co">#&gt;             NA             NA</span></span></code></pre></div>
+<p>Run on the double-sampled data, the same function returns numbers.
+The reason is that it is not the same estimator: which arguments you
+supply is the switch between two of them. <code>R</code> asks for Lee’s
+single-stage estimator, which trims one group and needs monotonicity to
+know which. <code>R1</code>, <code>Attempt</code> and <code>R2</code>
+ask for the double-sampling version, which trims <em>both</em> groups,
+by the share still missing in the other, and carries the follow-up
+sampling weights. Monotonicity is not among its assumptions, so there is
+no monotonicity condition left to fail.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">343</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>               se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">500</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span><span class="op">[</span></span>
+<span>                 <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"estimate_lower"</span>, <span class="st">"estimate_upper"</span>,</span>
+<span>                   <span class="st">"std.error_lower"</span>, <span class="st">"std.error_upper"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper </span></span>
+<span><span class="co">#&gt;         -0.2681          0.5676          0.1044          0.1058</span></span></code></pre></div>
 <p>Standard errors come two ways. <code>se = "analytic"</code>, the
 default, uses the closed-form variance in Lee (2009, Proposition 3),
 which covers the single-stage case only. <code>se = "bootstrap"</code>
 resamples units within treatment arm and works for both, which is why
-the double-sampling call above asks for it. Requesting analytic standard
-errors on the double-sampling path is an error rather than a silent
-substitution, since Lee’s derivation assumes independent sampling and
-trimming of one group only.</p>
+the double-sampling call above asks for it, and why it also sets a seed:
+without one the standard errors move a little from run to run.
+Requesting analytic standard errors on the double-sampling path is an
+error rather than a silent substitution, since Lee’s derivation assumes
+independent sampling and trimming of one group only.</p>
 </div>
 <div class="section level2">
 <h2 id="reading-the-output">Reading the output<a class="anchor" aria-label="anchor" href="#reading-the-output"></a>
 </h2>
-<p>Every estimator returns a named vector, and every one has a
-<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> method that puts the same information in a data
-frame.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 8</span></span></span>
-<span><span class="co">#&gt;   term  estimate std.error conf.low conf.high estimate.low estimate.high outcome</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> boun…   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       -<span style="color: #BB0000;">0.528</span>     0.745       -<span style="color: #BB0000;">0.342</span>         0.572 L_dif_…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lowe…   -<span style="color: #BB0000;">0.342</span>     0.113   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>     L_dif_…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> uppe…    0.572     0.105   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>     L_dif_…</span></span></code></pre></div>
-<p>Bounds do not have a point estimate, so <code>estimate</code> is
-<code>NA</code> on the <code>bounds</code> row and the identification
-region appears in <code>estimate.low</code> and
-<code>estimate.high</code>. The joint Imbens-Manski interval sits in
-<code>conf.low</code> and <code>conf.high</code>. The two rows below
-carry the bound estimates and their standard errors separately, for the
-cases where you want one endpoint at a time.</p>
-<p>Each estimator also takes a formula, which is what
-<code>DeclareDesign::declare_estimator()</code> expects. Response and
-attempt indicators are named as strings:</p>
+<p>Every estimator returns a named numeric vector, and every one returns
+the same six elements under the same names.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
+<span><span class="va">out</span></span>
+<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
+<span><span class="co">#&gt;         -0.3417          0.5718          0.1134          0.1054         -0.5283 </span></span>
+<span><span class="co">#&gt;       conf.high </span></span>
+<span><span class="co">#&gt;          0.7452</span></span></code></pre></div>
+<p><code>estimate_lower</code> and <code>estimate_upper</code> are the
+two ends of the identification region, <code>std.error_lower</code> and
+<code>std.error_upper</code> are their standard errors, and
+<code>conf.low</code> and <code>conf.high</code> are the joint
+Imbens-Manski interval. Note that the third pair are standard errors
+rather than variances. The names are broom’s, which is the point of
+them: <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> returns the same six quantities in a data
+frame, under exactly the same names.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 10</span></span></span>
+<span><span class="co">#&gt;   term       estimate std.error conf.low conf.high estimate_lower estimate_upper</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> bounds       <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       -<span style="color: #BB0000;">0.528</span>     0.745         -<span style="color: #BB0000;">0.342</span>          0.572</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lower_bou…   -<span style="color: #BB0000;">0.342</span>     0.113   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>             <span style="color: #BB0000;">NA</span>             <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> upper_bou…    0.572     0.105   <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>             <span style="color: #BB0000;">NA</span>             <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 3 more variables: std.error_lower &lt;dbl&gt;, std.error_upper &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   outcome &lt;chr&gt;</span></span></span></code></pre></div>
+<p>Bounds do not have a point estimate, so <code>estimate</code> is
+<code>NA</code> on the <code>bounds</code> row, which is the vector
+above laid out across columns. The two rows below split it, one endpoint
+each, so that <code>estimate</code> and <code>std.error</code> mean on
+those rows what broom means by them, and
+<code>DeclareDesign::declare_estimator()</code> can select a single
+endpoint with <code>term</code>.</p>
+<p>Each estimator also takes a formula, which is what
+<code>declare_estimator()</code> expects. When the first argument is a
+formula, the remaining columns are named as strings rather than passed
+bare, so <code>R1</code> becomes <code>R1 = "R1"</code>. The interface
+changed, not the argument.</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">L_dif_w2</span> <span class="op">~</span> <span class="va">Z1</span>, R1 <span class="op">=</span> <span class="st">"R1"</span>, Attempt <span class="op">=</span> <span class="st">"Attempt"</span>, R2 <span class="op">=</span> <span class="st">"R2"</span>,</span>
 <span>             minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ci_lower ci_upper  low_est  upp_est  low_var  upp_var </span></span>
-<span><span class="co">#&gt; -0.52831  0.74517 -0.34175  0.57182  0.01286  0.01111</span></span></code></pre></div>
+<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
+<span><span class="co">#&gt;         -0.3417          0.5718          0.1134          0.1054         -0.5283 </span></span>
+<span><span class="co">#&gt;       conf.high </span></span>
+<span><span class="co">#&gt;          0.7452</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="what-the-design-costs-and-what-it-buys">What the design costs and what it buys<a class="anchor" aria-label="anchor" href="#what-the-design-costs-and-what-it-buys"></a>
@@ -359,16 +479,16 @@ implement it.</p>
 <p>Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L.
 Kern (2017). Combining Double Sampling and Bounds to Address
 Nonignorable Missing Outcomes in Randomized Experiments. <em>Political
-Analysis</em> 25(2):188-206.</p>
+Analysis</em> 25(2):188-206. <a href="https://doi.org/10.1017/pan.2016.6" class="external-link uri">https://doi.org/10.1017/pan.2016.6</a></p>
 <p>Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals
 for Partially Identified Parameters. <em>Econometrica</em>
-72(6):1845-1857.</p>
+72(6):1845-1857. <a href="https://doi.org/10.1111/j.1468-0262.2004.00555.x" class="external-link uri">https://doi.org/10.1111/j.1468-0262.2004.00555.x</a></p>
 <p>Lee, David S. (2009). Training, Wages, and Sample Selection:
 Estimating Sharp Bounds on Treatment Effects. <em>Review of Economic
-Studies</em> 76(3):1071-1102.</p>
+Studies</em> 76(3):1071-1102. <a href="https://doi.org/10.1111/j.1467-937X.2009.00536.x" class="external-link uri">https://doi.org/10.1111/j.1467-937X.2009.00536.x</a></p>
 <p>Levendusky, Matthew, and Neil Malhotra (2016). Does Media Coverage of
 Partisan Polarization Affect Political Attitudes? <em>Political
-Communication</em> 33(2):283-301.</p>
+Communication</em> 33(2):283-301. <a href="https://doi.org/10.1080/10584609.2015.1038455" class="external-link uri">https://doi.org/10.1080/10584609.2015.1038455</a></p>
 <p>Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
 <em>American Economic Review Papers and Proceedings</em>
 80(2):319-323.</p>

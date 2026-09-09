@@ -126,6 +126,8 @@ with(dat, table(Z_lev, R1))
 
 # Table 3, column 2
 estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
-#>    ci_lower    ci_upper     low_est     upp_est     low_var     upp_var 
-#> -0.52830967  0.74517483 -0.34174538  0.57181573  0.01286479  0.01110807 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>      -0.3417454       0.5718157       0.1134230       0.1053948      -0.5283097 
+#>       conf.high 
+#>       0.7451748 
 ```

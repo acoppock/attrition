@@ -110,10 +110,13 @@ argument, so passing it positionally assigns it to another argument.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named numeric vector with elements <code>ci_lower</code> and <code>ci_upper</code>,
-  the joint Imbens-Manski confidence interval; <code>low_est</code> and <code>upp_est</code>,
-  the bound point estimates; and <code>low_var</code> and <code>upp_var</code>, their variances.
-  Pass to <code><a href="tidy.attrition_bounds.html">tidy()</a></code> for a data frame.</p>
+    <p>A named numeric vector with elements <code>estimate_lower</code> and
+  <code>estimate_upper</code>, the two ends of the identification region;
+  <code>std.error_lower</code> and <code>std.error_upper</code>, their standard errors;
+  and <code>conf.low</code> and <code>conf.high</code>, the joint Imbens-Manski
+  confidence interval. The names are those of the <code>bounds</code> row of
+  <code><a href="tidy.attrition_bounds.html">tidy()</a></code>, which returns the same
+  quantities as a data frame.</p>
     </div>
 
     <div class="section level2">
@@ -156,13 +159,17 @@ argument, so passing it positionally assigns it to another argument.</p></dd>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Without post-stratification</span></span></span>
 <span class="r-in"><span><span class="fu">estimator_ds</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY<span class="op">=</span><span class="fl">1</span>, maxY<span class="op">=</span><span class="fl">5</span>, data<span class="op">=</span><span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    ci_lower    ci_upper     low_est     upp_est     low_var     upp_var </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.048650402 0.437209789 0.181568350 0.304099481 0.006471977 0.006490723 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.18156835      0.30409948      0.08044860      0.08056503      0.04865040 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.43720979 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># With post-stratification</span></span></span>
 <span class="r-in"><span><span class="fu">estimator_ds</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY<span class="op">=</span><span class="fl">1</span>, maxY<span class="op">=</span><span class="fl">5</span>, strata<span class="op">=</span><span class="va">strata</span>, data<span class="op">=</span><span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    ci_lower    ci_upper     low_est     upp_est     low_var     upp_var </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.134213533 0.482968974 0.246987534 0.375801359 0.004689110 0.004234475 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.24698753      0.37580136      0.06847708      0.06507285      0.13421353 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.48296897 </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

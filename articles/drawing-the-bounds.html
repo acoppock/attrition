@@ -79,10 +79,12 @@ the same thing.</p>
 <p>The plot uses <a href="https://cran.r-project.org/package=vayr" class="external-link">vayr</a> and the
 difference in means uses <a href="https://cran.r-project.org/package=estimatr" class="external-link">estimatr</a>. Both
 are suggested packages rather than required ones, so if either is
-missing the code below is shown but not run.
+missing the code below is shown but not run. The same happens with vayr
+older than 1.1.0, the version that added
 <code><a href="https://alexandercoppock.com/vayr/reference/impute_extreme_values.html" class="external-link">impute_extreme_values()</a></code> and the
-<code>attrition_experiment</code> data arrived in vayr 1.1.0, so the
-same is true against an earlier version.</p>
+<code>attrition_experiment</code> data.</p>
+<p>The main vignette, <code><a href="../articles/attrition.html">vignette("attrition")</a></code>, runs the same
+estimator and four others on the paper’s own data.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/attrition/">attrition</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/vayr/" class="external-link">vayr</a></span><span class="op">)</span></span>
@@ -131,17 +133,16 @@ which points were reported and which were filled in.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">condition</span>, <span class="va">scenario</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/reframe.html" class="external-link">reframe</a></span><span class="op">(</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="https://declaredesign.org/r/estimatr/reference/lm_robust.html" class="external-link">lm_robust</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">estimate</span><span class="op">)</span></span></code></pre></div>
-<p>The nineteen orange points are the imputations. In the left panel
-they sit at the bottom of the scale for treated subjects and at the top
-for control subjects, which is the least favorable arrangement the data
-admit. The right panel reverses them. The black points are the arm means
-either way.</p>
+<p><code><a href="https://alexandercoppock.com/vayr/reference/position_sunflower.html" class="external-link">position_sunflower()</a></code> is vayr’s answer to overplotting on
+a discrete scale: identical values would otherwise land on top of one
+another, so it spreads the ties into a small circular packing around the
+point they share. <code>density</code> sets how tight that packing is
+and <code>aspect_ratio</code> corrects it for a panel that is wider than
+it is tall. Both are chosen by eye.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">gg_df</span> <span class="op">&lt;-</span> <span class="va">bounded</span></span>
-<span></span>
-<span><span class="co"># Labelled in the left panel only. The colours carry over to the right one, and</span></span>
+<code class="sourceCode R"><span><span class="co"># Labelled in the left panel only. The colours carry over to the right one, and</span></span>
 <span><span class="co"># a second copy of the same two words would just be more ink.</span></span>
-<span><span class="va">label_df</span> <span class="op">&lt;-</span> <span class="va">gg_df</span> <span class="op">|&gt;</span></span>
+<span><span class="va">label_df</span> <span class="op">&lt;-</span> <span class="va">bounded</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">scenario</span>, <span class="va">imputed</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">scenario</span> <span class="op">==</span> <span class="st">"Lower bound"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
@@ -150,7 +151,7 @@ either way.</p>
 <span>    label <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">imputed</span> <span class="op">==</span> <span class="st">"Outcome imputed"</span>, <span class="st">"imputed"</span>, <span class="st">"reported"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">gg_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">condition</span>, <span class="va">Y</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">bounded</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">condition</span>, <span class="va">Y</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="va">imputed</span>, shape <span class="op">=</span> <span class="va">imputed</span><span class="op">)</span>,</span>
 <span>             position <span class="op">=</span> <span class="fu"><a href="https://alexandercoppock.com/vayr/reference/position_sunflower.html" class="external-link">position_sunflower</a></span><span class="op">(</span>density <span class="op">=</span> <span class="fl">45</span>, aspect_ratio <span class="op">=</span> <span class="fl">0.45</span><span class="op">)</span>,</span>
 <span>             alpha <span class="op">=</span> <span class="fl">0.5</span>, stroke <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">+</span></span>
@@ -164,6 +165,12 @@ either way.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Outcome [1: strongly disagree, 7: strongly agree]"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="drawing-the-bounds_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="Two panels of the same 200 subjects, with the nineteen imputed outcomes piled at opposite ends of the scale in each" width="672"></p>
+<p>The nineteen orange points are the imputations. In the left panel
+they sit at the bottom of the scale for treated subjects and at the top
+for control subjects, which is the least favorable arrangement the data
+admit. The right panel reverses them. The black points are the arm means
+either way, and the gap between them in each panel is that panel’s
+bound.</p>
 </div>
 <div class="section level2">
 <h2 id="the-estimates">The estimates<a class="anchor" aria-label="anchor" href="#the-estimates"></a>
@@ -174,20 +181,23 @@ with a joint confidence interval.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R</span>, minY <span class="op">=</span> <span class="fl">1</span>, maxY <span class="op">=</span> <span class="fl">7</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
 <span><span class="va">ev</span></span>
-<span><span class="co">#&gt;   ci_lower   ci_upper    low_est    upp_est    low_var    upp_var </span></span>
-<span><span class="co">#&gt; -3.170e-01  1.430e+00  8.882e-16  1.140e+00  3.715e-02  3.106e-02</span></span></code></pre></div>
+<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
+<span><span class="co">#&gt;       8.882e-16       1.140e+00       1.927e-01       1.762e-01      -3.170e-01 </span></span>
+<span><span class="co">#&gt;       conf.high </span></span>
+<span><span class="co">#&gt;       1.430e+00</span></span></code></pre></div>
 <p><code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> puts the same object in a data frame, one row for
 the interval and one for each bound, which is the form the comparison
 below wants.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">ev</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 8</span></span></span>
-<span><span class="co">#&gt;   term         estimate std.error conf.low conf.high estimate.low estimate.high</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> bounds      <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>       <span style="color: #BB0000;">NA</span>       -<span style="color: #BB0000;">0.317</span>      1.43     8.88<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>          1.14</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lower_bound  8.88<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>     0.193   <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>            <span style="color: #BB0000;">NA</span>   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> upper_bound  1.14<span style="color: #949494;">e</span>+ 0     0.176   <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>            <span style="color: #BB0000;">NA</span>   </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: outcome &lt;chr&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 10</span></span></span>
+<span><span class="co">#&gt;   term       estimate std.error conf.low conf.high estimate_lower estimate_upper</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> bounds    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>       <span style="color: #BB0000;">NA</span>       -<span style="color: #BB0000;">0.317</span>      1.43       8.88<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>           1.14</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lower_bo…  8.88<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>     0.193   <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>             <span style="color: #BB0000;">NA</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> upper_bo…  1.14<span style="color: #949494;">e</span>+ 0     0.176   <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>             <span style="color: #BB0000;">NA</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 3 more variables: std.error_lower &lt;dbl&gt;, std.error_upper &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   outcome &lt;chr&gt;</span></span></span></code></pre></div>
 <p>The bounds are the two pictures. A difference in means run inside
 each panel recovers the two bound estimates to the twelfth decimal
 place, because filling in the missing outcomes and averaging is all the
@@ -241,15 +251,18 @@ true effect cannot sit at both ends at once.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Imbens-Manski           -<span style="color: #BB0000;">0.317</span>  1.43  1.75</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="saying-the-range-out-loud">Saying the range out loud<a class="anchor" aria-label="anchor" href="#saying-the-range-out-loud"></a>
+<h2 id="why-you-have-to-supply-the-range">Why you have to supply the range<a class="anchor" aria-label="anchor" href="#why-you-have-to-supply-the-range"></a>
 </h2>
-<p><code>minY</code> and <code>maxY</code> here are the same two numbers
-as <code>range</code> there, and neither function will guess them. That
-is deliberate in both places. No subject in this sample answered 1, so a
-function that inferred the scale from the observed data would have used
-2 to 7 and reported bounds narrower than the data support. The width of
-the identification region is a claim about the measurement instrument,
-not about the sample.</p>
+<p>The same two numbers were typed twice above:
+<code>range = c(1, 7)</code> for <code><a href="https://alexandercoppock.com/vayr/reference/impute_extreme_values.html" class="external-link">impute_extreme_values()</a></code>
+and <code>minY = 1, maxY = 7</code> for <code><a href="../reference/estimator_ev.html">estimator_ev()</a></code>.
+They differ only because the two functions belong to different packages,
+one taking the pair as a single argument and the other as two.</p>
+<p>Neither will guess them, and that is deliberate in both places. No
+subject in this sample answered 1, so a function that inferred the scale
+from the observed data would have used 2 to 7 and reported bounds
+narrower than the data support. The width of the identification region
+is a claim about the measurement instrument, not about the sample.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

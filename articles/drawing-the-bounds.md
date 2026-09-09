@@ -12,10 +12,14 @@ The plot uses [vayr](https://cran.r-project.org/package=vayr) and the
 difference in means uses
 [estimatr](https://cran.r-project.org/package=estimatr). Both are
 suggested packages rather than required ones, so if either is missing
-the code below is shown but not run.
+the code below is shown but not run. The same happens with vayr older
+than 1.1.0, the version that added
 [`impute_extreme_values()`](https://alexandercoppock.com/vayr/reference/impute_extreme_values.html)
-and the `attrition_experiment` data arrived in vayr 1.1.0, so the same
-is true against an earlier version.
+and the `attrition_experiment` data.
+
+The main vignette,
+[`vignette("attrition")`](https://alexandercoppock.com/attrition/articles/attrition.md),
+runs the same estimator and four others on the paper’s own data.
 
 ``` r
 
@@ -73,19 +77,18 @@ bound_means <- bounded |>
   mutate(Y = estimate)
 ```
 
-The nineteen orange points are the imputations. In the left panel they
-sit at the bottom of the scale for treated subjects and at the top for
-control subjects, which is the least favorable arrangement the data
-admit. The right panel reverses them. The black points are the arm means
-either way.
+[`position_sunflower()`](https://alexandercoppock.com/vayr/reference/position_sunflower.html)
+is vayr’s answer to overplotting on a discrete scale: identical values
+would otherwise land on top of one another, so it spreads the ties into
+a small circular packing around the point they share. `density` sets how
+tight that packing is and `aspect_ratio` corrects it for a panel that is
+wider than it is tall. Both are chosen by eye.
 
 ``` r
 
-gg_df <- bounded
-
 # Labelled in the left panel only. The colours carry over to the right one, and
 # a second copy of the same two words would just be more ink.
-label_df <- gg_df |>
+label_df <- bounded |>
   distinct(scenario, imputed) |>
   filter(scenario == "Lower bound") |>
   mutate(
@@ -94,7 +97,7 @@ label_df <- gg_df |>
     label = if_else(imputed == "Outcome imputed", "imputed", "reported")
   )
 
-ggplot(gg_df, aes(condition, Y)) +
+ggplot(bounded, aes(condition, Y)) +
   geom_point(aes(colour = imputed, shape = imputed),
              position = position_sunflower(density = 45, aspect_ratio = 0.45),
              alpha = 0.5, stroke = 0) +
@@ -113,6 +116,13 @@ ggplot(gg_df, aes(condition, Y)) +
 outcomes piled at opposite ends of the scale in
 each](drawing-the-bounds_files/figure-html/unnamed-chunk-4-1.png)
 
+The nineteen orange points are the imputations. In the left panel they
+sit at the bottom of the scale for treated subjects and at the top for
+control subjects, which is the least favorable arrangement the data
+admit. The right panel reverses them. The black points are the arm means
+either way, and the gap between them in each panel is that panel’s
+bound.
+
 ## The estimates
 
 [`estimator_ev()`](https://alexandercoppock.com/attrition/reference/estimator_ev.md)
@@ -123,8 +133,10 @@ outcome, and returns the two bounds with a joint confidence interval.
 
 ev <- estimator_ev(Y, Z, R, minY = 1, maxY = 7, data = dat)
 ev
-#>   ci_lower   ci_upper    low_est    upp_est    low_var    upp_var 
-#> -3.170e-01  1.430e+00  8.882e-16  1.140e+00  3.715e-02  3.106e-02
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>       8.882e-16       1.140e+00       1.927e-01       1.762e-01      -3.170e-01 
+#>       conf.high 
+#>       1.430e+00
 ```
 
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html) puts the same
@@ -134,13 +146,14 @@ which is the form the comparison below wants.
 ``` r
 
 tidy(ev)
-#> # A tibble: 3 × 8
-#>   term         estimate std.error conf.low conf.high estimate.low estimate.high
-#>   <chr>           <dbl>     <dbl>    <dbl>     <dbl>        <dbl>         <dbl>
-#> 1 bounds      NA           NA       -0.317      1.43     8.88e-16          1.14
-#> 2 lower_bound  8.88e-16     0.193   NA         NA       NA                NA   
-#> 3 upper_bound  1.14e+ 0     0.176   NA         NA       NA                NA   
-#> # ℹ 1 more variable: outcome <chr>
+#> # A tibble: 3 × 10
+#>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
+#>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
+#> 1 bounds    NA           NA       -0.317      1.43       8.88e-16           1.14
+#> 2 lower_bo…  8.88e-16     0.193   NA         NA         NA                 NA   
+#> 3 upper_bo…  1.14e+ 0     0.176   NA         NA         NA                 NA   
+#> # ℹ 3 more variables: std.error_lower <dbl>, std.error_upper <dbl>,
+#> #   outcome <chr>
 ```
 
 The bounds are the two pictures. A difference in means run inside each
@@ -201,10 +214,16 @@ bind_rows(
 #> 2 Imbens-Manski           -0.317  1.43  1.75
 ```
 
-## Saying the range out loud
+## Why you have to supply the range
 
-`minY` and `maxY` here are the same two numbers as `range` there, and
-neither function will guess them. That is deliberate in both places. No
+The same two numbers were typed twice above: `range = c(1, 7)` for
+[`impute_extreme_values()`](https://alexandercoppock.com/vayr/reference/impute_extreme_values.html)
+and `minY = 1, maxY = 7` for
+[`estimator_ev()`](https://alexandercoppock.com/attrition/reference/estimator_ev.md).
+They differ only because the two functions belong to different packages,
+one taking the pair as a single argument and the other as two.
+
+Neither will guess them, and that is deliberate in both places. No
 subject in this sample answered 1, so a function that inferred the scale
 from the observed data would have used 2 to 7 and reported bounds
 narrower than the data support. The width of the identification region

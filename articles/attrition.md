@@ -35,13 +35,34 @@ or as focused on common ground (the moderate condition). A third group
 read nothing on the topic and is not analyzed. The outcome, perceived
 polarization, was measured immediately and again ten days later.
 
+Seven of its twelve columns do the work below.
+[`?levendusky`](https://alexandercoppock.com/attrition/reference/levendusky.md)
+documents them all.
+
+| Column | What it holds |
+|----|----|
+| `L_dif_w2` | Perceived polarization at Wave 2, scored 0 to 6. The outcome, and the only column with missing values. |
+| `Z_lev` | The condition as assigned: `Placebo`, `Moderate`, or `Polarized`. |
+| `Z1` | Polarized (1) versus moderate (0), and `NA` in the placebo condition. The contrast the paper analyzes. |
+| `R1` | Answered the second wave on the first attempt. |
+| `Attempt` | Drawn into the follow-up sample and offered the larger incentive. |
+| `R2` | Answered the follow-up attempt. |
+| `pid_3_recoded` | Party identification in three categories, used below for poststratification. |
+
+Every analysis in the paper is the polarized-versus-moderate contrast,
+so the placebo group goes first. Dropping it is what `!is.na(Z1)` does:
+`Z1` is defined only for the two conditions being compared, so filtering
+on its missingness removes the placebo group and nothing else.
+[`droplevels()`](https://rdrr.io/r/base/droplevels.html) then clears the
+emptied factor level, which would otherwise print as a row of zeroes in
+every table that follows.
+
 ``` r
 
-dat <- subset(levendusky, !is.na(Z1))
+dat <- droplevels(subset(levendusky, !is.na(Z1)))
 with(dat, table(Z_lev, R1))
 #>            R1
 #> Z_lev         0   1
-#>   Placebo     0   0
 #>   Moderate  264 731
 #>   Polarized 272 713
 ```
@@ -77,14 +98,30 @@ missing outcome in the treatment group with 0 and every missing outcome
 in the control group with 6, and you get the lowest average effect the
 data can support. Reverse the fills and you get the highest.
 
-`estimator_ev` does that, and reports an Imbens-Manski confidence
+Those two numbers do all the work below, so it is worth being clear
+about where they come from. They are properties of the measurement
+instrument rather than of this sample. Perceived polarization is an
+average of absolute differences between two ratings of the same policy
+question, and such a difference can be neither negative nor wider than
+the rating scale, which fixes the limits at 0 and 6 whatever the data
+happen to contain. Here the data happen to contain both.
+
+``` r
+
+range(dat$L_dif_w2, na.rm = TRUE)
+#> [1] 0 6
+```
+
+`estimator_ev` does the filling, and reports an Imbens-Manski confidence
 interval around the resulting identification region.
 
 ``` r
 
 estimator_ev(L_dif_w2, Z1, R1, minY = 0, maxY = 6, data = dat)
-#>  ci_lower  ci_upper   low_est   upp_est   low_var   upp_var 
-#> -1.669079  1.835881 -1.539145  1.709668  0.006240  0.005888
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>        -1.53914         1.70967         0.07899         0.07673        -1.66908 
+#>       conf.high 
+#>         1.83588
 ```
 
 The effect lies between -1.54 and 1.71. The bounds are honest and nearly
@@ -94,6 +131,11 @@ sampling uncertainty contributes. The confidence interval runs from
 -1.67 to 1.84, barely wider than the bounds themselves. The problem here
 is not that the sample is small. The problem is that 536 outcomes are
 unknown, and no sample size fixes that.
+
+The companion vignette,
+[`vignette("drawing-the-bounds")`](https://alexandercoppock.com/attrition/articles/drawing-the-bounds.md),
+draws the imputation this estimator averages over, on a smaller
+simulated experiment where the picture fits on one page.
 
 ## Double sampling
 
@@ -110,7 +152,6 @@ with(dat, table(Z_lev, Attempt, R2))
 #> 
 #>            Attempt
 #> Z_lev         0   1
-#>   Placebo     0   0
 #>   Moderate  945  11
 #>   Polarized 935  17
 #> 
@@ -118,7 +159,6 @@ with(dat, table(Z_lev, Attempt, R2))
 #> 
 #>            Attempt
 #> Z_lev         0   1
-#>   Placebo     0   0
 #>   Moderate    0  39
 #>   Polarized   0  33
 ```
@@ -132,8 +172,10 @@ nonrespondents, the outcomes it recovers estimate the mean outcome among
 ``` r
 
 estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
-#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
-#> -0.52831  0.74517 -0.34175  0.57182  0.01286  0.01111
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
+#>       conf.high 
+#>          0.7452
 ```
 
 The identification region is now -0.34 to 0.57, against -1.54 to 1.71
@@ -149,21 +191,29 @@ and that bound is now tight enough to be substantively informative.
 ## Poststratification
 
 If you measured a discrete covariate that predicts the outcome, use it.
-Estimating the bounds within each stratum and averaging by stratum share
-targets the same identification region, so nothing is assumed away, but
-it estimates that region more precisely. The reason is that the stratum
-shares Pr(B = k) can be pinned down using the whole sample, while the
-unadjusted estimator effectively uses Pr(B = k \| Z = z), one arm at a
-time. By the law of total variance the asymptotic variance is guaranteed
-to be no larger. Here the covariate is three-category party
+Estimate the bounds separately inside each of its categories, then
+average those bounds using the share of the sample falling in each. The
+estimand does not change, so nothing is assumed away, but the estimate
+of it gets more precise.
+
+The precision comes from where the category shares are estimated. Write
+`B` for the covariate and Pr(B = k) for the share of the whole sample in
+category k. Poststratification weights by that whole-sample share, which
+every subject helps to pin down. The unadjusted estimator effectively
+weights by Pr(B = k \| Z = z), the share within one arm at a time, and
+each arm is half the sample. By the law of total variance, trading the
+arm-specific shares for the whole-sample ones is guaranteed not to raise
+the asymptotic variance. Here the covariate is three-category party
 identification.
 
 ``` r
 
 estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, strata = pid_3_recoded,
              minY = 0, maxY = 6, data = dat)
-#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
-#>  -0.5290   0.6966  -0.3444   0.5257   0.0126   0.0108
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>         -0.3444          0.5257          0.1122          0.1039         -0.5290 
+#>       conf.high 
+#>          0.6966
 ```
 
 The upper bound estimate falls from 0.57 to 0.53 and the confidence
@@ -173,30 +223,35 @@ prognostic. Bear in mind what moved and what did not: the estimand is
 the same identification region in both rows, and poststratification only
 estimates it better.
 
-These three sets of numbers are Table 3 of the published paper.
+These three sets of numbers are Table 3 of [the published
+paper](https://doi.org/10.1017/pan.2016.6).
 
 ## Sensitivity analysis
 
 Worst-case bounds assume nothing about the 28 subjects who refused
 twice. Ignorability assumes everything: that their outcomes look like
 those of the follow-up respondents. Neither extreme is a natural place
-to stand, and `estimator_ds_sens` interpolates between them. Set delta
+to stand, and `estimator_ds_sens` interpolates between them. Set `delta`
 to the fraction of follow-up nonrespondents whose outcomes you are
-unwilling to model, and the remaining 1 - delta are treated as
+unwilling to model, and the remaining 1 - `delta` are treated as
 ignorable.
 
-At delta = 1 the estimator reproduces the worst-case bounds above. At
-delta = 0 it returns a point estimate.
+At `delta = 1` the estimator reproduces the double-sampling bounds
+above, -0.34 to 0.57, since refusing to model any of the follow-up
+nonrespondents is exactly what `estimator_ds` does. At `delta = 0` it
+returns a point estimate.
 
 ``` r
 
 estimator_ds_sens(L_dif_w2, Z1, R1, Attempt, R2, delta = 0.5,
                   minY = 0, maxY = 6, data = dat)
-#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
-#> -0.26314  0.52733 -0.09162  0.36516  0.01087  0.00972
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>        -0.09162         0.36516         0.10428         0.09859        -0.26314 
+#>       conf.high 
+#>         0.52733
 ```
 
-`sensitivity_ds` sweeps delta from 0 to 1 and looks for delta\*, the
+`sensitivity_ds` sweeps `delta` from 0 to 1 and looks for delta\*, the
 smallest value at which the confidence interval starts to include zero.
 A delta\* near zero means the finding rests on assuming away nearly all
 of the missingness; a delta\* near one means it survives almost any
@@ -211,25 +266,33 @@ sens$sensitivity_plot
 
 ![Identification regions and confidence intervals as a function of the
 sensitivity parameter
-delta](attrition_files/figure-html/unnamed-chunk-9-1.png)
+delta](attrition_files/figure-html/unnamed-chunk-10-1.png)
 
 ``` r
 
-sens$p_star$p
+sens$delta_star
 #> [1] 0.07071
 ```
+
+The plot reads left to right, from ignorability at `delta = 0` to the
+worst case at `delta = 1`. The two lines are the lower and upper bound
+estimates, which coincide at the left edge, where the estimator returns
+a point, and separate as more of the follow-up nonrespondents are left
+unmodeled. The shaded band is the confidence interval around them, and
+delta\* is marked at the point where that band first reaches the dashed
+line at zero.
 
 At the 10 percent level, delta\* is 0.07. The naive result is fragile:
 allowing ignorability to fail for 7 percent of the follow-up
 nonrespondents is enough to erase it. At the 5 percent level there is no
 delta\* at all, because the interval around the naive estimate already
-includes zero.
+includes zero, and `delta_star` is `NA` to say so.
 
 ``` r
 
 sensitivity_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6,
-               alpha = 0.05, data = dat)$p_star
-#> [1] "No value of the sensitivity parameter yields a statistically significant result."
+               alpha = 0.05, data = dat)$delta_star
+#> [1] NA
 ```
 
 ## Trimming bounds
@@ -267,65 +330,97 @@ it.
 
 ``` r
 
-estimator_trim(L_dif_w2, Z1, R = R1, data = dat)[c("lower_bound", "upper_bound")]
-#> lower_bound upper_bound 
-#>          NA          NA
+estimator_trim(L_dif_w2, Z1, R = R1, data = dat)[c("estimate_lower", "estimate_upper")]
+#> estimate_lower estimate_upper 
+#>             NA             NA
 ```
 
-Applied to the double-sampled data, where both groups are trimmed and
-the follow-up respondents carry sampling weights, the bounds exist:
+Run on the double-sampled data, the same function returns numbers. The
+reason is that it is not the same estimator: which arguments you supply
+is the switch between two of them. `R` asks for Lee’s single-stage
+estimator, which trims one group and needs monotonicity to know which.
+`R1`, `Attempt` and `R2` ask for the double-sampling version, which
+trims *both* groups, by the share still missing in the other, and
+carries the follow-up sampling weights. Monotonicity is not among its
+assumptions, so there is no monotonicity condition left to fail.
 
 ``` r
 
+set.seed(343)
 estimator_trim(L_dif_w2, Z1, R1 = R1, Attempt = Attempt, R2 = R2,
-               se = "bootstrap", sims = 500, data = dat)[c("lower_bound", "upper_bound", "lower_se", "upper_se")]
-#> lower_bound upper_bound    lower_se    upper_se 
-#>     -0.2681      0.5676      0.1078      0.1065
+               se = "bootstrap", sims = 500, data = dat)[
+                 c("estimate_lower", "estimate_upper",
+                   "std.error_lower", "std.error_upper")]
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper 
+#>         -0.2681          0.5676          0.1044          0.1058
 ```
 
 Standard errors come two ways. `se = "analytic"`, the default, uses the
 closed-form variance in Lee (2009, Proposition 3), which covers the
 single-stage case only. `se = "bootstrap"` resamples units within
 treatment arm and works for both, which is why the double-sampling call
-above asks for it. Requesting analytic standard errors on the
-double-sampling path is an error rather than a silent substitution,
-since Lee’s derivation assumes independent sampling and trimming of one
-group only.
+above asks for it, and why it also sets a seed: without one the standard
+errors move a little from run to run. Requesting analytic standard
+errors on the double-sampling path is an error rather than a silent
+substitution, since Lee’s derivation assumes independent sampling and
+trimming of one group only.
 
 ## Reading the output
 
-Every estimator returns a named vector, and every one has a
-[`tidy()`](https://generics.r-lib.org/reference/tidy.html) method that
-puts the same information in a data frame.
+Every estimator returns a named numeric vector, and every one returns
+the same six elements under the same names.
 
 ``` r
 
-tidy(estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat))
-#> # A tibble: 3 × 8
-#>   term  estimate std.error conf.low conf.high estimate.low estimate.high outcome
-#>   <chr>    <dbl>     <dbl>    <dbl>     <dbl>        <dbl>         <dbl> <chr>  
-#> 1 boun…   NA        NA       -0.528     0.745       -0.342         0.572 L_dif_…
-#> 2 lowe…   -0.342     0.113   NA        NA           NA            NA     L_dif_…
-#> 3 uppe…    0.572     0.105   NA        NA           NA            NA     L_dif_…
+out <- estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
+out
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
+#>       conf.high 
+#>          0.7452
+```
+
+`estimate_lower` and `estimate_upper` are the two ends of the
+identification region, `std.error_lower` and `std.error_upper` are their
+standard errors, and `conf.low` and `conf.high` are the joint
+Imbens-Manski interval. Note that the third pair are standard errors
+rather than variances. The names are broom’s, which is the point of
+them: [`tidy()`](https://generics.r-lib.org/reference/tidy.html) returns
+the same six quantities in a data frame, under exactly the same names.
+
+``` r
+
+tidy(out)
+#> # A tibble: 3 × 10
+#>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
+#>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
+#> 1 bounds       NA        NA       -0.528     0.745         -0.342          0.572
+#> 2 lower_bou…   -0.342     0.113   NA        NA             NA             NA    
+#> 3 upper_bou…    0.572     0.105   NA        NA             NA             NA    
+#> # ℹ 3 more variables: std.error_lower <dbl>, std.error_upper <dbl>,
+#> #   outcome <chr>
 ```
 
 Bounds do not have a point estimate, so `estimate` is `NA` on the
-`bounds` row and the identification region appears in `estimate.low` and
-`estimate.high`. The joint Imbens-Manski interval sits in `conf.low` and
-`conf.high`. The two rows below carry the bound estimates and their
-standard errors separately, for the cases where you want one endpoint at
-a time.
+`bounds` row, which is the vector above laid out across columns. The two
+rows below split it, one endpoint each, so that `estimate` and
+`std.error` mean on those rows what broom means by them, and
+`DeclareDesign::declare_estimator()` can select a single endpoint with
+`term`.
 
-Each estimator also takes a formula, which is what
-`DeclareDesign::declare_estimator()` expects. Response and attempt
-indicators are named as strings:
+Each estimator also takes a formula, which is what `declare_estimator()`
+expects. When the first argument is a formula, the remaining columns are
+named as strings rather than passed bare, so `R1` becomes `R1 = "R1"`.
+The interface changed, not the argument.
 
 ``` r
 
 estimator_ds(L_dif_w2 ~ Z1, R1 = "R1", Attempt = "Attempt", R2 = "R2",
              minY = 0, maxY = 6, data = dat)
-#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
-#> -0.52831  0.74517 -0.34175  0.57182  0.01286  0.01111
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
+#>       conf.high 
+#>          0.7452
 ```
 
 ## What the design costs and what it buys
@@ -353,18 +448,20 @@ implement it.
 Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern
 (2017). Combining Double Sampling and Bounds to Address Nonignorable
 Missing Outcomes in Randomized Experiments. *Political Analysis*
-25(2):188-206.
+25(2):188-206. <https://doi.org/10.1017/pan.2016.6>
 
 Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
 Partially Identified Parameters. *Econometrica* 72(6):1845-1857.
+<https://doi.org/10.1111/j.1468-0262.2004.00555.x>
 
 Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating
 Sharp Bounds on Treatment Effects. *Review of Economic Studies*
-76(3):1071-1102.
+76(3):1071-1102. <https://doi.org/10.1111/j.1467-937X.2009.00536.x>
 
 Levendusky, Matthew, and Neil Malhotra (2016). Does Media Coverage of
 Partisan Polarization Affect Political Attitudes? *Political
 Communication* 33(2):283-301.
+<https://doi.org/10.1080/10584609.2015.1038455>
 
 Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
 *American Economic Review Papers and Proceedings* 80(2):319-323.

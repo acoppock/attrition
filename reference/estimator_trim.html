@@ -120,11 +120,14 @@ argument, so passing it positionally assigns it to another argument.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named numeric vector containing <code>lower_bound</code> and <code>upper_bound</code>,
-  the trimming bound estimates; <code>lower_se</code> and <code>upper_se</code>, their standard
-  errors; <code>ci_lower</code> and <code>ci_upper</code>, the joint Imbens-Manski confidence
-  interval; and the intermediate quantities used to build them. All elements are
-  <code>NA</code> when monotonicity is violated. Pass to
+    <p>A named numeric vector leading with the same six elements as the
+  bounding estimators, in the same order whichever path was taken:
+  <code>estimate_lower</code> and <code>estimate_upper</code>, the two trimming bounds;
+  <code>std.error_lower</code> and <code>std.error_upper</code>, their standard errors;
+  and <code>conf.low</code> and <code>conf.high</code>, the joint Imbens-Manski
+  confidence interval. The intermediate quantities used to build them follow,
+  and differ between the two paths. All six lead elements are <code>NA</code> when
+  monotonicity is violated. Pass to
   <code><a href="tidy.attrition_trim.html">tidy()</a></code> for a data frame.</p>
     </div>
     <div class="section level2">
@@ -165,25 +168,25 @@ Sample Selection. <em>Stata Journal</em> 14(4):884-894.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Single-stage: trimming bounds under monotonicity, with Lee (2009) standard errors</span></span></span>
 <span class="r-in"><span><span class="fu">estimator_trim</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     upper_bound     lower_bound       Out0_mono      Out1L_mono      Out1U_mono </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      0.64239649      0.01761468      2.93353474      2.95114943      3.57593123 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> control_group_N   treat_group_N               Q              f1              f0 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    331.00000000    417.00000000      0.16385742      0.18713450      0.32032854 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>          pi_r_1          pi_r_0              yU              yL        lower_se </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      0.81286550      0.67967146      2.00000000      4.00000000      0.09007908 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        upper_se        ci_lower        ci_upper </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      0.09972250     -0.13055222      0.80642541 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.01761468      0.64239649      0.09007908      0.09972250     -0.13055222 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high       Out0_mono      Out1L_mono      Out1U_mono control_group_N </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.80642541      2.93353474      2.95114943      3.57593123    331.00000000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   treat_group_N               Q              f1              f0          pi_r_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    417.00000000      0.16385742      0.18713450      0.32032854      0.81286550 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          pi_r_0              yU              yL </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.67967146      2.00000000      4.00000000 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Bootstrap standard errors instead</span></span></span>
 <span class="r-in"><span><span class="fu">estimator_trim</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R</span>, se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">200</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     upper_bound     lower_bound       Out0_mono      Out1L_mono      Out1U_mono </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      0.64239649      0.01761468      2.93353474      2.95114943      3.57593123 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> control_group_N   treat_group_N               Q              f1              f0 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    331.00000000    417.00000000      0.16385742      0.18713450      0.32032854 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>          pi_r_1          pi_r_0              yU              yL        lower_se </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      0.81286550      0.67967146      2.00000000      4.00000000      0.08467663 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        upper_se        ci_lower        ci_upper </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      0.09880524     -0.12166598      0.80491665 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.01761468      0.64239649      0.08467663      0.09880524     -0.12166598 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high       Out0_mono      Out1L_mono      Out1U_mono control_group_N </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.80491665      2.93353474      2.95114943      3.57593123    331.00000000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   treat_group_N               Q              f1              f0          pi_r_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    417.00000000      0.16385742      0.18713450      0.32032854      0.81286550 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          pi_r_0              yU              yL </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.67967146      2.00000000      4.00000000 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

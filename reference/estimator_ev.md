@@ -51,12 +51,13 @@ estimator_ev(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 
 ## Value
 
-A named numeric vector with elements `ci_lower` and `ci_upper`, the
-joint Imbens-Manski confidence interval; `low_est` and `upp_est`, the
-bound point estimates; and `low_var` and `upp_var`, their variances.
-Pass to
-[`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_bounds.md)
-for a data frame.
+A named numeric vector with elements `estimate_lower` and
+`estimate_upper`, the two ends of the identification region;
+`std.error_lower` and `std.error_upper`, their standard errors; and
+`conf.low` and `conf.high`, the joint Imbens-Manski confidence interval.
+The names are those of the `bounds` row of
+[`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_bounds.md),
+which returns the same quantities as a data frame.
 
 ## Examples
 
@@ -75,11 +76,15 @@ Y[R == 0] <- NA
 df <- data.frame(Y, Z, R)
 
 estimator_ev(Y, Z, R, minY = 1, maxY = 5, data = df)
-#>     ci_lower     ci_upper      low_est      upp_est      low_var      upp_var 
-#> -0.918861985  1.375461565 -0.782617049  1.247235131  0.006860981  0.006077159 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>     -0.78261705      1.24723513      0.08283104      0.07795614     -0.91886198 
+#>       conf.high 
+#>      1.37546156 
 
 # Equivalently, via the formula interface
 estimator_ev(Y ~ Z, R = "R", minY = 1, maxY = 5, data = df)
-#>     ci_lower     ci_upper      low_est      upp_est      low_var      upp_var 
-#> -0.918861985  1.375461565 -0.782617049  1.247235131  0.006860981  0.006077159 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>     -0.78261705      1.24723513      0.08283104      0.07795614     -0.91886198 
+#>       conf.high 
+#>      1.37546156 
 ```

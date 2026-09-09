@@ -72,12 +72,13 @@ estimator_ds(
 
 ## Value
 
-A named numeric vector with elements `ci_lower` and `ci_upper`, the
-joint Imbens-Manski confidence interval; `low_est` and `upp_est`, the
-bound point estimates; and `low_var` and `upp_var`, their variances.
-Pass to
-[`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_bounds.md)
-for a data frame.
+A named numeric vector with elements `estimate_lower` and
+`estimate_upper`, the two ends of the identification region;
+`std.error_lower` and `std.error_upper`, their standard errors; and
+`conf.low` and `conf.high`, the joint Imbens-Manski confidence interval.
+The names are those of the `bounds` row of
+[`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_bounds.md),
+which returns the same quantities as a data frame.
 
 ## Examples
 
@@ -120,11 +121,15 @@ df <- data.frame(Y, Z, R1, Attempt, R2, strata)
 
 # Without post-stratification
 estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, data=df)
-#>    ci_lower    ci_upper     low_est     upp_est     low_var     upp_var 
-#> 0.048650402 0.437209789 0.181568350 0.304099481 0.006471977 0.006490723 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>      0.18156835      0.30409948      0.08044860      0.08056503      0.04865040 
+#>       conf.high 
+#>      0.43720979 
 
 # With post-stratification
 estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, strata=strata, data=df)
-#>    ci_lower    ci_upper     low_est     upp_est     low_var     upp_var 
-#> 0.134213533 0.482968974 0.246987534 0.375801359 0.004689110 0.004234475 
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>      0.24698753      0.37580136      0.06847708      0.06507285      0.13421353 
+#>       conf.high 
+#>      0.48296897 
 ```

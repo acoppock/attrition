@@ -80,9 +80,10 @@ sensitivity_ds(
 ## Value
 
 A list with three elements: `sensitivity_plot`, a ggplot object;
-`sims_df`, a data frame of bounds and confidence intervals at each
-delta; and `p_star`, a one-row data frame giving delta\* when it exists
-and an explanatory character string when it does not.
+`sims_df`, a data frame of bounds and confidence intervals at each value
+of `delta`; and `delta_star`, a single number giving delta\*, or `NA`
+when no delta\* exists, which happens when the confidence interval
+already contains zero at delta = 0.
 
 ## Examples
 
@@ -109,7 +110,6 @@ sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
                        sims = 20, data = df)
 sens$sensitivity_plot
 
-sens$p_star
-#>   p value          label hjust vjust
-#> 1 1     0 delta^'*' == 1   1.1   1.3
+sens$delta_star
+#> [1] 1
 ```

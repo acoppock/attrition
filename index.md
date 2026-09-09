@@ -1,9 +1,17 @@
 # attrition
 
-Bounds on average treatment effects for randomized experiments with
-missing outcomes, implementing Coppock, Gerber, Green, and Kern (2017),
-[*Political Analysis*
-25(2):188-206](https://doi.org/10.1017/pan.2016.6).
+Addressing nonignorable attrition with double sampling and bounds: the
+estimators of Coppock, Gerber, Green, and Kern (2017), [*Political
+Analysis* 25(2):188-206](https://doi.org/10.1017/pan.2016.6), for
+randomized experiments in which some outcomes are missing.
+
+## Installation
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("acoppock/attrition")
+```
 
 ## When you would use these estimators
 
@@ -34,9 +42,24 @@ about the subjects you did not observe:
   and
   [`sensitivity_ds()`](https://alexandercoppock.com/attrition/reference/sensitivity_ds.md).
 
-Poststratification on a discrete covariate is available for the first
-two, and tightens the estimates without changing what is being
-estimated.
+## The estimators at a glance
+
+| Function | What it assumes |
+|----|----|
+| [`estimator_ev()`](https://alexandercoppock.com/attrition/reference/estimator_ev.md) | The outcome has known lower and upper limits (Manski 1990). |
+| [`estimator_ds()`](https://alexandercoppock.com/attrition/reference/estimator_ds.md) | The same, plus a random follow-up sample of nonrespondents. |
+| [`estimator_ds_sens()`](https://alexandercoppock.com/attrition/reference/estimator_ds_sens.md) | The same, with ignorability allowed to fail for a fraction `delta` of the follow-up nonrespondents. |
+| [`sensitivity_ds()`](https://alexandercoppock.com/attrition/reference/sensitivity_ds.md) | A search over `delta` for the point where the interval starts to include zero. |
+| [`estimator_trim()`](https://alexandercoppock.com/attrition/reference/estimator_trim.md) | Treatment moves response in one direction only (Lee 2009). The outcome need not be bounded. |
+
+The first four take a `strata` argument for poststratification on a
+discrete covariate, which targets the same identification region and
+estimates it more precisely;
+[`estimator_trim()`](https://alexandercoppock.com/attrition/reference/estimator_trim.md)
+does not. All five have
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html) methods and a
+formula interface for use with
+[DeclareDesign](https://declaredesign.org).
 
 ## When you would run a double-sampling design
 
@@ -56,19 +79,15 @@ Budget for it as design rather than analysis. A larger initial sample
 buys precision and does nothing about attrition; a follow-up sample
 attacks the attrition directly.
 
-## Installation
-
-``` r
-
-# install.packages("remotes")
-remotes::install_github("acoppock/attrition")
-```
-
 ## What double sampling buys
 
-The package ships the replication study from the paper: a two-wave
-survey experiment in which 1,980 subjects were asked about perceived
-polarization, and 536 of them did not answer the second wave.
+The package ships the replication study from the paper as `levendusky`:
+a two-wave survey experiment in which 1,980 subjects were asked about
+perceived polarization, and 536 of them did not answer the second wave.
+A third condition read nothing on the topic and is not analyzed, which
+is what the subset below removes: `Z1` is defined only for the two
+conditions being compared, so filtering on its missingness drops the
+unused group and nothing else.
 
 Refusing any assumption about the missing outcomes gives worst-case
 bounds. Because the outcome runs from 0 to 6, filling every missing
@@ -78,11 +97,13 @@ the data can support, and reversing the fills gives the highest.
 ``` r
 
 library(attrition)
-dat <- subset(levendusky, !is.na(Z1))
+dat <- droplevels(subset(levendusky, !is.na(Z1)))
 
 estimator_ev(L_dif_w2, Z1, R1, minY = 0, maxY = 6, data = dat)
-#>  ci_lower  ci_upper   low_est   upp_est   low_var   upp_var 
-#> -1.669079  1.835881 -1.539145  1.709668  0.006240  0.005888
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>        -1.53914         1.70967         0.07899         0.07673        -1.66908 
+#>       conf.high 
+#>         1.83588
 ```
 
 The effect lies somewhere between -1.54 and 1.71, which is honest and
@@ -102,66 +123,69 @@ worst-case treatment.
 ``` r
 
 estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
-#> ci_lower ci_upper  low_est  upp_est  low_var  upp_var 
-#> -0.52831  0.74517 -0.34175  0.57182  0.01286  0.01111
+#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
+#>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
+#>       conf.high 
+#>          0.7452
 ```
 
 The identification region shrinks by a factor of 3.6, from 3.25 points
 wide to 0.91. Chasing 100 subjects bought all of it.
 
-## The estimators at a glance
+## Reading the output
 
-| Function | What it assumes |
-|----|----|
-| [`estimator_ev()`](https://alexandercoppock.com/attrition/reference/estimator_ev.md) | The outcome has known lower and upper limits. |
-| [`estimator_ds()`](https://alexandercoppock.com/attrition/reference/estimator_ds.md) | The same, plus a random follow-up sample of nonrespondents. |
-| [`estimator_ds_sens()`](https://alexandercoppock.com/attrition/reference/estimator_ds_sens.md) | The same, with ignorability allowed to fail for a fraction delta of the follow-up nonrespondents. |
-| [`sensitivity_ds()`](https://alexandercoppock.com/attrition/reference/sensitivity_ds.md) | A search over delta for the point where the interval starts to include zero. |
-| [`estimator_trim()`](https://alexandercoppock.com/attrition/reference/estimator_trim.md) | Treatment moves response in one direction only ([Lee 2009](https://doi.org/10.1111/j.1467-937X.2009.00536.x)). The outcome need not be bounded. |
-
-The first three take a `strata` argument for poststratification on a
-discrete covariate, which targets the same identification region but
-estimates it more precisely. All five have
-[`tidy()`](https://generics.r-lib.org/reference/tidy.html) methods and a
-formula interface for use with
-[DeclareDesign](https://declaredesign.org).
+Every estimator returns the same six named elements: `estimate_lower`
+and `estimate_upper`, the two ends of the identification region;
+`std.error_lower` and `std.error_upper`, their standard errors; and
+`conf.low` and `conf.high`, the joint Imbens-Manski interval. Those are
+broom’s names, and
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html) returns the
+same six quantities as a data frame under the same names.
 
 ``` r
 
 tidy(estimator_ds(L_dif_w2 ~ Z1, R1 = "R1", Attempt = "Attempt", R2 = "R2",
                   minY = 0, maxY = 6, data = dat))
-#> # A tibble: 3 × 7
-#>   term        estimate std.error conf.low conf.high estimate.low estimate.high
-#>   <chr>          <dbl>     <dbl>    <dbl>     <dbl>        <dbl>         <dbl>
-#> 1 bounds        NA        NA       -0.528     0.745       -0.342         0.572
-#> 2 lower_bound   -0.342     0.113   NA        NA           NA            NA    
-#> 3 upper_bound    0.572     0.105   NA        NA           NA            NA
+#> # A tibble: 3 × 10
+#>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
+#>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
+#> 1 bounds       NA        NA       -0.528     0.745         -0.342          0.572
+#> 2 lower_bou…   -0.342     0.113   NA        NA             NA             NA    
+#> 3 upper_bou…    0.572     0.105   NA        NA             NA             NA    
+#> # ℹ 3 more variables: std.error_lower <dbl>, std.error_upper <dbl>,
+#> #   outcome <chr>
 ```
 
 Bounds have no single point estimate, so `estimate` is `NA` on the
-`bounds` row: the identification region sits in `estimate.low` and
-`estimate.high`, and the joint Imbens-Manski interval in `conf.low` and
-`conf.high`.
+`bounds` row, which carries the whole vector across its columns. The two
+rows below split it, one endpoint each, so `estimate` and `std.error`
+mean there what broom means by them and `declare_estimator()` can select
+an endpoint with `term`.
 
 ## Learning more
 
 [`vignette("attrition")`](https://alexandercoppock.com/attrition/articles/attrition.md)
 works through the design and all five estimators on the shipped data,
 reproducing the paper’s Table 3 along the way.
+[`vignette("drawing-the-bounds")`](https://alexandercoppock.com/attrition/articles/drawing-the-bounds.md)
+draws the imputation that
+[`estimator_ev()`](https://alexandercoppock.com/attrition/reference/estimator_ev.md)
+averages over and checks the picture against the estimates.
 
 ## References
 
 Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern
 (2017). Combining Double Sampling and Bounds to Address Nonignorable
 Missing Outcomes in Randomized Experiments. *Political Analysis*
-25(2):188-206.
+25(2):188-206. <https://doi.org/10.1017/pan.2016.6>
 
 Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
 Partially Identified Parameters. *Econometrica* 72(6):1845-1857.
+<https://doi.org/10.1111/j.1468-0262.2004.00555.x>
 
 Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating
 Sharp Bounds on Treatment Effects. *Review of Economic Studies*
-76(3):1071-1102.
+76(3):1071-1102. <https://doi.org/10.1111/j.1467-937X.2009.00536.x>
 
 Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
 *American Economic Review Papers and Proceedings* 80(2):319-323.

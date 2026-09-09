@@ -114,10 +114,13 @@ Must be numeric and take values 0 or 1.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named numeric vector with elements <code>ci_lower</code> and <code>ci_upper</code>,
-  the joint Imbens-Manski confidence interval; <code>low_est</code> and <code>upp_est</code>,
-  the bound point estimates; and <code>low_var</code> and <code>upp_var</code>, their variances.
-  Pass to <code><a href="tidy.attrition_bounds.html">tidy()</a></code> for a data frame.</p>
+    <p>A named numeric vector with elements <code>estimate_lower</code> and
+  <code>estimate_upper</code>, the two ends of the identification region;
+  <code>std.error_lower</code> and <code>std.error_upper</code>, their standard errors;
+  and <code>conf.low</code> and <code>conf.high</code>, the joint Imbens-Manski
+  confidence interval. The names are those of the <code>bounds</code> row of
+  <code><a href="tidy.attrition_bounds.html">tidy()</a></code>, which returns the same
+  quantities as a data frame.</p>
     </div>
 
     <div class="section level2">
@@ -142,15 +145,17 @@ Must be numeric and take values 0 or 1.</p></dd>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># delta = 1 reproduces the worst-case double-sampling bounds</span></span></span>
 <span class="r-in"><span><span class="fu">estimator_ds_sens</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">1</span>, maxY <span class="op">=</span> <span class="fl">5</span>, delta <span class="op">=</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      ci_lower      ci_upper       low_est       upp_est       low_var </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0003261488  0.5435113299  0.1356982015  0.4100265693  0.0068387546 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       upp_var </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  0.0065857778 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.1356982015    0.4100265693    0.0826967632    0.0811528054   -0.0003261488 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.5435113299 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># delta = 0 assumes ignorability among follow-up non-responders</span></span></span>
 <span class="r-in"><span><span class="fu">estimator_ds_sens</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">1</span>, maxY <span class="op">=</span> <span class="fl">5</span>, delta <span class="op">=</span> <span class="fl">0</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    ci_lower    ci_upper     low_est     upp_est     low_var     upp_var </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.128264350 0.433193885 0.280729118 0.280729118 0.006051218 0.006051218 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.28072912      0.28072912      0.07778958      0.07778958      0.12826435 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.43319388 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
