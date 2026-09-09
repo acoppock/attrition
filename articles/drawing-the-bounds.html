@@ -77,12 +77,7 @@ is the fastest way to see what the estimator is doing. This vignette
 puts the picture and the estimates side by side and checks that they are
 the same thing.</p>
 <p>The plot uses <a href="https://cran.r-project.org/package=vayr" class="external-link">vayr</a> and the
-difference in means uses <a href="https://cran.r-project.org/package=estimatr" class="external-link">estimatr</a>. Both
-are suggested packages rather than required ones, so if either is
-missing the code below is shown but not run. The same happens with vayr
-older than 1.1.0, the version that added
-<code><a href="https://alexandercoppock.com/vayr/reference/impute_extreme_values.html" class="external-link">impute_extreme_values()</a></code> and the
-<code>attrition_experiment</code> data.</p>
+difference in means uses <a href="https://cran.r-project.org/package=estimatr" class="external-link">estimatr</a>.</p>
 <p>The main vignette, <code><a href="../articles/attrition.html">vignette("attrition")</a></code>, runs the same
 estimator and four others on the paper’s own data.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -222,7 +217,7 @@ calculation reached from two directions.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Upper bound                1.14         1.14</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="what-the-picture-cannot-show">What the picture cannot show<a class="anchor" aria-label="anchor" href="#what-the-picture-cannot-show"></a>
+<h2 id="connection-to-the-imbens-manski-confidence-interval">Connection to the Imbens-Manski confidence interval<a class="anchor" aria-label="anchor" href="#connection-to-the-imbens-manski-confidence-interval"></a>
 </h2>
 <p>The error bars in the plot are ordinary confidence intervals around
 four arm means, one panel at a time. They do not answer the question the
@@ -249,20 +244,6 @@ true effect cannot sit at both ends at once.</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Stacking the two panels -<span style="color: #BB0000;">0.381</span>  1.49  1.87</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Imbens-Manski           -<span style="color: #BB0000;">0.317</span>  1.43  1.75</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="why-you-have-to-supply-the-range">Why you have to supply the range<a class="anchor" aria-label="anchor" href="#why-you-have-to-supply-the-range"></a>
-</h2>
-<p>The same two numbers were typed twice above:
-<code>range = c(1, 7)</code> for <code><a href="https://alexandercoppock.com/vayr/reference/impute_extreme_values.html" class="external-link">impute_extreme_values()</a></code>
-and <code>minY = 1, maxY = 7</code> for <code><a href="../reference/estimator_ev.html">estimator_ev()</a></code>.
-They differ only because the two functions belong to different packages,
-one taking the pair as a single argument and the other as two.</p>
-<p>Neither will guess them, and that is deliberate in both places. No
-subject in this sample answered 1, so a function that inferred the scale
-from the observed data would have used 2 to 7 and reported bounds
-narrower than the data support. The width of the identification region
-is a claim about the measurement instrument, not about the sample.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

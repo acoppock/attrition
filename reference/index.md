@@ -51,7 +51,7 @@ expects.
 
 ## Data
 
-- [`levendusky`](https://alexandercoppock.com/attrition/reference/levendusky.md)
+- [`levendusky_replication`](https://alexandercoppock.com/attrition/reference/levendusky_replication.md)
   : Perceived polarization under double sampling
 
 ## Package overview

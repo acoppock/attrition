@@ -8,35 +8,37 @@ library(attrition)
 This vignette works through a two-wave survey experiment in which 536 of
 1,980 subjects never answered the second wave. Everything runs on the
 replication study from Coppock, Gerber, Green, and Kern (2017), which
-ships with the package as `levendusky`.
+ships with the package as `levendusky_replication`.
 
-The situation is an ordinary one. You fielded an experiment, the outcome
+The situation is an ordinary one. An experiment is fielded, the outcome
 is missing for a substantial minority of subjects, and nothing in the
-data tells you whether they went missing for reasons connected to the
+data says whether they went missing for reasons connected to the
 outcomes they would have reported. Rather than settle that question by
 assumption, the estimators here report the range of average treatment
-effects consistent with what you did observe. The double-sampling design
+effects consistent with what was observed. The double-sampling design
 then shrinks that range, by recovering outcomes from a random sample of
-the nonrespondents and pursuing them harder than the first attempt.
+the nonrespondents and pursuing them with more effort than the first
+attempt.
 
-We take the estimators in the order you would meet the problem: what the
-data look like, what can be said with no follow-up at all, what a
+We take the estimators in the order a researcher meets the problem: what
+the data look like, what can be said with no follow-up at all, what a
 follow-up buys, and how much of the remaining assumption a result
-survives. The short version is that chasing 100 of the 536
+survives. The short version is that a follow-up on 100 of the 536
 nonrespondents shrinks the identification region by a factor of 3.6,
 from 3.25 points wide to 0.91 on an outcome scored from 0 to 6.
 
 ## The experiment
 
-`levendusky` holds a two-wave survey experiment run on Mechanical Turk,
-replicating Levendusky and Malhotra (2016). Subjects read a news article
-describing the electorate as sharply divided (the polarized condition)
-or as focused on common ground (the moderate condition). A third group
-read nothing on the topic and is not analyzed. The outcome, perceived
-polarization, was measured immediately and again ten days later.
+`levendusky_replication` holds a two-wave survey experiment run on
+Mechanical Turk, replicating Levendusky and Malhotra (2016). Subjects
+read a news article describing the electorate as sharply divided (the
+polarized condition) or as focused on common ground (the moderate
+condition). A third group read nothing on the topic and is not analyzed.
+The outcome, perceived polarization, was measured immediately and again
+ten days later.
 
 Seven of its twelve columns do the work below.
-[`?levendusky`](https://alexandercoppock.com/attrition/reference/levendusky.md)
+[`?levendusky_replication`](https://alexandercoppock.com/attrition/reference/levendusky_replication.md)
 documents them all.
 
 | Column | What it holds |
@@ -59,7 +61,7 @@ every table that follows.
 
 ``` r
 
-dat <- droplevels(subset(levendusky, !is.na(Z1)))
+dat <- droplevels(subset(levendusky_replication, !is.na(Z1)))
 with(dat, table(Z_lev, R1))
 #>            R1
 #> Z_lev         0   1
@@ -82,8 +84,8 @@ summary(lm(L_dif_w2 ~ Z1, data = subset(dat, R1 == 1)))$coefficients
 ```
 
 The subset matters. Restricting to `R1 == 1` is what makes the estimate
-naive: it is the analysis you would run if the double sampling had never
-happened.
+naive: it is the analysis that would be run if the double sampling had
+never happened.
 
 That estimate is consistent only if the 536 missing subjects are missing
 for reasons unrelated to their outcomes. Nothing in the data tells us
@@ -93,10 +95,10 @@ whether they are.
 
 Suppose we refuse the assumption entirely. The outcome runs from 0 to 6,
 so we know something about the missing values even without knowing what
-they are: whatever they were, they were between 0 and 6. Fill in every
-missing outcome in the treatment group with 0 and every missing outcome
-in the control group with 6, and you get the lowest average effect the
-data can support. Reverse the fills and you get the highest.
+they are: whatever they were, they were between 0 and 6. Filling in
+every missing outcome in the treatment group with 0 and every missing
+outcome in the control group with 6 gives the lowest average effect the
+data can support. Reversing the fills gives the highest.
 
 Those two numbers do all the work below, so it is worth being clear
 about where they come from. They are properties of the measurement
@@ -139,11 +141,11 @@ simulated experiment where the picture fits on one page.
 
 ## Double sampling
 
-Now the design. After the initial round of data collection, draw a
-random sample of the nonrespondents and pursue them with more effort
-than you spent the first time. In this study, 50 nonrespondents were
-drawn at random from each condition and offered \$4.00 instead of the
-original \$1.00. Of those 100 subjects, 72 answered.
+Now the design. After the initial round of data collection, a random
+sample of the nonrespondents is drawn and pursued with more effort than
+the first round spent. In this study, 50 nonrespondents were drawn at
+random from each condition and offered \$4.00 instead of the original
+\$1.00. Of those 100 subjects, 72 answered.
 
 ``` r
 
@@ -180,8 +182,8 @@ estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
 
 The identification region is now -0.34 to 0.57, against -1.54 to 1.71
 before. It has shrunk by a factor of 3.6, and the confidence interval
-has narrowed from 3.50 points wide to 1.27. Chasing 100 subjects out of
-536 bought all of that.
+has narrowed from 3.50 points wide to 1.27, on a follow-up of 100
+subjects out of 536.
 
 To be sure, the interval still contains zero, so the study does not
 establish that the polarized article changed perceived polarization.
@@ -190,11 +192,11 @@ and that bound is now tight enough to be substantively informative.
 
 ## Poststratification
 
-If you measured a discrete covariate that predicts the outcome, use it.
-Estimate the bounds separately inside each of its categories, then
-average those bounds using the share of the sample falling in each. The
-estimand does not change, so nothing is assumed away, but the estimate
-of it gets more precise.
+A discrete covariate that predicts the outcome is worth using. The
+bounds are estimated separately inside each of its categories and then
+averaged using the share of the sample falling in each. The estimand
+does not change, so nothing is assumed away, but the estimate of it gets
+more precise.
 
 The precision comes from where the category shares are estimated. Write
 `B` for the covariate and Pr(B = k) for the share of the whole sample in
@@ -231,10 +233,9 @@ paper](https://doi.org/10.1017/pan.2016.6).
 Worst-case bounds assume nothing about the 28 subjects who refused
 twice. Ignorability assumes everything: that their outcomes look like
 those of the follow-up respondents. Neither extreme is a natural place
-to stand, and `estimator_ds_sens` interpolates between them. Set `delta`
-to the fraction of follow-up nonrespondents whose outcomes you are
-unwilling to model, and the remaining 1 - `delta` are treated as
-ignorable.
+to stand, and `estimator_ds_sens` interpolates between them. `delta` is
+the fraction of follow-up nonrespondents whose outcomes are left
+unmodeled, and the remaining 1 - `delta` are treated as ignorable.
 
 At `delta = 1` the estimator reproduces the double-sampling bounds
 above, -0.34 to 0.57, since refusing to model any of the follow-up
@@ -336,13 +337,14 @@ estimator_trim(L_dif_w2, Z1, R = R1, data = dat)[c("estimate_lower", "estimate_u
 ```
 
 Run on the double-sampled data, the same function returns numbers. The
-reason is that it is not the same estimator: which arguments you supply
-is the switch between two of them. `R` asks for Lee’s single-stage
-estimator, which trims one group and needs monotonicity to know which.
-`R1`, `Attempt` and `R2` ask for the double-sampling version, which
-trims *both* groups, by the share still missing in the other, and
-carries the follow-up sampling weights. Monotonicity is not among its
-assumptions, so there is no monotonicity condition left to fail.
+reason is that it is not the same estimator: which arguments are
+supplied is the switch between two of them. `R` asks for Lee’s
+single-stage estimator, which trims one group and needs monotonicity to
+know which. `R1`, `Attempt` and `R2` ask for the double-sampling
+version, which trims *both* groups, by the share still missing in the
+other, and carries the follow-up sampling weights. Monotonicity is not
+among its assumptions, so there is no monotonicity condition left to
+fail.
 
 ``` r
 
@@ -429,18 +431,18 @@ Double sampling is not free. Someone has to find the nonrespondents and
 pay them more, and the budget for that effort competes with the budget
 for a larger initial sample. The trade is usually worth making, because
 a larger initial sample does nothing about attrition bias while a
-follow-up sample attacks it directly. In this study the initial-sample
+follow-up sample reduces it directly. In this study the initial-sample
 confidence interval was 3.50 points wide and no realistic increase in
 sample size would have narrowed it much, since almost all of that width
-came from the 536 unknown outcomes rather than from sampling error.
-Chasing 100 of them narrowed it to 1.23.
+came from the 536 unknown outcomes rather than from sampling error. A
+follow-up on 100 of them narrowed it to 1.23.
 
 The design decision that remains open is how to split a fixed budget
 between the initial sample and the follow-up, and it depends on
-quantities you do not know until the data are in: the response rate in
-each round, the outcome variance among respondents and nonrespondents,
-and the relative cost of a first and second contact. Coppock, Gerber,
-Green, and Kern (2017) sketch the optimization; the package does not yet
+quantities not known until the data are in: the response rate in each
+round, the outcome variance among respondents and nonrespondents, and
+the relative cost of a first and second contact. Coppock, Gerber, Green,
+and Kern (2017) sketch the optimization; the package does not yet
 implement it.
 
 ## References

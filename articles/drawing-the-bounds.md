@@ -10,12 +10,7 @@ side by side and checks that they are the same thing.
 
 The plot uses [vayr](https://cran.r-project.org/package=vayr) and the
 difference in means uses
-[estimatr](https://cran.r-project.org/package=estimatr). Both are
-suggested packages rather than required ones, so if either is missing
-the code below is shown but not run. The same happens with vayr older
-than 1.1.0, the version that added
-[`impute_extreme_values()`](https://alexandercoppock.com/vayr/reference/impute_extreme_values.html)
-and the `attrition_experiment` data.
+[estimatr](https://cran.r-project.org/package=estimatr).
 
 The main vignette,
 [`vignette("attrition")`](https://alexandercoppock.com/attrition/articles/attrition.md),
@@ -182,7 +177,7 @@ by_scenario |>
 #> 2 Upper bound                1.14         1.14
 ```
 
-## What the picture cannot show
+## Connection to the Imbens-Manski confidence interval
 
 The error bars in the plot are ordinary confidence intervals around four
 arm means, one panel at a time. They do not answer the question the
@@ -213,18 +208,3 @@ bind_rows(
 #> 1 Stacking the two panels -0.381  1.49  1.87
 #> 2 Imbens-Manski           -0.317  1.43  1.75
 ```
-
-## Why you have to supply the range
-
-The same two numbers were typed twice above: `range = c(1, 7)` for
-[`impute_extreme_values()`](https://alexandercoppock.com/vayr/reference/impute_extreme_values.html)
-and `minY = 1, maxY = 7` for
-[`estimator_ev()`](https://alexandercoppock.com/attrition/reference/estimator_ev.md).
-They differ only because the two functions belong to different packages,
-one taking the pair as a single argument and the other as two.
-
-Neither will guess them, and that is deliberate in both places. No
-subject in this sample answered 1, so a function that inferred the scale
-from the observed data would have used 2 to 7 and reported bounds
-narrower than the data support. The width of the identification region
-is a claim about the measurement instrument, not about the sample.

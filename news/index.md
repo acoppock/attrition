@@ -6,6 +6,11 @@ First release.
 
 ### New features
 
+- The shipped dataset is `levendusky_replication` rather than
+  `levendusky`. The old name read as the author’s name rather than as
+  what the object is, which is the replication study reported in the
+  paper.
+
 - One vocabulary for estimator output, taken from broom. Every estimator
   returns the same six named elements in the same order:
   `estimate_lower` and `estimate_upper`, the two ends of the

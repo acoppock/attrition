@@ -74,33 +74,34 @@
 <p>This vignette works through a two-wave survey experiment in which 536
 of 1,980 subjects never answered the second wave. Everything runs on the
 replication study from Coppock, Gerber, Green, and Kern (2017), which
-ships with the package as <code>levendusky</code>.</p>
-<p>The situation is an ordinary one. You fielded an experiment, the
+ships with the package as <code>levendusky_replication</code>.</p>
+<p>The situation is an ordinary one. An experiment is fielded, the
 outcome is missing for a substantial minority of subjects, and nothing
-in the data tells you whether they went missing for reasons connected to
-the outcomes they would have reported. Rather than settle that question
-by assumption, the estimators here report the range of average treatment
-effects consistent with what you did observe. The double-sampling design
+in the data says whether they went missing for reasons connected to the
+outcomes they would have reported. Rather than settle that question by
+assumption, the estimators here report the range of average treatment
+effects consistent with what was observed. The double-sampling design
 then shrinks that range, by recovering outcomes from a random sample of
-the nonrespondents and pursuing them harder than the first attempt.</p>
-<p>We take the estimators in the order you would meet the problem: what
-the data look like, what can be said with no follow-up at all, what a
-follow-up buys, and how much of the remaining assumption a result
-survives. The short version is that chasing 100 of the 536
+the nonrespondents and pursuing them with more effort than the first
+attempt.</p>
+<p>We take the estimators in the order a researcher meets the problem:
+what the data look like, what can be said with no follow-up at all, what
+a follow-up buys, and how much of the remaining assumption a result
+survives. The short version is that a follow-up on 100 of the 536
 nonrespondents shrinks the identification region by a factor of 3.6,
 from 3.25 points wide to 0.91 on an outcome scored from 0 to 6.</p>
 <div class="section level2">
 <h2 id="the-experiment">The experiment<a class="anchor" aria-label="anchor" href="#the-experiment"></a>
 </h2>
-<p><code>levendusky</code> holds a two-wave survey experiment run on
-Mechanical Turk, replicating Levendusky and Malhotra (2016). Subjects
-read a news article describing the electorate as sharply divided (the
-polarized condition) or as focused on common ground (the moderate
-condition). A third group read nothing on the topic and is not analyzed.
-The outcome, perceived polarization, was measured immediately and again
-ten days later.</p>
+<p><code>levendusky_replication</code> holds a two-wave survey
+experiment run on Mechanical Turk, replicating Levendusky and Malhotra
+(2016). Subjects read a news article describing the electorate as
+sharply divided (the polarized condition) or as focused on common ground
+(the moderate condition). A third group read nothing on the topic and is
+not analyzed. The outcome, perceived polarization, was measured
+immediately and again ten days later.</p>
 <p>Seven of its twelve columns do the work below.
-<code><a href="../reference/levendusky.html">?levendusky</a></code> documents them all.</p>
+<code><a href="../reference/levendusky_replication.html">?levendusky_replication</a></code> documents them all.</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -154,7 +155,7 @@ the placebo group and nothing else. <code><a href="https://rdrr.io/r/base/drople
 clears the emptied factor level, which would otherwise print as a row of
 zeroes in every table that follows.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/droplevels.html" class="external-link">droplevels</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">levendusky</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">Z1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/droplevels.html" class="external-link">droplevels</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">levendusky_replication</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">Z1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">dat</span>, <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">Z_lev</span>, <span class="va">R1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;            R1</span></span>
 <span><span class="co">#&gt; Z_lev         0   1</span></span>
@@ -171,7 +172,7 @@ level.</p>
 <span><span class="co">#&gt; (Intercept)   3.5421    0.04647  76.220  0.00000</span></span>
 <span><span class="co">#&gt; Z1            0.1259    0.06613   1.903  0.05718</span></span></code></pre></div>
 <p>The subset matters. Restricting to <code>R1 == 1</code> is what makes
-the estimate naive: it is the analysis you would run if the double
+the estimate naive: it is the analysis that would be run if the double
 sampling had never happened.</p>
 <p>That estimate is consistent only if the 536 missing subjects are
 missing for reasons unrelated to their outcomes. Nothing in the data
@@ -182,11 +183,10 @@ tells us whether they are.</p>
 </h2>
 <p>Suppose we refuse the assumption entirely. The outcome runs from 0 to
 6, so we know something about the missing values even without knowing
-what they are: whatever they were, they were between 0 and 6. Fill in
+what they are: whatever they were, they were between 0 and 6. Filling in
 every missing outcome in the treatment group with 0 and every missing
-outcome in the control group with 6, and you get the lowest average
-effect the data can support. Reverse the fills and you get the
-highest.</p>
+outcome in the control group with 6 gives the lowest average effect the
+data can support. Reversing the fills gives the highest.</p>
 <p>Those two numbers do all the work below, so it is worth being clear
 about where they come from. They are properties of the measurement
 instrument rather than of this sample. Perceived polarization is an
@@ -220,11 +220,11 @@ simulated experiment where the picture fits on one page.</p>
 <div class="section level2">
 <h2 id="double-sampling">Double sampling<a class="anchor" aria-label="anchor" href="#double-sampling"></a>
 </h2>
-<p>Now the design. After the initial round of data collection, draw a
-random sample of the nonrespondents and pursue them with more effort
-than you spent the first time. In this study, 50 nonrespondents were
-drawn at random from each condition and offered $4.00 instead of the
-original $1.00. Of those 100 subjects, 72 answered.</p>
+<p>Now the design. After the initial round of data collection, a random
+sample of the nonrespondents is drawn and pursued with more effort than
+the first round spent. In this study, 50 nonrespondents were drawn at
+random from each condition and offered $4.00 instead of the original
+$1.00. Of those 100 subjects, 72 answered.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">dat</span>, <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">Z_lev</span>, <span class="va">Attempt</span>, <span class="va">R2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; , , R2 = 0</span></span>
@@ -253,8 +253,8 @@ there are 28 of them, still need worst-case imputation.</p>
 <span><span class="co">#&gt;          0.7452</span></span></code></pre></div>
 <p>The identification region is now -0.34 to 0.57, against -1.54 to 1.71
 before. It has shrunk by a factor of 3.6, and the confidence interval
-has narrowed from 3.50 points wide to 1.27. Chasing 100 subjects out of
-536 bought all of that.</p>
+has narrowed from 3.50 points wide to 1.27, on a follow-up of 100
+subjects out of 536.</p>
 <p>To be sure, the interval still contains zero, so the study does not
 establish that the polarized article changed perceived polarization.
 What it does establish is a bound on how large any such effect could be,
@@ -263,11 +263,11 @@ and that bound is now tight enough to be substantively informative.</p>
 <div class="section level2">
 <h2 id="poststratification">Poststratification<a class="anchor" aria-label="anchor" href="#poststratification"></a>
 </h2>
-<p>If you measured a discrete covariate that predicts the outcome, use
-it. Estimate the bounds separately inside each of its categories, then
-average those bounds using the share of the sample falling in each. The
-estimand does not change, so nothing is assumed away, but the estimate
-of it gets more precise.</p>
+<p>A discrete covariate that predicts the outcome is worth using. The
+bounds are estimated separately inside each of its categories and then
+averaged using the share of the sample falling in each. The estimand
+does not change, so nothing is assumed away, but the estimate of it gets
+more precise.</p>
 <p>The precision comes from where the category shares are estimated.
 Write <code>B</code> for the covariate and Pr(B = k) for the share of
 the whole sample in category k. Poststratification weights by that
@@ -299,9 +299,9 @@ estimates it better.</p>
 twice. Ignorability assumes everything: that their outcomes look like
 those of the follow-up respondents. Neither extreme is a natural place
 to stand, and <code>estimator_ds_sens</code> interpolates between them.
-Set <code>delta</code> to the fraction of follow-up nonrespondents whose
-outcomes you are unwilling to model, and the remaining 1 -
-<code>delta</code> are treated as ignorable.</p>
+<code>delta</code> is the fraction of follow-up nonrespondents whose
+outcomes are left unmodeled, and the remaining 1 - <code>delta</code>
+are treated as ignorable.</p>
 <p>At <code>delta = 1</code> the estimator reproduces the
 double-sampling bounds above, -0.34 to 0.57, since refusing to model any
 of the follow-up nonrespondents is exactly what
@@ -377,14 +377,14 @@ than a number built on it.</p>
 <span><span class="co">#&gt; estimate_lower estimate_upper </span></span>
 <span><span class="co">#&gt;             NA             NA</span></span></code></pre></div>
 <p>Run on the double-sampled data, the same function returns numbers.
-The reason is that it is not the same estimator: which arguments you
-supply is the switch between two of them. <code>R</code> asks for Lee’s
-single-stage estimator, which trims one group and needs monotonicity to
-know which. <code>R1</code>, <code>Attempt</code> and <code>R2</code>
-ask for the double-sampling version, which trims <em>both</em> groups,
-by the share still missing in the other, and carries the follow-up
-sampling weights. Monotonicity is not among its assumptions, so there is
-no monotonicity condition left to fail.</p>
+The reason is that it is not the same estimator: which arguments are
+supplied is the switch between two of them. <code>R</code> asks for
+Lee’s single-stage estimator, which trims one group and needs
+monotonicity to know which. <code>R1</code>, <code>Attempt</code> and
+<code>R2</code> ask for the double-sampling version, which trims
+<em>both</em> groups, by the share still missing in the other, and
+carries the follow-up sampling weights. Monotonicity is not among its
+assumptions, so there is no monotonicity condition left to fail.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">343</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span><span class="va">L_dif_w2</span>, <span class="va">Z1</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
@@ -460,17 +460,17 @@ changed, not the argument.</p>
 and pay them more, and the budget for that effort competes with the
 budget for a larger initial sample. The trade is usually worth making,
 because a larger initial sample does nothing about attrition bias while
-a follow-up sample attacks it directly. In this study the initial-sample
+a follow-up sample reduces it directly. In this study the initial-sample
 confidence interval was 3.50 points wide and no realistic increase in
 sample size would have narrowed it much, since almost all of that width
-came from the 536 unknown outcomes rather than from sampling error.
-Chasing 100 of them narrowed it to 1.23.</p>
+came from the 536 unknown outcomes rather than from sampling error. A
+follow-up on 100 of them narrowed it to 1.23.</p>
 <p>The design decision that remains open is how to split a fixed budget
 between the initial sample and the follow-up, and it depends on
-quantities you do not know until the data are in: the response rate in
-each round, the outcome variance among respondents and nonrespondents,
-and the relative cost of a first and second contact. Coppock, Gerber,
-Green, and Kern (2017) sketch the optimization; the package does not yet
+quantities not known until the data are in: the response rate in each
+round, the outcome variance among respondents and nonrespondents, and
+the relative cost of a first and second contact. Coppock, Gerber, Green,
+and Kern (2017) sketch the optimization; the package does not yet
 implement it.</p>
 </div>
 <div class="section level2">

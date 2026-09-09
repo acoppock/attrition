@@ -61,7 +61,7 @@ method and a formula interface for use with DeclareDesign.
 [`vignette("attrition")`](https://alexandercoppock.com/attrition/articles/attrition.md)
 walks through the design and all five estimators on the replication data
 in
-[`levendusky`](https://alexandercoppock.com/attrition/reference/levendusky.md),
+[`levendusky_replication`](https://alexandercoppock.com/attrition/reference/levendusky_replication.md),
 reproducing the published table as it goes.
 
 ## References
