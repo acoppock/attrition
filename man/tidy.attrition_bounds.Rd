@@ -14,12 +14,15 @@
 }
 \value{
 A [tibble::tibble()] with columns `term`, `estimate`, `std.error`,
-  `conf.low`, `conf.high`, `estimate.low`, `estimate.high`.
+  `conf.low`, `conf.high`, `estimate_lower`, `estimate_upper`,
+  `std.error_lower`, `std.error_upper`, `outcome`.
 }
 \description{
-Returns a one-row tibble representing the identified interval. Designed for
-use with DeclareDesign: `estimate` and `std.error` are `NA` because bounds
-do not yield a single point estimate, while `conf.low`/`conf.high` hold the
-Imbens-Manski joint confidence interval and `estimate.low`/`estimate.high`
-hold the bound point estimates.
+Returns a three-row tibble. The `bounds` row is the estimator's own named
+vector transcribed, so `estimate_lower`, `estimate_upper`,
+`std.error_lower`, `std.error_upper`, `conf.low` and `conf.high` are the
+same names in both places. `estimate` and `std.error` are `NA` on that row,
+because bounds do not yield a single point estimate; the `lower_bound` and
+`upper_bound` rows carry one endpoint each in broom's long form, which is
+what DeclareDesign selects on with `term`.
 }

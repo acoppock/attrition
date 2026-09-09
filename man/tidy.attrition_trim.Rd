@@ -14,10 +14,11 @@
 }
 \value{
 A [tibble::tibble()] with columns `term`, `estimate`, `std.error`,
-  `conf.low`, `conf.high`, `estimate.low`, `estimate.high`.
+  `conf.low`, `conf.high`, `estimate_lower`, `estimate_upper`,
+  `std.error_lower`, `std.error_upper`, `outcome`.
 }
 \description{
-Returns a three-row tibble matching the structure of [tidy.attrition_bounds()].
+Returns a three-row tibble with the same columns as [tidy.attrition_bounds()].
 Standard errors and the joint Imbens-Manski confidence interval are filled in
 when [estimator_trim()] was called with `se = "analytic"` or `se = "bootstrap"`,
 and are `NA` when it was called with `se = "none"` or when monotonicity failed.

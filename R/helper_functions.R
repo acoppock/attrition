@@ -124,22 +124,23 @@ gen_var_sens <- function(y_m, y_s, p, delta, lower_bound = TRUE, minY, maxY) {
 # variances by squared share, with a joint Imbens-Manski interval computed on
 # the pooled quantities. Stratum shares are treated as fixed, not estimated.
 # strata_ests is a 6-row matrix, one column per stratum, as returned by the
-# unstratified estimators.
+# unstratified estimators. Those carry standard errors, so they are squared back
+# to variances here: it is variances that combine by squared stratum share.
 pool_strata <- function(strata_ests, proportions, alpha) {
-  lower_bound_est <- sum(strata_ests["low_est", ] * proportions)
-  upper_bound_est <- sum(strata_ests["upp_est", ] * proportions)
-  lower_bound_var_est <- sum(strata_ests["low_var", ] * proportions^2)
-  upper_bound_var_est <- sum(strata_ests["upp_var", ] * proportions^2)
+  lower_bound_est <- sum(strata_ests["estimate_lower", ] * proportions)
+  upper_bound_est <- sum(strata_ests["estimate_upper", ] * proportions)
+  lower_bound_var_est <- sum(strata_ests["std.error_lower", ]^2 * proportions^2)
+  upper_bound_var_est <- sum(strata_ests["std.error_upper", ]^2 * proportions^2)
 
   sig <- im_critical_value(lower_bound_est, upper_bound_est,
                            lower_bound_var_est, upper_bound_var_est, alpha)
 
-  return(c(ci_lower = lower_bound_est - sig*lower_bound_var_est^.5,
-           ci_upper = upper_bound_est + sig*upper_bound_var_est^.5,
-           low_est = lower_bound_est,
-           upp_est = upper_bound_est,
-           low_var = lower_bound_var_est,
-           upp_var = upper_bound_var_est))
+  return(c(estimate_lower = lower_bound_est,
+           estimate_upper = upper_bound_est,
+           std.error_lower = lower_bound_var_est^.5,
+           std.error_upper = upper_bound_var_est^.5,
+           conf.low = lower_bound_est - sig*lower_bound_var_est^.5,
+           conf.high = upper_bound_est + sig*upper_bound_var_est^.5))
 }
 
 construct_manski_bounds <-

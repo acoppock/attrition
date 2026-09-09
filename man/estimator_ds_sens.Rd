@@ -47,10 +47,13 @@ Must be numeric and take values 0 or 1.}
 \item{data}{A dataframe}
 }
 \value{
-A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
-  the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
-  the bound point estimates; and \code{low_var} and \code{upp_var}, their variances.
-  Pass to \code{\link[=tidy.attrition_bounds]{tidy()}} for a data frame.
+A named numeric vector with elements \code{estimate_lower} and
+  \code{estimate_upper}, the two ends of the identification region;
+  \code{std.error_lower} and \code{std.error_upper}, their standard errors;
+  and \code{conf.low} and \code{conf.high}, the joint Imbens-Manski
+  confidence interval. The names are those of the \code{bounds} row of
+  \code{\link[=tidy.attrition_bounds]{tidy()}}, which returns the same
+  quantities as a data frame.
 }
 \description{
 This function yields extreme value bounds under the assumption that the outcomes of 1-delta of the missing second-round units are ignorable, that is, that they are drawn from an unknown distribution with mean and variance equal to the observed second-round groups.

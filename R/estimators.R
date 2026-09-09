@@ -24,12 +24,12 @@ manski_cis <- function(n1_t, n1_c,
   sig <- im_critical_value(lower_bound_est, upper_bound_est,
                            lower_bound_var_est, upper_bound_var_est, alpha)
 
-  return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
-           ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
-           low_est=lower_bound_est,
-           upp_est=upper_bound_est,
-           low_var=lower_bound_var_est,
-           upp_var=upper_bound_var_est))
+  return(c(estimate_lower = lower_bound_est,
+           estimate_upper = upper_bound_est,
+           std.error_lower = lower_bound_var_est^.5,
+           std.error_upper = upper_bound_var_est^.5,
+           conf.low = lower_bound_est - sig*lower_bound_var_est^.5,
+           conf.high = upper_bound_est + sig*upper_bound_var_est^.5))
 }
 
 ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
@@ -66,10 +66,12 @@ ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
   sig <- im_critical_value(lower_bound_est, upper_bound_est,
                            lower_bound_var_est, upper_bound_var_est, alpha)
 
-  return(c(ci_lower=lower_bound_est - sig*lower_bound_var_est^.5,
-           ci_upper=upper_bound_est + sig*upper_bound_var_est^.5,
-           low_est=lower_bound_est,upp_est=upper_bound_est,
-           low_var=lower_bound_var_est,upp_var=upper_bound_var_est))
+  return(c(estimate_lower = lower_bound_est,
+           estimate_upper = upper_bound_est,
+           std.error_lower = lower_bound_var_est^.5,
+           std.error_upper = upper_bound_var_est^.5,
+           conf.low = lower_bound_est - sig*lower_bound_var_est^.5,
+           conf.high = upper_bound_est + sig*upper_bound_var_est^.5))
 }
 
 ds_manski_cis_2s_sens <- function(n1_t,n2_t,n1_c,n2_c,
@@ -107,10 +109,12 @@ ds_manski_cis_2s_sens <- function(n1_t,n2_t,n1_c,n2_c,
   sig <- im_critical_value(lower_bound_est, upper_bound_est,
                            lower_bound_var_est, upper_bound_var_est, alpha)
 
-  return(c(ci_lower= lower_bound_est - sig*lower_bound_var_est^.5,
-           ci_upper= upper_bound_est + sig*upper_bound_var_est^.5,
-           low_est= lower_bound_est,upp_est=upper_bound_est,
-           low_var= lower_bound_var_est,upp_var=upper_bound_var_est))
+  return(c(estimate_lower = lower_bound_est,
+           estimate_upper = upper_bound_est,
+           std.error_lower = lower_bound_var_est^.5,
+           std.error_upper = upper_bound_var_est^.5,
+           conf.low = lower_bound_est - sig*lower_bound_var_est^.5,
+           conf.high = upper_bound_est + sig*upper_bound_var_est^.5))
 }
 
 

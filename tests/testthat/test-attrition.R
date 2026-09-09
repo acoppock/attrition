@@ -7,7 +7,7 @@ library(testthat)
 # Data source: Harvard Dataverse doi:10.7910/DVN/AQB4MP, shipped as data(levendusky)
 #
 # The bound point estimates and variances below are the published quantities and
-# have never changed. The ci_lower/ci_upper expectations were refreshed when the
+# have never changed. The conf.low/conf.high expectations were refreshed when the
 # Imbens-Manski critical value moved from optim() on abs() to uniroot() on the
 # signed coverage excess; the two agree to 9 decimal places and uniroot is the
 # more accurate of the two.
@@ -16,12 +16,12 @@ test_that("estimator_ev matches Table 3 column 1 (no double sampling)", {
   dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_ev(Y = L_dif_w2, Z = Z1, R = R1,
                       minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -1.66907903885775,   tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  1.83588114554598,   tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]), -1.53914496339566,    tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),  1.70966762747749,    tolerance = 1e-10)
-  expect_equal(unname(out["low_var"]),  0.00624010083468930, tolerance = 1e-10)
-  expect_equal(unname(out["upp_var"]),  0.00588785669626299, tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]), -1.66907903885775,   tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  1.83588114554598,   tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]), -1.53914496339566,    tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  1.70966762747749,    tolerance = 1e-10)
+  expect_equal(unname(out["std.error_lower"]),  0.078994308875319, tolerance = 1e-10)
+  expect_equal(unname(out["std.error_upper"]),  0.0767323705893607, tolerance = 1e-10)
 })
 
 test_that("estimator_ds matches Table 3 column 2 (double sampling)", {
@@ -29,12 +29,12 @@ test_that("estimator_ds matches Table 3 column 2 (double sampling)", {
   out <- estimator_ds(Y = L_dif_w2, Z = Z1, R1 = R1,
                       Attempt = Attempt, R2 = R2,
                       minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -0.52830967410789,  tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.745174826433894,  tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]), -0.34174537662934,    tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),  0.571815728388134,   tolerance = 1e-10)
-  expect_equal(unname(out["low_var"]),  0.0128647858310974,  tolerance = 1e-10)
-  expect_equal(unname(out["upp_var"]),  0.0111080739914738,  tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]), -0.52830967410789,  tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  0.745174826433894,  tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]), -0.34174537662934,    tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  0.571815728388134,   tolerance = 1e-10)
+  expect_equal(unname(out["std.error_lower"]),  0.113423039242904,  tolerance = 1e-10)
+  expect_equal(unname(out["std.error_upper"]),  0.105394848030982,  tolerance = 1e-10)
 })
 
 test_that("estimator_ds matches Table 3 column 3 (DS + poststratification)", {
@@ -43,12 +43,12 @@ test_that("estimator_ds matches Table 3 column 3 (DS + poststratification)", {
                       Attempt = Attempt, R2 = R2,
                       strata = pid_3_recoded,
                       minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -0.529010551320638,  tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.696600307023322,  tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]), -0.344389910863888,   tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),  0.525683688852529,   tolerance = 1e-10)
-  expect_equal(unname(out["low_var"]),  0.0125981273119329,  tolerance = 1e-10)
-  expect_equal(unname(out["upp_var"]),  0.0107972726598501,  tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]), -0.529010551320638,  tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  0.696600307023322,  tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]), -0.344389910863888,   tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  0.525683688852529,   tolerance = 1e-10)
+  expect_equal(unname(out["std.error_lower"]),  0.112241379677608,  tolerance = 1e-10)
+  expect_equal(unname(out["std.error_upper"]),  0.103909925704189,  tolerance = 1e-10)
 })
 
 # ── Synthetic data tests (self-contained, seed = 343) ───────────────────────
@@ -79,20 +79,20 @@ make_synthetic <- function() {
 test_that("estimator_ds produces stable results on synthetic data", {
   df  <- make_synthetic()
   out <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = df)
-  expect_equal(unname(out["ci_lower"]), -0.0823029393291099, tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.624972549760316, tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]),   0.0572167798040737, tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),   0.487115989508957, tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]), -0.0823029393291099, tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  0.624972549760316, tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]),   0.0572167798040737, tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),   0.487115989508957, tolerance = 1e-10)
 })
 
 test_that("estimator_ds with poststratification produces stable results on synthetic data", {
   df  <- make_synthetic()
   out <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
                       strata = strata, data = df)
-  expect_equal(unname(out["ci_lower"]),  0.00420597347763489, tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.662950557416964,   tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]),   0.124794503861406,   tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),   0.544633130143652,   tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]),  0.00420597347763489, tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  0.662950557416964,   tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]),   0.124794503861406,   tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),   0.544633130143652,   tolerance = 1e-10)
 })
 
 # ── Helper function unit tests ───────────────────────────────────────────────
@@ -127,7 +127,7 @@ test_that("EV bound width equals (maxY - minY) * (frac_missing_t + frac_missing_
   # Support must actually cover the draws: 10,000 normals reach roughly 4 sd out
   out <- estimator_ev(Y, Z, R, minY = -4, maxY = 8, data = df)
   # Expected width ≈ 12 * ((1 - 0.8) + (1 - 0.6)) = 12 * 0.6 = 7.2
-  expect_equal(unname(out["upp_est"] - out["low_est"]), 7.2, tolerance = 0.1)
+  expect_equal(unname(out["estimate_upper"] - out["estimate_lower"]), 7.2, tolerance = 0.1)
 })
 
 # ── tidy() method tests ──────────────────────────────────────────────────────
@@ -139,29 +139,30 @@ test_that("tidy.attrition_bounds works for estimator_ev", {
   expect_s3_class(td, "tbl_df")
   expect_equal(nrow(td), 3L)
   expect_named(td, c("term", "estimate", "std.error", "conf.low", "conf.high",
-                     "estimate.low", "estimate.high", "outcome"))
+                     "estimate_lower", "estimate_upper",
+                     "std.error_lower", "std.error_upper", "outcome"))
   expect_equal(td$term, c("bounds", "lower_bound", "upper_bound"))
   # bounds row
   expect_true(is.na(td$estimate[1]))
   expect_true(is.na(td$std.error[1]))
-  expect_equal(td$conf.low[1],      unname(out["ci_lower"]))
-  expect_equal(td$conf.high[1],     unname(out["ci_upper"]))
-  expect_equal(td$estimate.low[1],  unname(out["low_est"]))
-  expect_equal(td$estimate.high[1], unname(out["upp_est"]))
+  expect_equal(td$conf.low[1],      unname(out["conf.low"]))
+  expect_equal(td$conf.high[1],     unname(out["conf.high"]))
+  expect_equal(td$estimate_lower[1],  unname(out["estimate_lower"]))
+  expect_equal(td$estimate_upper[1], unname(out["estimate_upper"]))
   # lower_bound row
-  expect_equal(td$estimate[2],  unname(out["low_est"]))
-  expect_equal(td$std.error[2], sqrt(unname(out["low_var"])))
+  expect_equal(td$estimate[2],  unname(out["estimate_lower"]))
+  expect_equal(td$std.error[2], unname(out["std.error_lower"]))
   expect_true(is.na(td$conf.low[2]))
   expect_true(is.na(td$conf.high[2]))
-  expect_true(is.na(td$estimate.low[2]))
-  expect_true(is.na(td$estimate.high[2]))
+  expect_true(is.na(td$estimate_lower[2]))
+  expect_true(is.na(td$estimate_upper[2]))
   # upper_bound row
-  expect_equal(td$estimate[3],  unname(out["upp_est"]))
-  expect_equal(td$std.error[3], sqrt(unname(out["upp_var"])))
+  expect_equal(td$estimate[3],  unname(out["estimate_upper"]))
+  expect_equal(td$std.error[3], unname(out["std.error_upper"]))
   expect_true(is.na(td$conf.low[3]))
   expect_true(is.na(td$conf.high[3]))
-  expect_true(is.na(td$estimate.low[3]))
-  expect_true(is.na(td$estimate.high[3]))
+  expect_true(is.na(td$estimate_lower[3]))
+  expect_true(is.na(td$estimate_upper[3]))
 })
 
 test_that("tidy.attrition_bounds works for estimator_ds", {
@@ -171,29 +172,30 @@ test_that("tidy.attrition_bounds works for estimator_ds", {
   expect_s3_class(td, "tbl_df")
   expect_equal(nrow(td), 3L)
   expect_named(td, c("term", "estimate", "std.error", "conf.low", "conf.high",
-                     "estimate.low", "estimate.high", "outcome"))
+                     "estimate_lower", "estimate_upper",
+                     "std.error_lower", "std.error_upper", "outcome"))
   expect_equal(td$term, c("bounds", "lower_bound", "upper_bound"))
   # bounds row
   expect_true(is.na(td$estimate[1]))
   expect_true(is.na(td$std.error[1]))
-  expect_equal(td$conf.low[1],      unname(out["ci_lower"]))
-  expect_equal(td$conf.high[1],     unname(out["ci_upper"]))
-  expect_equal(td$estimate.low[1],  unname(out["low_est"]))
-  expect_equal(td$estimate.high[1], unname(out["upp_est"]))
+  expect_equal(td$conf.low[1],      unname(out["conf.low"]))
+  expect_equal(td$conf.high[1],     unname(out["conf.high"]))
+  expect_equal(td$estimate_lower[1],  unname(out["estimate_lower"]))
+  expect_equal(td$estimate_upper[1], unname(out["estimate_upper"]))
   # lower_bound row
-  expect_equal(td$estimate[2],  unname(out["low_est"]))
-  expect_equal(td$std.error[2], sqrt(unname(out["low_var"])))
+  expect_equal(td$estimate[2],  unname(out["estimate_lower"]))
+  expect_equal(td$std.error[2], unname(out["std.error_lower"]))
   expect_true(is.na(td$conf.low[2]))
   expect_true(is.na(td$conf.high[2]))
-  expect_true(is.na(td$estimate.low[2]))
-  expect_true(is.na(td$estimate.high[2]))
+  expect_true(is.na(td$estimate_lower[2]))
+  expect_true(is.na(td$estimate_upper[2]))
   # upper_bound row
-  expect_equal(td$estimate[3],  unname(out["upp_est"]))
-  expect_equal(td$std.error[3], sqrt(unname(out["upp_var"])))
+  expect_equal(td$estimate[3],  unname(out["estimate_upper"]))
+  expect_equal(td$std.error[3], unname(out["std.error_upper"]))
   expect_true(is.na(td$conf.low[3]))
   expect_true(is.na(td$conf.high[3]))
-  expect_true(is.na(td$estimate.low[3]))
-  expect_true(is.na(td$estimate.high[3]))
+  expect_true(is.na(td$estimate_lower[3]))
+  expect_true(is.na(td$estimate_upper[3]))
 })
 
 test_that("tidy.attrition_trim works for estimator_trim", {
@@ -203,20 +205,21 @@ test_that("tidy.attrition_trim works for estimator_trim", {
   expect_s3_class(td, "tbl_df")
   expect_equal(nrow(td), 3L)
   expect_named(td, c("term", "estimate", "std.error", "conf.low", "conf.high",
-                     "estimate.low", "estimate.high", "outcome"))
+                     "estimate_lower", "estimate_upper",
+                     "std.error_lower", "std.error_upper", "outcome"))
   expect_equal(td$term, c("bounds", "lower_bound", "upper_bound"))
   # bounds row
   expect_true(is.na(td$estimate[1]))
-  expect_equal(td$estimate.low[1],  unname(out["lower_bound"]))
-  expect_equal(td$estimate.high[1], unname(out["upper_bound"]))
+  expect_equal(td$estimate_lower[1],  unname(out["estimate_lower"]))
+  expect_equal(td$estimate_upper[1], unname(out["estimate_upper"]))
   # lower_bound row
-  expect_equal(td$estimate[2], unname(out["lower_bound"]))
-  expect_true(is.na(td$estimate.low[2]))
-  expect_true(is.na(td$estimate.high[2]))
+  expect_equal(td$estimate[2], unname(out["estimate_lower"]))
+  expect_true(is.na(td$estimate_lower[2]))
+  expect_true(is.na(td$estimate_upper[2]))
   # upper_bound row
-  expect_equal(td$estimate[3], unname(out["upper_bound"]))
-  expect_true(is.na(td$estimate.low[3]))
-  expect_true(is.na(td$estimate.high[3]))
+  expect_equal(td$estimate[3], unname(out["estimate_upper"]))
+  expect_true(is.na(td$estimate_lower[3]))
+  expect_true(is.na(td$estimate_upper[3]))
   # NAs throughout for se and CI (no analytic variance for trimming bounds)
   expect_true(all(is.na(td$std.error)))
   expect_true(all(is.na(td$conf.low)))
@@ -244,20 +247,20 @@ test_that("estimator_ev with strata (paper data)", {
   dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_ev(Y = L_dif_w2, Z = Z1, R = R1, strata = pid_3_recoded,
                       minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -1.66862420646393,  tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  1.83541087616497,  tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]), -1.53858804710012,   tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),  1.70925509076352,   tolerance = 1e-10)
-  expect_equal(unname(out["low_var"]),  0.00624990987170985, tolerance = 1e-10)
-  expect_equal(unname(out["upp_var"]),  0.00588247147395304, tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]), -1.66862420646393,  tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  1.83541087616497,  tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]), -1.53858804710012,   tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  1.70925509076352,   tolerance = 1e-10)
+  expect_equal(unname(out["std.error_lower"]),  0.0790563714807975, tolerance = 1e-10)
+  expect_equal(unname(out["std.error_upper"]),  0.0766972716200064, tolerance = 1e-10)
 })
 
 test_that("estimator_trim DS path (paper data)", {
   dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_trim(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
                         se = "none", data = dat)
-  expect_equal(unname(out["upper_bound"]),  0.567599031583528,  tolerance = 1e-10)
-  expect_equal(unname(out["lower_bound"]), -0.268142333620083,  tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  0.567599031583528,  tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]), -0.268142333620083,  tolerance = 1e-10)
 })
 
 test_that("estimator_trim R path returns NA bounds on monotonicity violation (paper data)", {
@@ -265,8 +268,8 @@ test_that("estimator_trim R path returns NA bounds on monotonicity violation (pa
   # Control group has slightly higher attrition than treatment → violation
   out <- estimator_trim(Y = L_dif_w2, Z = Z1, R = R1, data = dat)
   expect_s3_class(out, "attrition_trim")
-  expect_true(is.na(out["lower_bound"]))
-  expect_true(is.na(out["upper_bound"]))
+  expect_true(is.na(out["estimate_lower"]))
+  expect_true(is.na(out["estimate_upper"]))
 })
 
 test_that("estimator_ds_sens(delta=1) exactly matches estimator_ds (paper data)", {
@@ -282,12 +285,12 @@ test_that("estimator_ds_sens delta=0.5 (paper data)", {
   dat <- subset(levendusky, !is.na(Z1))
   out <- estimator_ds_sens(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
                            delta = 0.5, minY = 0, maxY = 6, data = dat)
-  expect_equal(unname(out["ci_lower"]), -0.263141039257175,  tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.527330963282511,  tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]), -0.0916157282335379,  tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),  0.365164824275198,   tolerance = 1e-10)
-  expect_equal(unname(out["low_var"]),  0.0108743150646462,  tolerance = 1e-10)
-  expect_equal(unname(out["upp_var"]),  0.00971999036287018, tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]), -0.263141039257175,  tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  0.527330963282511,  tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]), -0.0916157282335379,  tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  0.365164824275198,   tolerance = 1e-10)
+  expect_equal(unname(out["std.error_lower"]),  0.1042799840077,  tolerance = 1e-10)
+  expect_equal(unname(out["std.error_upper"]),  0.0985900114761642, tolerance = 1e-10)
 })
 
 # ── Additional synthetic data tests ─────────────────────────────────────────
@@ -295,39 +298,39 @@ test_that("estimator_ds_sens delta=0.5 (paper data)", {
 test_that("estimator_ev with strata produces stable results on synthetic data", {
   df  <- make_synthetic()
   out <- estimator_ev(Y, Z, R1, strata = strata, minY = 1, maxY = 5, data = df)
-  expect_equal(unname(out["ci_lower"]), -0.828328275895711,   tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  1.3505157781213,   tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]), -0.699410333729967,   tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),  1.23280497665065,    tolerance = 1e-10)
-  expect_equal(unname(out["low_var"]),  0.00614288260167931, tolerance = 1e-10)
-  expect_equal(unname(out["upp_var"]),  0.00512127526981296, tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]), -0.828328275895711,   tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  1.3505157781213,   tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]), -0.699410333729967,   tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  1.23280497665065,    tolerance = 1e-10)
+  expect_equal(unname(out["std.error_lower"]),  0.0783765436956703, tolerance = 1e-10)
+  expect_equal(unname(out["std.error_upper"]),  0.0715630859438926, tolerance = 1e-10)
 })
 
 test_that("estimator_trim R path (monotonicity) produces stable results on synthetic data", {
   df  <- make_synthetic()
   out <- estimator_trim(Y, Z, R = R1, data = df)
-  expect_equal(unname(out["upper_bound"]),  0.534610520108332, tolerance = 1e-10)
-  expect_equal(unname(out["lower_bound"]),  0.100617821905443, tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  0.534610520108332, tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]),  0.100617821905443, tolerance = 1e-10)
   expect_equal(unname(out["Q"]),            0.101526858997151, tolerance = 1e-10)
 })
 
 test_that("estimator_trim DS path produces stable results on synthetic data", {
   df  <- make_synthetic()
   out <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2, se = "none", data = df)
-  expect_equal(unname(out["upper_bound"]),  0.544188162330423,  tolerance = 1e-10)
-  expect_equal(unname(out["lower_bound"]),  0.0677009048063324, tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),  0.544188162330423,  tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]),  0.0677009048063324, tolerance = 1e-10)
 })
 
 test_that("estimator_ds_sens delta=0.5 produces stable results on synthetic data", {
   df  <- make_synthetic()
   out <- estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0.5,
                            data = df)
-  expect_equal(unname(out["ci_lower"]),  0.0288421426106519, tolerance = 1e-10)
-  expect_equal(unname(out["ci_upper"]),  0.514219908745877, tolerance = 1e-10)
-  expect_equal(unname(out["low_est"]),   0.164445203836863, tolerance = 1e-10)
-  expect_equal(unname(out["upp_est"]),   0.379394808689304, tolerance = 1e-10)
-  expect_equal(unname(out["low_var"]),   0.00679563956699848, tolerance = 1e-10)
-  expect_equal(unname(out["upp_var"]),   0.00671788942612276, tolerance = 1e-10)
+  expect_equal(unname(out["conf.low"]),  0.0288421426106519, tolerance = 1e-10)
+  expect_equal(unname(out["conf.high"]),  0.514219908745877, tolerance = 1e-10)
+  expect_equal(unname(out["estimate_lower"]),   0.164445203836863, tolerance = 1e-10)
+  expect_equal(unname(out["estimate_upper"]),   0.379394808689304, tolerance = 1e-10)
+  expect_equal(unname(out["std.error_lower"]),   0.082435669263969, tolerance = 1e-10)
+  expect_equal(unname(out["std.error_upper"]),   0.0819627319342319, tolerance = 1e-10)
 })
 
 # ── Property tests ───────────────────────────────────────────────────────────
@@ -345,9 +348,9 @@ test_that("lower_bound <= upper_bound for all estimators (synthetic data)", {
   ev   <- estimator_ev(Y, Z, R1, minY = 1, maxY = 5, data = df)
   ds   <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = df)
   trim <- estimator_trim(Y, Z, R = R1, data = df)
-  expect_lte(unname(ev["low_est"]),       unname(ev["upp_est"]))
-  expect_lte(unname(ds["low_est"]),       unname(ds["upp_est"]))
-  expect_lte(unname(trim["lower_bound"]), unname(trim["upper_bound"]))
+  expect_lte(unname(ev["estimate_lower"]),       unname(ev["estimate_upper"]))
+  expect_lte(unname(ds["estimate_lower"]),       unname(ds["estimate_upper"]))
+  expect_lte(unname(trim["estimate_lower"]), unname(trim["estimate_upper"]))
 })
 
 test_that("Imbens-Manski CI covers the identification region", {
@@ -356,8 +359,8 @@ test_that("Imbens-Manski CI covers the identification region", {
     estimator_ev(Y, Z, R1, minY = 1, maxY = 5, data = df),
     estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = df)
   )) {
-    expect_lte(unname(out["ci_lower"]), unname(out["low_est"]))
-    expect_gte(unname(out["ci_upper"]), unname(out["upp_est"]))
+    expect_lte(unname(out["conf.low"]), unname(out["estimate_lower"]))
+    expect_gte(unname(out["conf.high"]), unname(out["estimate_upper"]))
   }
 })
 
@@ -365,8 +368,8 @@ test_that("double sampling narrows identification region vs extreme value bounds
   df       <- make_synthetic()
   ev       <- estimator_ev(Y, Z, R1, minY = 1, maxY = 5, data = df)
   ds       <- estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = df)
-  ev_width <- unname(ev["upp_est"] - ev["low_est"])
-  ds_width <- unname(ds["upp_est"] - ds["low_est"])
+  ev_width <- unname(ev["estimate_upper"] - ev["estimate_lower"])
+  ds_width <- unname(ds["estimate_upper"] - ds["estimate_lower"])
   expect_lte(ds_width, ev_width)
 })
 
@@ -375,7 +378,7 @@ test_that("increasing delta widens bounds in estimator_ds_sens", {
   sens0 <- estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0,   data = df)
   sens5 <- estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0.5, data = df)
   sens1 <- estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 1,   data = df)
-  width <- function(x) unname(x["upp_est"] - x["low_est"])
+  width <- function(x) unname(x["estimate_upper"] - x["estimate_lower"])
   expect_lte(width(sens0), width(sens5))
   expect_lte(width(sens5), width(sens1))
 })
@@ -446,7 +449,7 @@ test_that("estimator CIs widen as alpha shrinks", {
   df <- make_synthetic()
   ci_width <- function(a) {
     o <- estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = a, data = df)
-    unname(o["ci_upper"] - o["ci_lower"])
+    unname(o["conf.high"] - o["conf.low"])
   }
   widths <- vapply(c(0.20, 0.10, 0.05, 0.01, 0.001), ci_width, numeric(1))
   expect_true(all(diff(widths) > 0))
@@ -456,7 +459,7 @@ test_that("estimator CIs widen as alpha shrinks", {
   # depending on the platform. The tolerance is six orders of magnitude below
   # the 0.33 defect this guards against.
   o01 <- estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = 0.01, data = df)
-  sig <- unname((o01["low_est"] - o01["ci_lower"]) / sqrt(o01["low_var"]))
+  sig <- unname((o01["estimate_lower"] - o01["conf.low"]) / o01["std.error_lower"])
   expect_gt(sig, qnorm(0.99) - 1e-6)
 })
 
@@ -576,8 +579,8 @@ test_that("estimator_trim returns NA bounds when monotonicity is violated", {
   df$Z <- 1L - df$Z  # flip treatment — control now has higher response rate
   out  <- estimator_trim(Y, Z, R = R1, data = df)
   expect_s3_class(out, "attrition_trim")
-  expect_true(is.na(out["lower_bound"]))
-  expect_true(is.na(out["upper_bound"]))
+  expect_true(is.na(out["estimate_lower"]))
+  expect_true(is.na(out["estimate_upper"]))
 })
 
 test_that("tidy carries the outcome name from either interface", {
@@ -605,13 +608,13 @@ test_that("tidy carries the outcome name from either interface", {
 test_that("Lee (2009) analytic standard errors are produced and stable", {
   df  <- make_synthetic()
   out <- estimator_trim(Y, Z, R = R1, data = df)
-  expect_true(all(c("lower_se", "upper_se", "ci_lower", "ci_upper") %in% names(out)))
-  expect_true(all(out[c("lower_se", "upper_se")] > 0))
-  expect_equal(unname(out["lower_se"]), 0.108109837320316, tolerance = 1e-8)
-  expect_equal(unname(out["upper_se"]), 0.0939297066416204, tolerance = 1e-8)
+  expect_true(all(c("std.error_lower", "std.error_upper", "conf.low", "conf.high") %in% names(out)))
+  expect_true(all(out[c("std.error_lower", "std.error_upper")] > 0))
+  expect_equal(unname(out["std.error_lower"]), 0.108109837320316, tolerance = 1e-8)
+  expect_equal(unname(out["std.error_upper"]), 0.0939297066416204, tolerance = 1e-8)
   # The Imbens-Manski interval must contain the identified set
-  expect_lte(unname(out["ci_lower"]), unname(out["lower_bound"]))
-  expect_gte(unname(out["ci_upper"]), unname(out["upper_bound"]))
+  expect_lte(unname(out["conf.low"]), unname(out["estimate_lower"]))
+  expect_gte(unname(out["conf.high"]), unname(out["estimate_upper"]))
 })
 
 test_that("Lee eq (7) term 3 equals the Tauchmann (2014) form it is written in", {
@@ -629,10 +632,10 @@ test_that("analytic and bootstrap standard errors agree", {
   ana <- estimator_trim(Y, Z, R = R1, se = "analytic", data = df)
   set.seed(11)
   boo <- estimator_trim(Y, Z, R = R1, se = "bootstrap", sims = 600, data = df)
-  expect_equal(unname(boo["lower_bound"]), unname(ana["lower_bound"]))
-  expect_equal(unname(boo["upper_bound"]), unname(ana["upper_bound"]))
-  expect_equal(unname(boo["lower_se"]), unname(ana["lower_se"]), tolerance = 0.15)
-  expect_equal(unname(boo["upper_se"]), unname(ana["upper_se"]), tolerance = 0.15)
+  expect_equal(unname(boo["estimate_lower"]), unname(ana["estimate_lower"]))
+  expect_equal(unname(boo["estimate_upper"]), unname(ana["estimate_upper"]))
+  expect_equal(unname(boo["std.error_lower"]), unname(ana["std.error_lower"]), tolerance = 0.15)
+  expect_equal(unname(boo["std.error_upper"]), unname(ana["std.error_upper"]), tolerance = 0.15)
 })
 
 test_that("bootstrap standard errors work on the double-sampling path", {
@@ -640,9 +643,9 @@ test_that("bootstrap standard errors work on the double-sampling path", {
   set.seed(12)
   out <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
                         se = "bootstrap", sims = 300, data = df)
-  expect_true(all(out[c("lower_se", "upper_se")] > 0))
-  expect_lte(unname(out["ci_lower"]), unname(out["lower_bound"]))
-  expect_gte(unname(out["ci_upper"]), unname(out["upper_bound"]))
+  expect_true(all(out[c("std.error_lower", "std.error_upper")] > 0))
+  expect_lte(unname(out["conf.low"]), unname(out["estimate_lower"]))
+  expect_gte(unname(out["conf.high"]), unname(out["estimate_upper"]))
 })
 
 test_that("analytic standard errors are refused on the double-sampling path", {
@@ -655,8 +658,8 @@ test_that("analytic standard errors are refused on the double-sampling path", {
 test_that("se = 'none' leaves standard errors and CIs missing", {
   df  <- make_synthetic()
   out <- estimator_trim(Y, Z, R = R1, se = "none", data = df)
-  expect_true(all(is.na(out[c("lower_se", "upper_se", "ci_lower", "ci_upper")])))
-  expect_false(is.na(unname(out["lower_bound"])))
+  expect_true(all(is.na(out[c("std.error_lower", "std.error_upper", "conf.low", "conf.high")])))
+  expect_false(is.na(unname(out["estimate_lower"])))
 })
 
 test_that("bootstrap validates sims and estimator_trim validates alpha", {
@@ -683,10 +686,10 @@ test_that("tidy.attrition_trim carries standard errors and the IM interval", {
   df  <- make_synthetic()
   out <- estimator_trim(Y, Z, R = R1, se = "analytic", data = df)
   td  <- tidy(out)
-  expect_equal(td$std.error[2], unname(out["lower_se"]))
-  expect_equal(td$std.error[3], unname(out["upper_se"]))
-  expect_equal(td$conf.low[1],  unname(out["ci_lower"]))
-  expect_equal(td$conf.high[1], unname(out["ci_upper"]))
+  expect_equal(td$std.error[2], unname(out["std.error_lower"]))
+  expect_equal(td$std.error[3], unname(out["std.error_upper"]))
+  expect_equal(td$conf.low[1],  unname(out["conf.low"]))
+  expect_equal(td$conf.high[1], unname(out["conf.high"]))
   expect_true(is.na(td$std.error[1]))
 })
 
@@ -702,9 +705,9 @@ test_that("analytic standard errors recover the sampling variability (Monte Carl
   }
   n <- 3000; reps <- 400
   mc <- vapply(seq_len(reps), function(i)
-    unname(estimator_trim(Y, Z, R = R, se = "none", data = dgp(n))["upper_bound"]), numeric(1))
+    unname(estimator_trim(Y, Z, R = R, se = "none", data = dgp(n))["estimate_upper"]), numeric(1))
   se <- vapply(seq_len(60), function(i)
-    unname(estimator_trim(Y, Z, R = R, se = "analytic", data = dgp(n))["upper_se"]), numeric(1))
+    unname(estimator_trim(Y, Z, R = R, se = "analytic", data = dgp(n))["std.error_upper"]), numeric(1))
   # The mean analytic SE should track the Monte Carlo sd of the estimator
   expect_equal(mean(se), sd(mc), tolerance = 0.12)
 })
@@ -806,15 +809,16 @@ test_that("over-specified formulas are rejected with a clear error", {
 test_that("sensitivity_ds returns correct structure", {
   df  <- make_synthetic()
   out <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 20, data = df)
-  expect_named(out, c("sensitivity_plot", "sims_df", "p_star"))
+  expect_named(out, c("sensitivity_plot", "sims_df", "delta_star"))
   expect_s3_class(out$sensitivity_plot, "gg")
   expect_equal(nrow(out$sims_df), 20L)
   expect_named(out$sims_df,
-    c("ci_lower", "ci_upper", "low_est", "upp_est", "low_var", "upp_var",
-      "p", "change_lower", "change_upper", "change_any"))
-  # p grid runs from 0 to 1
-  expect_equal(out$sims_df$p[1],  0)
-  expect_equal(out$sims_df$p[20], 1)
+    c("estimate_lower", "estimate_upper", "std.error_lower", "std.error_upper",
+      "conf.low", "conf.high", "delta", "change_lower", "change_upper",
+      "change_any"))
+  # the delta grid runs from 0 to 1
+  expect_equal(out$sims_df$delta[1],  0)
+  expect_equal(out$sims_df$delta[20], 1)
 })
 
 test_that("sensitivity_ds detects delta* on synthetic data", {
@@ -822,9 +826,9 @@ test_that("sensitivity_ds detects delta* on synthetic data", {
   # so there must be a sign change interior to [0, 1]
   df  <- make_synthetic()
   out <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 50, data = df)
-  expect_s3_class(out$p_star, "data.frame")
-  expect_equal(nrow(out$p_star), 1L)
-  expect_true(out$p_star$p > 0 && out$p_star$p < 1)
+  expect_true(is.numeric(out$delta_star))
+  expect_length(out$delta_star, 1L)
+  expect_true(out$delta_star > 0 && out$delta_star < 1)
 })
 
 test_that("sensitivity_ds formula interface matches NSE interface", {
@@ -845,6 +849,6 @@ test_that("sensitivity_ds with strata returns correct structure", {
   df  <- make_synthetic()
   out <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 10,
                         strata = strata, data = df)
-  expect_named(out, c("sensitivity_plot", "sims_df", "p_star"))
+  expect_named(out, c("sensitivity_plot", "sims_df", "delta_star"))
   expect_equal(nrow(out$sims_df), 10L)
 })

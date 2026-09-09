@@ -19,7 +19,9 @@ knitr::opts_chunk$set(
 
 `estimator_ev()` reports a range of average treatment effects rather than a point, and the range comes from filling in the missing outcomes twice: once with the worst case for the treatment group, once with the best. That imputation can be drawn, and drawing it is the fastest way to see what the estimator is doing. This vignette puts the picture and the estimates side by side and checks that they are the same thing.
 
-The plot uses [vayr](https://cran.r-project.org/package=vayr) and the difference in means uses [estimatr](https://cran.r-project.org/package=estimatr). Both are suggested packages rather than required ones, so if either is missing the code below is shown but not run. `impute_extreme_values()` and the `attrition_experiment` data arrived in vayr 1.1.0, so the same is true against an earlier version.
+The plot uses [vayr](https://cran.r-project.org/package=vayr) and the difference in means uses [estimatr](https://cran.r-project.org/package=estimatr). Both are suggested packages rather than required ones, so if either is missing the code below is shown but not run. The same happens with vayr older than 1.1.0, the version that added `impute_extreme_values()` and the `attrition_experiment` data.
+
+The main vignette, `vignette("attrition")`, runs the same estimator and four others on the paper's own data.
 
 ```{r setup}
 library(attrition)
@@ -53,14 +55,12 @@ bound_means <- bounded |>
   mutate(Y = estimate)
 ```
 
-The nineteen orange points are the imputations. In the left panel they sit at the bottom of the scale for treated subjects and at the top for control subjects, which is the least favorable arrangement the data admit. The right panel reverses them. The black points are the arm means either way.
+`position_sunflower()` is vayr's answer to overplotting on a discrete scale: identical values would otherwise land on top of one another, so it spreads the ties into a small circular packing around the point they share. `density` sets how tight that packing is and `aspect_ratio` corrects it for a panel that is wider than it is tall. Both are chosen by eye.
 
 ```{r fig.alt = "Two panels of the same 200 subjects, with the nineteen imputed outcomes piled at opposite ends of the scale in each"}
-gg_df <- bounded
-
 # Labelled in the left panel only. The colours carry over to the right one, and
 # a second copy of the same two words would just be more ink.
-label_df <- gg_df |>
+label_df <- bounded |>
   distinct(scenario, imputed) |>
   filter(scenario == "Lower bound") |>
   mutate(
@@ -69,7 +69,7 @@ label_df <- gg_df |>
     label = if_else(imputed == "Outcome imputed", "imputed", "reported")
   )
 
-ggplot(gg_df, aes(condition, Y)) +
+ggplot(bounded, aes(condition, Y)) +
   geom_point(aes(colour = imputed, shape = imputed),
              position = position_sunflower(density = 45, aspect_ratio = 0.45),
              alpha = 0.5, stroke = 0) +
@@ -83,6 +83,8 @@ ggplot(gg_df, aes(condition, Y)) +
   labs(x = NULL, y = "Outcome [1: strongly disagree, 7: strongly agree]") +
   theme(legend.position = "none")
 ```
+
+The nineteen orange points are the imputations. In the left panel they sit at the bottom of the scale for treated subjects and at the top for control subjects, which is the least favorable arrangement the data admit. The right panel reverses them. The black points are the arm means either way, and the gap between them in each panel is that panel's bound.
 
 ## The estimates
 
@@ -134,6 +136,8 @@ bind_rows(
   mutate(width = upper - lower)
 ```
 
-## Saying the range out loud
+## Why you have to supply the range
 
-`minY` and `maxY` here are the same two numbers as `range` there, and neither function will guess them. That is deliberate in both places. No subject in this sample answered 1, so a function that inferred the scale from the observed data would have used 2 to 7 and reported bounds narrower than the data support. The width of the identification region is a claim about the measurement instrument, not about the sample.
+The same two numbers were typed twice above: `range = c(1, 7)` for `impute_extreme_values()` and `minY = 1, maxY = 7` for `estimator_ev()`. They differ only because the two functions belong to different packages, one taking the pair as a single argument and the other as two.
+
+Neither will guess them, and that is deliberate in both places. No subject in this sample answered 1, so a function that inferred the scale from the observed data would have used 2 to 7 and reported bounds narrower than the data support. The width of the identification region is a claim about the measurement instrument, not about the sample.

@@ -1,14 +1,21 @@
 # CRAN submission comments — attrition 1.0.0
 
+> **STALE as of 2026-09-08. Do not submit on these results.** Everything below
+> describes a tarball built from `e9a6677`. The estimator output names changed
+> after that commit (see NEWS), so the win-builder rounds recorded here checked
+> code that no longer exists. Re-run step 3 of the release protocol and rewrite
+> this file before submitting.
+
 ## Test environments
 
-* macOS 26.5 (local), R 4.6.0
-* GitHub Actions, all passing:
+* macOS 26.6.2 (local), R 4.6.0
+* GitHub Actions, all passing, tests FAIL 0 | WARN 0 | SKIP 0 | PASS 278 on each:
   * macOS-latest (release)
   * Windows-latest (release)
   * Ubuntu-latest (R-devel, release, oldrel-1)
-* win-builder, R Under development (unstable) (2026-08-08 r90381 ucrt),
-  x86_64-w64-mingw32
+* win-builder, x86_64-w64-mingw32, both Status: 1 NOTE (the note below):
+  * R Under development (unstable) (2026-08-27 r90452 ucrt)
+  * R 4.6.1 (2026-06-24 ucrt)
 
 ## R CMD check results
 

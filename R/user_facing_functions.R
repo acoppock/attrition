@@ -17,10 +17,13 @@
 #' @param data A dataframe. Must be given by name: \code{data} is the last
 #'   argument, so passing it positionally assigns it to another argument.
 #'
-#' @return A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
-#'   the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
-#'   the bound point estimates; and \code{low_var} and \code{upp_var}, their variances.
-#'   Pass to \code{\link[=tidy.attrition_bounds]{tidy()}} for a data frame.
+#' @return A named numeric vector with elements \code{estimate_lower} and
+#'   \code{estimate_upper}, the two ends of the identification region;
+#'   \code{std.error_lower} and \code{std.error_upper}, their standard errors;
+#'   and \code{conf.low} and \code{conf.high}, the joint Imbens-Manski
+#'   confidence interval. The names are those of the \code{bounds} row of
+#'   \code{\link[=tidy.attrition_bounds]{tidy()}}, which returns the same
+#'   quantities as a data frame.
 #' @export
 #'
 #' @examples
@@ -160,10 +163,13 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 #' @param data A dataframe. Must be given by name: \code{data} is the last
 #'   argument, so passing it positionally assigns it to another argument.
 #'
-#' @return A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
-#'   the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
-#'   the bound point estimates; and \code{low_var} and \code{upp_var}, their variances.
-#'   Pass to \code{\link[=tidy.attrition_bounds]{tidy()}} for a data frame.
+#' @return A named numeric vector with elements \code{estimate_lower} and
+#'   \code{estimate_upper}, the two ends of the identification region;
+#'   \code{std.error_lower} and \code{std.error_upper}, their standard errors;
+#'   and \code{conf.low} and \code{conf.high}, the joint Imbens-Manski
+#'   confidence interval. The names are those of the \code{bounds} row of
+#'   \code{\link[=tidy.attrition_bounds]{tidy()}}, which returns the same
+#'   quantities as a data frame.
 #' @export
 #'
 #' @examples
@@ -267,11 +273,14 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #' @param data A dataframe. Must be given by name: \code{data} is the last
 #'   argument, so passing it positionally assigns it to another argument.
 #'
-#' @return A named numeric vector containing \code{lower_bound} and \code{upper_bound},
-#'   the trimming bound estimates; \code{lower_se} and \code{upper_se}, their standard
-#'   errors; \code{ci_lower} and \code{ci_upper}, the joint Imbens-Manski confidence
-#'   interval; and the intermediate quantities used to build them. All elements are
-#'   \code{NA} when monotonicity is violated. Pass to
+#' @return A named numeric vector leading with the same six elements as the
+#'   bounding estimators, in the same order whichever path was taken:
+#'   \code{estimate_lower} and \code{estimate_upper}, the two trimming bounds;
+#'   \code{std.error_lower} and \code{std.error_upper}, their standard errors;
+#'   and \code{conf.low} and \code{conf.high}, the joint Imbens-Manski
+#'   confidence interval. The intermediate quantities used to build them follow,
+#'   and differ between the two paths. All six lead elements are \code{NA} when
+#'   monotonicity is violated. Pass to
 #'   \code{\link[=tidy.attrition_trim]{tidy()}} for a data frame.
 #'
 #' @details
@@ -341,8 +350,9 @@ estimator_trim <-
     }
 
     na_trim <- structure(
-      c(lower_bound = NA_real_, upper_bound = NA_real_, Q = NA_real_,
-        lower_se = NA_real_, upper_se = NA_real_, ci_lower = NA_real_, ci_upper = NA_real_),
+      c(estimate_lower = NA_real_, estimate_upper = NA_real_,
+        std.error_lower = NA_real_, std.error_upper = NA_real_,
+        conf.low = NA_real_, conf.high = NA_real_),
       class = c("attrition_trim", "numeric")
     )
 
@@ -407,20 +417,25 @@ estimator_trim <-
       variances <- boot[c("lower_var", "upper_var")]
     }
 
-    ci <- c(ci_lower = NA_real_, ci_upper = NA_real_)
+    conf <- c(conf.low = NA_real_, conf.high = NA_real_)
     if (se != "none") {
       sig <- im_critical_value(unname(out["lower_bound"]), unname(out["upper_bound"]),
                                unname(variances["lower_var"]), unname(variances["upper_var"]), alpha)
-      ci <- c(ci_lower = unname(out["lower_bound"]) - sig*unname(variances["lower_var"])^.5,
-              ci_upper = unname(out["upper_bound"]) + sig*unname(variances["upper_var"])^.5)
+      conf <- c(conf.low = unname(out["lower_bound"]) - sig*unname(variances["lower_var"])^.5,
+                conf.high = unname(out["upper_bound"]) + sig*unname(variances["upper_var"])^.5)
     }
 
     # Drop the quantities that exist only to feed lee_variance
     out <- out[!names(out) %in% c("var_keep_U", "var_keep_L", "n_keep_U", "n_keep_L", "var_control")]
-    out <- c(out,
-             lower_se = unname(variances["lower_var"])^.5,
-             upper_se = unname(variances["upper_var"])^.5,
-             ci)
+    # The six reported quantities lead, in the same order whichever path ran, so
+    # the single-stage and double-sampling calls return vectors that begin alike.
+    # The path-specific intermediates follow.
+    core <- c(estimate_lower = unname(out["lower_bound"]),
+              estimate_upper = unname(out["upper_bound"]),
+              std.error_lower = unname(variances["lower_var"])^.5,
+              std.error_upper = unname(variances["upper_var"])^.5,
+              conf)
+    out <- c(core, out[!names(out) %in% c("lower_bound", "upper_bound")])
     return(structure(out, class = c("attrition_trim", "numeric"),
                      se_method = se, single_stage = single_stage,
                      outcome = yz$outcome))
@@ -448,10 +463,13 @@ estimator_trim <-
 #' @param data A dataframe
 #' @param delta Sensitivity parameter in [0, 1]. At delta = 1 (default) worst-case bounds apply; at delta = 0 ignorability holds for all follow-up non-responders.
 #'
-#' @return A named numeric vector with elements \code{ci_lower} and \code{ci_upper},
-#'   the joint Imbens-Manski confidence interval; \code{low_est} and \code{upp_est},
-#'   the bound point estimates; and \code{low_var} and \code{upp_var}, their variances.
-#'   Pass to \code{\link[=tidy.attrition_bounds]{tidy()}} for a data frame.
+#' @return A named numeric vector with elements \code{estimate_lower} and
+#'   \code{estimate_upper}, the two ends of the identification region;
+#'   \code{std.error_lower} and \code{std.error_upper}, their standard errors;
+#'   and \code{conf.low} and \code{conf.high}, the joint Imbens-Manski
+#'   confidence interval. The names are those of the \code{bounds} row of
+#'   \code{\link[=tidy.attrition_bounds]{tidy()}}, which returns the same
+#'   quantities as a data frame.
 #' @export
 #'
 #' @examples
@@ -581,9 +599,10 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #' @param sims Number of values of delta at which to evaluate the bounds. Defaults to 100.
 #'
 #' @return A list with three elements: \code{sensitivity_plot}, a ggplot object;
-#'   \code{sims_df}, a data frame of bounds and confidence intervals at each delta;
-#'   and \code{p_star}, a one-row data frame giving delta* when it exists and an
-#'   explanatory character string when it does not.
+#'   \code{sims_df}, a data frame of bounds and confidence intervals at each
+#'   value of \code{delta}; and \code{delta_star}, a single number giving
+#'   delta*, or \code{NA} when no delta* exists, which happens when the
+#'   confidence interval already contains zero at delta = 0.
 #' @importFrom ggplot2 ggplot aes geom_line geom_ribbon geom_point geom_text
 #'   geom_hline xlab ylab theme_bw theme element_blank
 #' @importFrom grid unit
@@ -613,7 +632,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #' sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
 #'                        sims = 20, data = df)
 #' sens$sensitivity_plot
-#' sens$p_star
+#' sens$delta_star
 sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata = NULL, alpha = 0.05, data){
   if (missing(data)) require_data("sensitivity_ds")
   # Formula interface: sensitivity_ds(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
@@ -633,48 +652,48 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
 
   strata <- resolve_column(eval(substitute(strata), data, parent.frame()), data)
 
-  ps <- seq(0, 1, length.out = sims)
+  deltas <- seq(0, 1, length.out = sims)
 
   if (is.null(strata)) {
     df <- data.frame(Y, Z, R1, R2, Attempt)
     sims_df <-
-      map(ps, \(d) estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, alpha = alpha,
-                                     R2 = R2, minY = minY, maxY = maxY, data = df, delta = d)) |>
+      map(deltas, \(d) estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, alpha = alpha,
+                                         R2 = R2, minY = minY, maxY = maxY, data = df, delta = d)) |>
       (\(lst) do.call(rbind, lst))() |>
       as.data.frame() |>
-      dplyr::mutate(p = ps,
-                    change_lower = find_sign_changes(ci_lower),
-                    change_upper = find_sign_changes(ci_upper),
+      dplyr::mutate(delta = deltas,
+                    change_lower = find_sign_changes(conf.low),
+                    change_upper = find_sign_changes(conf.high),
                     change_any = change_lower | change_upper)
   } else {
     df <- data.frame(Y, Z, R1, R2, Attempt, strata)
     sims_df <-
-      map(ps, \(d) estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,
-                                     strata = strata, alpha = alpha,
-                                     R2 = R2, minY = minY, maxY = maxY, data = df, delta = d)) |>
+      map(deltas, \(d) estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,
+                                         strata = strata, alpha = alpha,
+                                         R2 = R2, minY = minY, maxY = maxY, data = df, delta = d)) |>
       (\(lst) do.call(rbind, lst))() |>
       as.data.frame() |>
-      dplyr::mutate(p = ps,
-                    change_lower = find_sign_changes(ci_lower),
-                    change_upper = find_sign_changes(ci_upper),
+      dplyr::mutate(delta = deltas,
+                    change_lower = find_sign_changes(conf.low),
+                    change_upper = find_sign_changes(conf.high),
                     change_any = change_lower | change_upper)
   }
 
 
   points_df <-
-    data.frame(p = c(0, 1, 1),
-               value = c(with(sims_df, low_est[p==0]),
-                         with(sims_df, low_est[p==1]),
-                         with(sims_df, upp_est[p==1])),
+    data.frame(delta = c(0, 1, 1),
+               value = c(with(sims_df, estimate_lower[delta==0]),
+                         with(sims_df, estimate_lower[delta==1]),
+                         with(sims_df, estimate_upper[delta==1])),
                hjust = c(-.3, 1.1, 1.1),
                vjust = c(NA, 1, -1),
                label = c("Naive Estimate", "Worst Case Lower Bound", "Worst Case Upper Bound"))
 
   g <-
-    ggplot(sims_df, aes(x = p)) +
-    geom_line(aes(y = upp_est), alpha = 0.5) +
-    geom_line(aes(y = low_est), alpha = 0.5) +
-    geom_ribbon(aes(ymax = ci_upper, ymin = ci_lower), alpha = 0.2) +
+    ggplot(sims_df, aes(x = delta)) +
+    geom_line(aes(y = estimate_upper), alpha = 0.5) +
+    geom_line(aes(y = estimate_lower), alpha = 0.5) +
+    geom_ribbon(aes(ymax = conf.high, ymin = conf.low), alpha = 0.2) +
     geom_point(data = points_df, aes(y = value)) +
     geom_text(data = points_df, aes(y = value, label = label, hjust = hjust, vjust = vjust)) +
     ylab(paste0("Identification Regions and ", round((1-alpha)*100), "% Confidence Intervals")) +
@@ -686,21 +705,22 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
           legend.title = element_blank())
 
 
-  p_star_df <- "No value of the sensitivity parameter yields a statistically significant result."
+  # delta*: the smallest delta at which the confidence interval reaches zero.
+  # NA when the interval contains zero at every delta, including delta = 0,
+  # which is to say when the naive estimate is not significant to begin with.
+  crossings <- with(sims_df, delta[change_any])
+  delta_star <- if (length(crossings) >= 1) min(crossings) else NA_real_
 
-  p_star <- with(sims_df, p[change_any])
-  if(length(p_star) >= 1){
-    p_star <- min(p_star)
-    p_star_df <- data.frame(p = p_star,
-                            value = 0,
-                            label = paste0("delta^'*' == ", round(p_star, 2)),
-                            hjust = ifelse(p_star > 0.5, 1.1, -1.1),
-                            vjust = ifelse(with(sims_df, low_est[p==0]) > 0, 1.3, -1.3))
+  if (!is.na(delta_star)) {
+    star_df <- data.frame(delta = delta_star,
+                          value = 0,
+                          label = paste0("delta^'*' == ", round(delta_star, 2)),
+                          vjust = ifelse(with(sims_df, estimate_lower[delta==0]) > 0, 1.3, -1.3))
 
-    g <- g + geom_point(data = p_star_df, aes(y = value)) +
-      geom_text(data = p_star_df, aes(label = label, y = value,  vjust = vjust), parse = TRUE)
+    g <- g + geom_point(data = star_df, aes(y = value)) +
+      geom_text(data = star_df, aes(label = label, y = value, vjust = vjust), parse = TRUE)
   }
 
-  return(list(sensitivity_plot = g, sims_df = sims_df, p_star = p_star_df))
+  return(list(sensitivity_plot = g, sims_df = sims_df, delta_star = delta_star))
 
 }

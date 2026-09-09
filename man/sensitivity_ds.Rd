@@ -49,9 +49,10 @@ argument, so passing it positionally assigns it to another argument.}
 }
 \value{
 A list with three elements: \code{sensitivity_plot}, a ggplot object;
-  \code{sims_df}, a data frame of bounds and confidence intervals at each delta;
-  and \code{p_star}, a one-row data frame giving delta* when it exists and an
-  explanatory character string when it does not.
+  \code{sims_df}, a data frame of bounds and confidence intervals at each
+  value of \code{delta}; and \code{delta_star}, a single number giving
+  delta*, or \code{NA} when no delta* exists, which happens when the
+  confidence interval already contains zero at delta = 0.
 }
 \description{
 This function performs a line search over values of delta, the sensitivity parameter, in order to find (if it exists) delta*, the value of delta where the confidence interval no longer includes zero.
@@ -78,5 +79,5 @@ df <- data.frame(Y, Z, R1, Attempt, R2)
 sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
                        sims = 20, data = df)
 sens$sensitivity_plot
-sens$p_star
+sens$delta_star
 }

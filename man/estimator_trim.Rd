@@ -53,11 +53,14 @@ treatment arm and works for both paths. \code{"none"} returns bounds alone.}
 argument, so passing it positionally assigns it to another argument.}
 }
 \value{
-A named numeric vector containing \code{lower_bound} and \code{upper_bound},
-  the trimming bound estimates; \code{lower_se} and \code{upper_se}, their standard
-  errors; \code{ci_lower} and \code{ci_upper}, the joint Imbens-Manski confidence
-  interval; and the intermediate quantities used to build them. All elements are
-  \code{NA} when monotonicity is violated. Pass to
+A named numeric vector leading with the same six elements as the
+  bounding estimators, in the same order whichever path was taken:
+  \code{estimate_lower} and \code{estimate_upper}, the two trimming bounds;
+  \code{std.error_lower} and \code{std.error_upper}, their standard errors;
+  and \code{conf.low} and \code{conf.high}, the joint Imbens-Manski
+  confidence interval. The intermediate quantities used to build them follow,
+  and differ between the two paths. All six lead elements are \code{NA} when
+  monotonicity is violated. Pass to
   \code{\link[=tidy.attrition_trim]{tidy()}} for a data frame.
 }
 \description{

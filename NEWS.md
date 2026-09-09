@@ -4,6 +4,34 @@ First release.
 
 ## New features
 
+* One vocabulary for estimator output, taken from broom. Every estimator
+  returns the same six named elements in the same order: `estimate_lower` and
+  `estimate_upper`, the two ends of the identification region;
+  `std.error_lower` and `std.error_upper`, their standard errors; and
+  `conf.low` and `conf.high`, the joint Imbens-Manski interval. They are the
+  names `tidy()` uses for the same quantities, so the `bounds` row of the tidy
+  output is the returned vector transcribed.
+
+  Previously `estimator_ev()`, `estimator_ds()` and `estimator_ds_sens()`
+  returned `ci_lower`/`ci_upper`/`low_est`/`upp_est`/`low_var`/`upp_var` while
+  `estimator_trim()` returned `lower_bound`/`upper_bound`/`lower_se`/`upper_se`,
+  so the same two ideas had two abbreviations and two scales, and `tidy()`
+  introduced a third set of names. The uncertainty is now reported as a
+  standard error everywhere, where three of the estimators previously reported
+  a variance under a name that did not say so.
+
+  `estimator_trim()`'s two paths also returned different vectors in different
+  orders. Both now lead with the same six elements, with the path-specific
+  intermediates after.
+
+* `sensitivity_ds()` calls the sensitivity parameter `delta` throughout, as the
+  prose and the plot always did. `sims_df` gains a `delta` column in place of
+  `p`, and the returned list carries `delta_star`, a single number giving
+  delta* or `NA` when no delta* exists. It replaces `p_star`, which was the
+  plot's annotation data frame when a delta* existed and an explanatory
+  character string when none did, so reading the answer off it took two `$`
+  and failed in the second case.
+
 * Formula interface on all estimators: `estimator_ev(Y ~ Z, R = "R", ...)`,
   `estimator_ds(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2", ...)`, and
   likewise for `estimator_trim()`, `estimator_ds_sens()`, and
@@ -15,9 +43,10 @@ First release.
   `attrition_trim`) via the `generics` package. Each method returns a
   three-row tibble with rows `"bounds"`, `"lower_bound"`, and `"upper_bound"`,
   suitable for use with DeclareDesign. The `"bounds"` row carries the joint
-  Imbens-Manski confidence interval in `conf.low`/`conf.high` and the bound
-  point estimates in `estimate.low`/`estimate.high`; the individual rows carry
-  point estimates and standard errors selectable via the `term` argument.
+  Imbens-Manski confidence interval in `conf.low`/`conf.high`, the bound point
+  estimates in `estimate_lower`/`estimate_upper` and their standard errors in
+  `std.error_lower`/`std.error_upper`; the individual rows carry one endpoint
+  each in broom's `estimate`/`std.error`, selectable via the `term` argument.
 
 * S3 classes on all estimator return values: `estimator_ds()` returns class
   `c("attrition_ds", "attrition_bounds")`, `estimator_ev()` returns
