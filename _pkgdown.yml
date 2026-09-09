@@ -67,7 +67,7 @@ reference:
       - reexports
   - title: Data
     contents:
-      - levendusky
+      - levendusky_replication
   - title: Package overview
     contents:
       - attrition-package

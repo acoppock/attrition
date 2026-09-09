@@ -55,7 +55,7 @@ and a formula interface for use with \pkg{DeclareDesign}.
 \section{Where to start}{
 
 \code{vignette("attrition")} walks through the design and all five estimators
-on the replication data in \code{\link{levendusky}}, reproducing the published
+on the replication data in \code{\link{levendusky_replication}}, reproducing the published
 table as it goes.
 }
 

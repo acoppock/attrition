@@ -18,7 +18,7 @@
 #' nonrespondent, and the worst-case bounds narrow sharply.
 #'
 #' The placebo condition is not analyzed in the paper. Every published result
-#' uses \code{subset(levendusky, !is.na(Z1))}, the polarized-versus-moderate
+#' uses \code{subset(levendusky_replication, !is.na(Z1))}, the polarized-versus-moderate
 #' contrast.
 #'
 #' @format A data frame with 2,955 rows and 12 columns:
@@ -61,11 +61,11 @@
 #' 33(2):283-301.
 #'
 #' @examples
-#' dat <- subset(levendusky, !is.na(Z1))
+#' dat <- subset(levendusky_replication, !is.na(Z1))
 #'
 #' # Table 1: attrition by condition
 #' with(dat, table(Z_lev, R1))
 #'
 #' # Table 3, column 2
 #' estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
-"levendusky"
+"levendusky_replication"
