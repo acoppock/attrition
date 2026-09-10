@@ -121,12 +121,13 @@
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/attrition/">attrition</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
-<span>                  Z <span class="op">=</span> <span class="va">Z</span>,</span>
-<span>                  R <span class="op">=</span> <span class="va">R1</span>,</span>
-<span>                  minY <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>                  maxY <span class="op">=</span> <span class="fl">6</span>,</span>
-<span>                  data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">fit_ev</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>                       Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>                       R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                       minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                       maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                       data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_ev</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 3 × 10</span></span>
 <span><span class="co">#&gt;   term       estimate std.error conf.low conf.high estimate_lower estimate_upper</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;         &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;</span></span>
@@ -138,14 +139,15 @@
 <p>The effect lies somewhere between -1.54 and 1.71, which is honest and nearly useless. Little of that width is sampling error: the confidence interval is barely wider than the bounds. A larger sample would not have helped, because the problem is 536 unknown outcomes rather than noise.</p>
 <p>Double sampling addresses the unknown outcomes directly. After the first round of data collection, a random sample of the nonrespondents is drawn and pursued with more effort than the first attempt. Here, 50 nonrespondents per condition were offered $4.00 rather than the original $1.00, and 72 of those 100 answered. Because they are a random sample of the nonrespondents, their outcomes stand in for all 536, and only the 28 who refused twice still need worst-case treatment.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
-<span>                  Z <span class="op">=</span> <span class="va">Z</span>,</span>
-<span>                  R1 <span class="op">=</span> <span class="va">R1</span>,</span>
-<span>                  Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
-<span>                  R2 <span class="op">=</span> <span class="va">R2</span>,</span>
-<span>                  minY <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>                  maxY <span class="op">=</span> <span class="fl">6</span>,</span>
-<span>                  data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">fit_ds</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>                       Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>                       R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                       Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>                       R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                       minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                       maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                       data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_ds</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 3 × 10</span></span>
 <span><span class="co">#&gt;   term       estimate std.error conf.low conf.high estimate_lower estimate_upper</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;         &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;</span></span>
