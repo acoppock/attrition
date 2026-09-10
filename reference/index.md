@@ -25,8 +25,10 @@ before a finding stops holding.
 
 ## Trimming bounds
 
-Lee (2009) bounds, which assume treatment moves response in one
-direction only and do not require the outcome to be bounded.
+Bounds on the effect among subjects who would report either way, under
+monotone selection in a stated direction (Lee 2009) or under random
+assignment alone (Imai 2008). The outcome need not be bounded, and
+either assumption pairs with either design.
 
 - [`estimator_trim()`](https://alexandercoppock.com/attrition/reference/estimator_trim.md)
   : Trimming Bounds

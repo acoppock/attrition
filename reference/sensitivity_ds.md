@@ -85,6 +85,14 @@ of `delta`; and `delta_star`, a single number giving delta\*, or `NA`
 when no delta\* exists, which happens when the confidence interval
 already contains zero at delta = 0.
 
+## References
+
+Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern
+(2017). Combining Double Sampling and Bounds to Address Nonignorable
+Missing Outcomes in Randomized Experiments. *Political Analysis*
+25(2):188-206.
+[doi:10.1017/pan.2016.6](https://doi.org/10.1017/pan.2016.6)
+
 ## Examples
 
 ``` r

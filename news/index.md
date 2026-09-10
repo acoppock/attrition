@@ -27,6 +27,76 @@ First release.
   the data by downloading the deposited file from the Harvard Dataverse
   rather than from a copy checked into the repository.
 
+- [`estimator_trim()`](https://alexandercoppock.com/attrition/reference/estimator_trim.md)
+  takes a `monotonicity` argument, and it separates the selection
+  assumption from the design. Previously the two were welded together:
+  `R` meant Lee’s monotone estimator in one hardwired direction, and
+  `R1`/`Attempt`/`R2` meant the assumption-free one, with no way to ask
+  for any other combination. The argument now takes
+  `"treatment_increases_response"` (Lee’s direction: control respondents
+  are the always-reporters, the treatment group is trimmed),
+  `"treatment_decreases_response"` (the reverse, trimming the control
+  group), or `"none"`, and all three work in either design. The defaults
+  are unchanged, so existing calls return exactly what they did:
+  monotone on the single-stage path, none on the double-sampling path.
+
+  `"none"` gives the sharp bounds of Imai (2008, Proposition 1), which
+  build on Zhang and Rubin (2003) and Horowitz and Manski (1995): the
+  always-reporter share is bounded below by the Frechet-Hoeffding bound
+  `1 - f0 - f1`, and each arm is trimmed by the largest share of its
+  respondents that could fail to be always-reporters. Nothing about
+  double sampling was ever what licensed dropping monotonicity; the
+  follow-up just shrinks the never-reporter share from 27 percent to 1.4
+  percent, which is what makes the assumption-free bounds worth
+  reporting. On the paper’s data all four cells now estimate, from 0.08
+  points wide to 2.98.
+
+  The direction matters in the other direction too. Only one direction
+  is consistent with any given pair of response rates, and the paper’s
+  own data contradict Lee’s: the polarized group responded at 0.724
+  against the control group’s 0.735. That case used to return `NA` in
+  silence with no recourse. It now warns, names the direction the
+  response rates do admit, and can be asked for it.
+
+- Two degenerate cases in the trimming bounds are errors rather than
+  silent `NaN`s: missingness rates summing to one or more, where nothing
+  bounds the always-reporter share away from zero and the
+  assumption-free bounds do not exist, and a trimming proportion so
+  large for the group it applies to that one side retains no
+  observations. Both are caught in the bootstrap as well, which drops
+  the replicate and reports how many survived.
+
+- Analytic standard errors are offered only where Lee (2009,
+  Proposition 3) derives them, which is a single unweighted sample with
+  one group trimmed. Asking for them in the other three cells is an
+  error naming the reason rather than a silent substitution of the
+  bootstrap.
+
+- Every estimator’s help page cites the papers behind it, where four of
+  the five previously cited nothing at all: Manski (1990) and Imbens and
+  Manski (2004) for the worst-case bounds and their joint interval,
+  Neyman (1938) and Hansen and Hurwitz (1946) for the double-sampling
+  design, and Miratrix, Sekhon and Yu
+
+  2013. for poststratification. Every entry in the package, including
+        those already there, was checked field by field against
+        Crossref.
+
+- The vignette closes with a figure putting all nine estimators on one
+  axis, grouped by the population each one is about, since they do not
+  all estimate the same thing: the naive difference in means describes
+  the subjects who answered, the extreme value and double-sampling
+  estimators describe all 1,980, and the trimming estimators describe
+  the always reporters.
+
+- The two vignettes are one. `vignette("drawing-the-bounds")` is gone,
+  and the figure it drew, along with the check that the picture and the
+  estimates agree, is now a section of
+  [`vignette("attrition")`](https://alexandercoppock.com/attrition/articles/attrition.md)
+  drawn on the paper’s own data rather than on a simulated experiment.
+  The chunks needing vayr and estimatr are guarded individually, so the
+  rest of the vignette builds without them.
+
 - One vocabulary for estimator output, taken from broom. Every estimator
   returns the same six named elements in the same order:
   `estimate_lower` and `estimate_upper`, the two ends of the

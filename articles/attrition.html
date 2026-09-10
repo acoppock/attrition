@@ -34,12 +34,6 @@
       <ul class="navbar-nav me-auto">
 <li class="active nav-item"><a class="nav-link" href="../articles/attrition.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/drawing-the-bounds.html">Drawing the extreme value bounds</a></li>
-  </ul>
-</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -70,40 +64,43 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/attrition/">attrition</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/attrition/">attrition</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     filter, lag</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/vayr/" class="external-link">vayr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://declaredesign.org/r/estimatr/" class="external-link">estimatr</a></span><span class="op">)</span></span></code></pre></div>
 <p>This vignette works through a two-wave survey experiment in which 536
-of 1,980 subjects never answered the second wave. Everything runs on the
+of 1,980 subjects did not report an outcome. The example is the
 replication study from Coppock, Gerber, Green, and Kern (2017), which
 ships with the package as <code>levendusky_replication</code>.</p>
-<p>The situation is an ordinary one. An experiment is fielded, the
-outcome is missing for a substantial minority of subjects, and nothing
-in the data says whether they went missing for reasons connected to the
-outcomes they would have reported. Rather than settle that question by
-assumption, the estimators here report the range of average treatment
-effects consistent with what was observed. The double-sampling design
-then shrinks that range, by recovering outcomes from a random sample of
-the nonrespondents and pursuing them with more effort than the first
-attempt.</p>
-<p>We take the estimators in the order a researcher meets the problem:
-what the data look like, what can be said with no follow-up at all, what
-a follow-up buys, and how much of the remaining assumption a result
-survives. The short version is that a follow-up on 100 of the 536
-nonrespondents shrinks the identification region by a factor of 3.6,
-from 3.25 points wide to 0.91 on an outcome scored from 0 to 6.</p>
+<p>We work through the extreme value bounds without double sampling and
+how the extreme value bounds change with the second round data
+collection. In short, a follow-up on 100 of the 536 nonrespondents
+shrinks the identification region by a factor of 3.6, from 3.25 points
+wide to 0.91 on an outcome that ranges from 0 to 6.</p>
 <div class="section level2">
 <h2 id="the-experiment">The experiment<a class="anchor" aria-label="anchor" href="#the-experiment"></a>
 </h2>
-<p><code>levendusky_replication</code> holds a two-wave survey
-experiment run on Mechanical Turk, replicating Levendusky and Malhotra
-(2016). Subjects read a news article describing the electorate as
-sharply divided (the polarized condition) or as focused on common ground
-(the moderate condition). The outcome, perceived polarization, was
-measured immediately and again ten days later. The experiment ran a
-third group who read nothing on the topic, which the paper does not
-analyze and which is not shipped here, so the 1,980 rows are the
-polarized-versus-moderate contrast and nothing else.</p>
-<p>Six of its ten columns do the work below.
-<code><a href="../reference/levendusky_replication.html">?levendusky_replication</a></code> documents them all.</p>
+<p><code>levendusky_replication</code> dataset is derived from a
+two-wave survey experiment run on Mechanical Turk, replicating
+Levendusky and Malhotra (2016). Subjects read a news article describing
+the electorate as sharply divided (the polarized condition) or as
+focused on common ground (the moderate condition). The outcome,
+“perceived polarization,” was measured immediately and again ten days
+later. (The experiment ran a third group who read nothing on the topic,
+which the paper does not analyze and which is not included here, so the
+1,980 rows represent only the polarized-versus-moderate contrast.)</p>
+<p>Here’s a description of the dataset:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -111,13 +108,13 @@ polarized-versus-moderate contrast and nothing else.</p>
 </colgroup>
 <thead><tr class="header">
 <th>Column</th>
-<th>What it holds</th>
+<th>Description</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code>Y_polarization_w2</code></td>
-<td>Perceived polarization at Wave 2, scored 0 to 6. The outcome,
-missing wherever Wave 2 went unanswered.</td>
+<td><code>X_party_id</code></td>
+<td>Party identification in three categories, used below for
+poststratification.</td>
 </tr>
 <tr class="even">
 <td><code>Z_condition</code></td>
@@ -129,120 +126,216 @@ missing wherever Wave 2 went unanswered.</td>
 <td>Polarized (1) versus moderate (0).</td>
 </tr>
 <tr class="even">
+<td><code>Y_polarization_w2</code></td>
+<td>Perceived polarization at Wave 2, scored 0 to 6, with some
+missingness.</td>
+</tr>
+<tr class="odd">
 <td><code>R1</code></td>
 <td>Answered the second wave on the first attempt.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>Attempt</code></td>
 <td>Drawn into the follow-up sample and offered the larger
 incentive.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>R2</code></td>
 <td>Answered the follow-up attempt.</td>
 </tr>
-<tr class="odd">
-<td><code>X_party_id</code></td>
-<td>Party identification in three categories, used below for
-poststratification.</td>
-</tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">levendusky_replication</span>, <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">Z_condition</span>, <span class="va">R1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;            R1</span></span>
-<span><span class="co">#&gt; Z_condition   0   1</span></span>
-<span><span class="co">#&gt;   Moderate  264 731</span></span>
-<span><span class="co">#&gt;   Polarized 272 713</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">levendusky_replication</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">Z_condition</span>, <span class="va">R1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
+<span><span class="co">#&gt;   Z_condition    R1     n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Moderate        0   264</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Moderate        1   731</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Polarized       0   272</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Polarized       1   713</span></span></code></pre></div>
 <p>Of 1,980 subjects, 1,444 answered the second-wave survey and 536 did
 not. A naive difference in means among those 1,444 respondents puts the
 effect of the polarized article at 0.126 points (standard error 0.066),
 which is significant at the 10 percent level and not at the 5 percent
 level.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span>, data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">levendusky_replication</span>, <span class="va">R1</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">naive</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
-<span><span class="co">#&gt;             Estimate Std. Error t value Pr(&gt;|t|)</span></span>
-<span><span class="co">#&gt; (Intercept)   3.5421    0.04647  76.220  0.00000</span></span>
-<span><span class="co">#&gt; Z             0.1259    0.06613   1.903  0.05718</span></span></code></pre></div>
-<p>The subset matters. Restricting to <code>R1 == 1</code> is what makes
-the estimate naive: it is the analysis that would be run if the double
-sampling had never happened.</p>
-<p>That estimate is consistent only if the 536 missing subjects are
-missing for reasons unrelated to their outcomes. Nothing in the data
-tells us whether they are.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">naive_fit</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu"><a href="https://declaredesign.org/r/estimatr/reference/difference_in_means.html" class="external-link">difference_in_means</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span>,</span>
+<span>                      data <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">levendusky_replication</span>, <span class="va">R1</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">naive_fit</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   term estimate std.error statistic p.value conf.low conf.high   df</span></span>
+<span><span class="co">#&gt; 1    Z   0.1259   0.06615     1.903 0.05724 -0.00388    0.2557 1439</span></span>
+<span><span class="co">#&gt;             outcome</span></span>
+<span><span class="co">#&gt; 1 Y_polarization_w2</span></span></code></pre></div>
+<p>This estimate is naive in the sense that it only estimates the
+average treatment effect if wave 2 attrition is unrelated to potential
+outcomes.</p>
 </div>
 <div class="section level2">
-<h2 id="worst-case-bounds">Worst-case bounds<a class="anchor" aria-label="anchor" href="#worst-case-bounds"></a>
+<h2 id="extreme-value-bounds">Extreme value bounds<a class="anchor" aria-label="anchor" href="#extreme-value-bounds"></a>
 </h2>
-<p>Suppose we refuse the assumption entirely. The outcome runs from 0 to
-6, so we know something about the missing values even without knowing
-what they are: whatever they were, they were between 0 and 6. Filling in
+<p>If we are unwilling to make that assumption, we can estimate extreme
+value bounds (Manski, 1990). The outcome runs from 0 to 6. Filling in
 every missing outcome in the treatment group with 0 and every missing
 outcome in the control group with 6 gives the lowest average effect the
-data can support. Reversing the fills gives the highest.</p>
-<p>Those two numbers do all the work below, so it is worth being clear
-about where they come from. They are properties of the measurement
-instrument rather than of this sample. Perceived polarization is an
-average of absolute differences between two ratings of the same policy
-question, and such a difference can be neither negative nor wider than
-the rating scale, which fixes the limits at 0 and 6 whatever the data
-happen to contain. Here the data happen to contain both.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">levendusky_replication</span><span class="op">$</span><span class="va">Y_polarization_w2</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0 6</span></span></code></pre></div>
-<p><code>estimator_ev</code> does the filling, and reports an
-Imbens-Manski confidence interval around the resulting identification
+data can support. Doing the opposite yields the highest possible
+estimate. <code>estimator_ev</code> implements this approach and reports
+an Imbens-Manski confidence interval around the resulting identification
 region.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>,</span>
-<span>             minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>             Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>             R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>             minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>             maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>             data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
 <span><span class="co">#&gt;        -1.53914         1.70967         0.07899         0.07673        -1.66908 </span></span>
 <span><span class="co">#&gt;       conf.high </span></span>
 <span><span class="co">#&gt;         1.83588</span></span></code></pre></div>
-<p>The effect lies between -1.54 and 1.71. The bounds are honest and
-nearly useless: they are wide enough to contain a large negative effect,
-a large positive effect, and everything in between. Notice how little
-the sampling uncertainty contributes. The confidence interval runs from
--1.67 to 1.84, barely wider than the bounds themselves. The problem here
-is not that the sample is small. The problem is that 536 outcomes are
-unknown, and no sample size fixes that.</p>
-<p>The companion vignette, <code><a href="../articles/drawing-the-bounds.html">vignette("drawing-the-bounds")</a></code>,
-draws the imputation this estimator averages over, on a smaller
-simulated experiment where the picture fits on one page.</p>
+<p>The bounds range from -1.54 and 1.71. The bounds are nearly useless:
+they are wide enough to contain a large negative effect, a large
+positive effect, and everything in between. The confidence interval is
+still wider, running from -1.67 to 1.84.</p>
+<p>We can visualize the bounds using an approach from the
+<code>vayr</code> package. <code>R1</code> rather than the outcome
+column decides who is missing, and the two disagree for sixteen subjects
+who started the Wave 2 survey and abandoned it partway: they have an
+outcome because the outcome averages the policy items a subject did
+answer, and <code>R1 == 0</code> because they never finished. Blanking
+those outcomes puts the picture and the estimator on the same 536
+missing values.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bounded</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">levendusky_replication</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>Y_polarization_w2 <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">R1</span> <span class="op">==</span> <span class="fl">1</span>, <span class="va">Y_polarization_w2</span>, <span class="cn">NA_real_</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://alexandercoppock.com/vayr/reference/impute_extreme_values.html" class="external-link">impute_extreme_values</a></span><span class="op">(</span>outcome <span class="op">=</span> <span class="st">"Y_polarization_w2"</span>,</span>
+<span>                        assignment <span class="op">=</span> <span class="st">"Z"</span>,</span>
+<span>                        range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">6</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bound_means</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">bounded</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">Z_condition</span>, <span class="va">scenario</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>Y_polarization_w2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Labelled in the left panel only. The colours carry over to the right one, and</span></span>
+<span><span class="co"># a second copy of the same two words would just be more ink.</span></span>
+<span><span class="va">label_df</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">bounded</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">scenario</span>, <span class="va">imputed</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">scenario</span> <span class="op">==</span> <span class="st">"Lower bound"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    Z_condition <span class="op">=</span> <span class="st">"Moderate"</span>,</span>
+<span>    Y_polarization_w2 <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">imputed</span> <span class="op">==</span> <span class="st">"Outcome imputed"</span>, <span class="fl">6.4</span>, <span class="fl">4.9</span><span class="op">)</span>,</span>
+<span>    label <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">imputed</span> <span class="op">==</span> <span class="st">"Outcome imputed"</span>, <span class="st">"imputed"</span>, <span class="st">"reported"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">bounded</span>,</span>
+<span>       mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Z_condition</span>, y <span class="op">=</span> <span class="va">Y_polarization_w2</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="va">imputed</span>, shape <span class="op">=</span> <span class="va">imputed</span><span class="op">)</span>,</span>
+<span>             position <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/position_jitter.html" class="external-link">position_jitter</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">0.25</span>, height <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>,</span>
+<span>             alpha <span class="op">=</span> <span class="fl">0.5</span>, stroke <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">bound_means</span>, size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">geom_text</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">label_df</span>,</span>
+<span>            mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>label <span class="op">=</span> <span class="va">label</span>, colour <span class="op">=</span> <span class="va">imputed</span><span class="op">)</span>,</span>
+<span>            hjust <span class="op">=</span> <span class="fl">0</span>, nudge_x <span class="op">=</span> <span class="fl">0.15</span>, size <span class="op">=</span> <span class="fl">3.2</span>, show.legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span>facets <span class="op">=</span> <span class="op">~</span> <span class="va">scenario</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_colour_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#205C8A"</span>, <span class="st">"#C67800"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fl">6</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Perceived polarization (0 to 6)"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="attrition_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="Two panels of the same 1,980 subjects. In the lower bound panel the imputed outcomes sit at 0 for the polarized group and at 6 for the moderate group; the upper bound panel reverses them." width="672"></p>
+<p>The orange points are the 536 imputations. In the left panel they sit
+at the bottom of the scale for the polarized group and at the top for
+the moderate group, which is the least favorable arrangement the data
+admit. The right panel reverses them. The black points are the arm means
+either way, and the gap between them within a panel is that panel’s
+bound.</p>
+<p>Those gaps are the estimates, not an illustration of them. A
+difference in means run inside each panel recovers both bound estimates
+exactly, because filling in the missing outcomes and averaging is all
+the estimator does to reach its point estimates.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bounded</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">scenario</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/reframe.html" class="external-link">reframe</a></span><span class="op">(</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="https://declaredesign.org/r/estimatr/reference/lm_robust.html" class="external-link">lm_robust</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">term</span> <span class="op">==</span> <span class="st">"Z"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">scenario</span>, difference_in_means <span class="op">=</span> <span class="va">estimate</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 2</span></span></span>
+<span><span class="co">#&gt;   scenario    difference_in_means</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Lower bound               -<span style="color: #BB0000;">1.54</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Upper bound                1.71</span></span></code></pre></div>
+<p>The confidence interval is not drawn twice the same way. The tempting
+move is to put an ordinary interval around each panel’s difference in
+means and take the outermost endpoints, which is wider than it needs to
+be. The Imbens-Manski interval covers the true effect with probability
+0.95 rather than covering the whole identified set, and it uses the fact
+that the effect cannot sit at both ends at once.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>                   Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>                   R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                   minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                   maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                   data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
+<span>  <span class="va">bounded</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">scenario</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/reframe.html" class="external-link">reframe</a></span><span class="op">(</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="https://declaredesign.org/r/estimatr/reference/lm_robust.html" class="external-link">lm_robust</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">term</span> <span class="op">==</span> <span class="st">"Z"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>interval <span class="op">=</span> <span class="st">"Stacking the two panels"</span>,</span>
+<span>              lower <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">conf.low</span><span class="op">)</span>,</span>
+<span>              upper <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">conf.high</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">ev</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">term</span> <span class="op">==</span> <span class="st">"bounds"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span>interval <span class="op">=</span> <span class="st">"Imbens-Manski"</span>, lower <span class="op">=</span> <span class="va">conf.low</span>, upper <span class="op">=</span> <span class="va">conf.high</span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>width <span class="op">=</span> <span class="va">upper</span> <span class="op">-</span> <span class="va">lower</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 4</span></span></span>
+<span><span class="co">#&gt;   interval                lower upper width</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Stacking the two panels -<span style="color: #BB0000;">1.69</span>  1.86  3.55</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Imbens-Manski           -<span style="color: #BB0000;">1.67</span>  1.84  3.50</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="double-sampling">Double sampling<a class="anchor" aria-label="anchor" href="#double-sampling"></a>
 </h2>
-<p>Now the design. After the initial round of data collection, a random
-sample of the nonrespondents is drawn and pursued with more effort than
-the first round spent. In this study, 50 nonrespondents were drawn at
-random from each condition and offered $4.00 instead of the original
-$1.00. Of those 100 subjects, 72 answered.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">levendusky_replication</span>, <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">Z_condition</span>, <span class="va">Attempt</span>, <span class="va">R2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; , , R2 = 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;            Attempt</span></span>
-<span><span class="co">#&gt; Z_condition   0   1</span></span>
-<span><span class="co">#&gt;   Moderate  945  11</span></span>
-<span><span class="co">#&gt;   Polarized 935  17</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; , , R2 = 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;            Attempt</span></span>
-<span><span class="co">#&gt; Z_condition   0   1</span></span>
-<span><span class="co">#&gt;   Moderate    0  39</span></span>
-<span><span class="co">#&gt;   Polarized   0  33</span></span></code></pre></div>
-<p>The 72 recovered outcomes do more work than their number suggests.
-Because the follow-up sample was drawn at random from the
+<p>The design is Neyman’s (1938), turned on survey nonresponse by Hansen
+and Hurwitz (1946). After the initial round of data collection, a random
+sample of the nonrespondents was drawn and pursued with more effort. In
+this study, 50 nonrespondents were drawn at random from each condition
+and offered $4.00 instead of the original $1.00. Of those 100 subjects,
+72 answered.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">levendusky_replication</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">Z_condition</span>, <span class="va">Attempt</span>, <span class="va">R2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 4</span></span></span>
+<span><span class="co">#&gt;   Z_condition Attempt    R2     n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Moderate          0     0   945</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Moderate          1     0    11</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Moderate          1     1    39</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Polarized         0     0   935</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Polarized         1     0    17</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Polarized         1     1    33</span></span></code></pre></div>
+<p>Because the follow-up sample was drawn at random from the
 nonrespondents, the outcomes it recovers estimate the mean outcome among
-<em>all</em> nonrespondents. Only the subjects who refused twice, and
-there are 28 of them, still need worst-case imputation.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>,</span>
-<span>             minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<em>all</em> nonrespondents. Only the subjects who refused twice (28
+subjects) still need worst-case imputation.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>             Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>             R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>             Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>             R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>             minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>             maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>             data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
 <span><span class="co">#&gt;         -0.3417          0.5718          0.1134          0.1054         -0.5283 </span></span>
 <span><span class="co">#&gt;       conf.high </span></span>
@@ -251,31 +344,29 @@ there are 28 of them, still need worst-case imputation.</p>
 before. It has shrunk by a factor of 3.6, and the confidence interval
 has narrowed from 3.50 points wide to 1.27, on a follow-up of 100
 subjects out of 536.</p>
-<p>To be sure, the interval still contains zero, so the study does not
-establish that the polarized article changed perceived polarization.
-What it does establish is a bound on how large any such effect could be,
-and that bound is now tight enough to be substantively informative.</p>
+<p>The interval still contains zero, so the study does not establish
+that the polarized article changed perceived polarization. What it does
+establish is a bound on how large any such effect could be, and that
+bound is now tight enough to be substantively informative.</p>
 </div>
 <div class="section level2">
 <h2 id="poststratification">Poststratification<a class="anchor" aria-label="anchor" href="#poststratification"></a>
 </h2>
-<p>A discrete covariate that predicts the outcome is worth using. The
-bounds are estimated separately inside each of its categories and then
-averaged using the share of the sample falling in each. The estimand
-does not change, so nothing is assumed away, but the estimate of it gets
-more precise.</p>
-<p>The precision comes from where the category shares are estimated.
-Write <code>B</code> for the covariate and Pr(B = k) for the share of
-the whole sample in category k. Poststratification weights by that
-whole-sample share, which every subject helps to pin down. The
-unadjusted estimator effectively weights by Pr(B = k | Z = z), the share
-within one arm at a time, and each arm is half the sample. By the law of
-total variance, trading the arm-specific shares for the whole-sample
-ones is guaranteed not to raise the asymptotic variance. Here the
-covariate is three-category party identification.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, strata <span class="op">=</span> <span class="va">X_party_id</span>,</span>
-<span>             minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<p>A discrete covariate that predicts the outcome can increase the
+precision further. The bounds are estimated separately inside each of
+its categories and then averaged using the share of the sample falling
+in each, which is poststratification in the sense of Miratrix, Sekhon,
+and Yu (2013).</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>             Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>             R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>             Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>             R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>             strata <span class="op">=</span> <span class="va">X_party_id</span>,</span>
+<span>             minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>             maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>             data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
 <span><span class="co">#&gt;         -0.3444          0.5257          0.1122          0.1039         -0.5290 </span></span>
 <span><span class="co">#&gt;       conf.high </span></span>
@@ -283,18 +374,16 @@ covariate is three-category party identification.</p>
 <p>The upper bound estimate falls from 0.57 to 0.53 and the confidence
 interval from 1.27 to 1.23 points wide. The gain is real but modest,
 which is what to expect when the covariate is only moderately
-prognostic. Bear in mind what moved and what did not: the estimand is
-the same identification region in both rows, and poststratification only
-estimates it better.</p>
+prognostic.</p>
 <p>These three sets of numbers are Table 3 of <a href="https://doi.org/10.1017/pan.2016.6" class="external-link">the published paper</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="sensitivity-analysis">Sensitivity analysis<a class="anchor" aria-label="anchor" href="#sensitivity-analysis"></a>
 </h2>
-<p>Worst-case bounds assume nothing about the 28 subjects who refused
-twice. Ignorability assumes everything: that their outcomes look like
-those of the follow-up respondents. Neither extreme is a natural place
-to stand, and <code>estimator_ds_sens</code> interpolates between them.
+<p>Worst-case bounds assume nothing about the outcomes the 28 subjects
+who refused twice would have reported. Ignorability assumes that their
+outcomes look like those of the follow-up respondents.
+<code>estimator_ds_sens</code> interpolates between the two assumptions.
 <code>delta</code> is the fraction of follow-up nonrespondents whose
 outcomes are left unmodeled, and the remaining 1 - <code>delta</code>
 are treated as ignorable.</p>
@@ -303,9 +392,16 @@ double-sampling bounds above, -0.34 to 0.57, since refusing to model any
 of the follow-up nonrespondents is exactly what
 <code>estimator_ds</code> does. At <code>delta = 0</code> it returns a
 point estimate.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds_sens.html">estimator_ds_sens</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, delta <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>                  minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds_sens.html">estimator_ds_sens</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>                  Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>                  R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                  Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>                  R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                  delta <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>                  minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                  maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                  data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
 <span><span class="co">#&gt;        -0.09162         0.36516         0.10428         0.09859        -0.26314 </span></span>
 <span><span class="co">#&gt;       conf.high </span></span>
@@ -315,12 +411,21 @@ looks for delta*, the smallest value at which the confidence interval
 starts to include zero. A delta* near zero means the finding rests on
 assuming away nearly all of the missingness; a delta* near one means it
 survives almost any amount.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sensitivity_ds.html">sensitivity_ds</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>,</span>
-<span>                       alpha <span class="op">=</span> <span class="fl">0.10</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sens</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu"><a href="../reference/sensitivity_ds.html">sensitivity_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>                 Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>                 R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                 Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>                 R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                 minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                 maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                 alpha <span class="op">=</span> <span class="fl">0.10</span>,</span>
+<span>                 data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">sens</span><span class="op">$</span><span class="va">sensitivity_plot</span></span></code></pre></div>
-<p><img src="attrition_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="Identification regions and confidence intervals as a function of the sensitivity parameter delta" width="672"></p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p><img src="attrition_files/figure-html/unnamed-chunk-14-1.png" class="r-plt" alt="Identification regions and confidence intervals as a function of the sensitivity parameter delta" width="672"></p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sens</span><span class="op">$</span><span class="va">delta_star</span></span>
 <span><span class="co">#&gt; [1] 0.07071</span></span></code></pre></div>
 <p>The plot reads left to right, from ignorability at
@@ -334,80 +439,185 @@ that band first reaches the dashed line at zero.</p>
 allowing ignorability to fail for 7 percent of the follow-up
 nonrespondents is enough to erase it. At the 5 percent level there is no
 delta* at all, because the interval around the naive estimate already
-includes zero, and <code>delta_star</code> is <code>NA</code> to say
-so.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sensitivity_ds.html">sensitivity_ds</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>,</span>
-<span>               alpha <span class="op">=</span> <span class="fl">0.05</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">$</span><span class="va">delta_star</span></span>
+includes zero, and <code>delta_star</code> is <code>NA</code>.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sensitivity_ds.html">sensitivity_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>               Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>               R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>               Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>               R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>               minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>               maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>               alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>               data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">$</span><span class="va">delta_star</span></span>
 <span><span class="co">#&gt; [1] NA</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="trimming-bounds">Trimming bounds<a class="anchor" aria-label="anchor" href="#trimming-bounds"></a>
 </h2>
-<p>Everything so far leans on the outcome having known lower and upper
-limits. When it does not, or when the limits are so far apart that
-worst-case bounds say nothing, Lee (2009) offers a different trade:
-assume instead that treatment moves selection in one direction only. If
-treatment can only make subjects more likely to respond, never less,
-then the extra respondents it produces are a known fraction of the
-treated respondents, and trimming that fraction off either tail of the
-treated distribution bounds the effect among subjects who would have
-responded either way.</p>
-<p>Monotonicity is an assumption about the world, not about the
-measurement scale, so it is not nested with the bounded-support
-assumption. Neither dominates.</p>
-<p>Monotonicity is checkable in one direction, at least: it implies the
-treated respond at least as often as the controls. In this experiment
-they do not.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">levendusky_replication</span>, <span class="fu"><a href="https://rdrr.io/r/base/tapply.html" class="external-link">tapply</a></span><span class="op">(</span><span class="va">R1</span>, <span class="va">Z</span>, <span class="va">mean</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;      0      1 </span></span>
-<span><span class="co">#&gt; 0.7347 0.7239</span></span></code></pre></div>
-<p>The treated responded at 0.724 and the controls at 0.735. The gap is
-small and could easily be noise, but the trimming proportion it implies
-is negative, so the assumption fails in the direction the estimator
-needs and <code>estimator_trim</code> returns <code>NA</code> rather
-than a number built on it.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R1</span>,</span>
+<p>Trimming bounds (Lee, 2009) bracket the effect among subjects who
+would respond in either condition, the so-called “always reporters.” The
+classic version runs on monotonicity: treatment moves response in one
+direction only. If treatment can only make subjects more likely to
+respond, never less, then every control respondent is an always
+reporter, the extra respondents treatment produced are a known fraction
+of the treated respondents, and trimming that fraction off either tail
+of the treated distribution bounds the effect among the always
+reporters.</p>
+<p>Monotonicity has a direction, and the estimator has to be told which
+one it is. The two directions are not two ways of writing the same
+assumption. Each names a different group as the always reporters and
+trims the other, so they give different bounds on the same data.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">levendusky_replication</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">Z_condition</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>response_rate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">R1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 2</span></span></span>
+<span><span class="co">#&gt;   Z_condition response_rate</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Moderate            0.735</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Polarized           0.724</span></span></code></pre></div>
+<p>The polarized response rate is 0.724 compared with 0.735 in the
+control group. The default direction,
+<code>monotonicity = "treatment_increases_response"</code>, is the one
+Lee states, and it implies a trimming proportion that these response
+rates make negative. The estimator returns <code>NA</code> for every
+quantity rather than a number built on an assumption the data
+contradict, and says which direction they leave open.</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>               Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>               R <span class="op">=</span> <span class="va">R1</span>,</span>
 <span>               data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"estimate_lower"</span>, <span class="st">"estimate_upper"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; Warning: Monotonicity is violated in the direction assumed: the control group</span></span>
+<span><span class="co">#&gt; responded at the higher rate, so the trimming proportion is negative and every</span></span>
+<span><span class="co">#&gt; bound is NA. Setting monotonicity = "treatment_decreases_response" assumes the</span></span>
+<span><span class="co">#&gt; direction the response rates do admit.</span></span>
 <span><span class="co">#&gt; estimate_lower estimate_upper </span></span>
 <span><span class="co">#&gt;             NA             NA</span></span></code></pre></div>
-<p>Run on the double-sampled data, the same function returns numbers.
-The reason is that it is not the same estimator: which arguments are
-supplied is the switch between two of them. <code>R</code> asks for
-Lee’s single-stage estimator, which trims one group and needs
-monotonicity to know which. <code>R1</code>, <code>Attempt</code> and
-<code>R2</code> ask for the double-sampling version, which trims
-<em>both</em> groups, by the share still missing in the other, and
-carries the follow-up sampling weights. Monotonicity is not among its
-assumptions, so there is no monotonicity condition left to fail.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<p>Assuming instead that the polarized article can only have lowered
+response puts the control group in the trimmed role, and the estimator
+runs.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>               Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>               R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>               monotonicity <span class="op">=</span> <span class="st">"treatment_decreases_response"</span>,</span>
+<span>               data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"estimate_lower"</span>, <span class="st">"estimate_upper"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; estimate_lower estimate_upper </span></span>
+<span><span class="co">#&gt;        0.07884        0.16344</span></span></code></pre></div>
+<p>The bounds are 0.08 to 0.16, far narrower than anything above,
+because only 1.5 percent of control respondents get trimmed. Narrow
+bounds bought this way are worth reading carefully. The response rates
+did not choose the direction and cannot: a gap of 0.011 between two
+rates estimated on about a thousand subjects each is well inside
+sampling noise, and even a large gap would be a consequence of the
+assumption rather than evidence for it. Monotonicity is a claim about
+how the article affected the decision to answer, and it holds or fails
+whatever the two rates happen to be.</p>
+<div class="section level3">
+<h3 id="dropping-monotonicity">Dropping monotonicity<a class="anchor" aria-label="anchor" href="#dropping-monotonicity"></a>
+</h3>
+<p><code>monotonicity = "none"</code> refuses the direction as well, and
+assumes only that treatment was randomly assigned. What survives is a
+lower bound on how many always reporters there can be: at least a share
+1 - f0 - f1 of the sample, where fz is the missingness rate in arm z,
+since two events covering 1 - f0 and 1 - f1 of the sample must overlap
+by at least that much. Each arm is then trimmed by the largest share of
+its own respondents that could fail to be always reporters, f0/(1 - f1)
+of the treatment group and f1/(1 - f0) of the control group. Those are
+the sharp bounds of Imai (2008, Proposition 1), which build on Zhang and
+Rubin (2003) and Horowitz and Manski (1995). Since both arms are trimmed
+by the same rule, this version has no direction to set, and it exists
+only while f0 + f1 is below 1.</p>
+<p>The assumption and the design are separate choices, so there are four
+estimators here rather than two, and <code>estimator_trim</code> reaches
+all four.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cells</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="st">"single sample, monotonicity"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                   monotonicity <span class="op">=</span> <span class="st">"treatment_decreases_response"</span>,</span>
+<span>                   se <span class="op">=</span> <span class="st">"none"</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"single sample, no monotonicity"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                   monotonicity <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>                   se <span class="op">=</span> <span class="st">"none"</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"double sampling, monotonicity"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                   monotonicity <span class="op">=</span> <span class="st">"treatment_decreases_response"</span>,</span>
+<span>                   se <span class="op">=</span> <span class="st">"none"</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"double sampling, no monotonicity"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                   monotonicity <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>                   se <span class="op">=</span> <span class="st">"none"</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  cell <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">cells</span><span class="op">)</span>,</span>
+<span>  lower <span class="op">=</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_dbl</a></span><span class="op">(</span><span class="va">cells</span>, <span class="st">"estimate_lower"</span><span class="op">)</span>,</span>
+<span>  upper <span class="op">=</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_dbl</a></span><span class="op">(</span><span class="va">cells</span>, <span class="st">"estimate_upper"</span><span class="op">)</span>,</span>
+<span>  width <span class="op">=</span> <span class="va">upper</span> <span class="op">-</span> <span class="va">lower</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 4</span></span></span>
+<span><span class="co">#&gt;   cell                               lower upper  width</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> single sample, monotonicity       0.078<span style="text-decoration: underline;">8</span> 0.163 0.084<span style="text-decoration: underline;">6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> single sample, no monotonicity   -<span style="color: #BB0000;">1.36</span>   1.62  2.98  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> double sampling, monotonicity     0.032<span style="text-decoration: underline;">7</span> 0.243 0.210 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> double sampling, no monotonicity -<span style="color: #BB0000;">0.268</span>  0.568 0.836</span></span></code></pre></div>
+<p>The two narrowing devices are doing different work. Double sampling
+narrows by recovering outcomes: it cuts the share of subjects who never
+reported from 27 percent to 1.4 percent, which is why the
+assumption-free bounds go from 2.98 points wide to 0.84. Monotonicity
+narrows by assumption, and it narrows most where there is most left to
+assume about, which is the single sample. Read the rows against each
+other with one caveat: the always reporters are not the same people in
+every row, because who counts as one is part of what the assumption
+fixes.</p>
+</div>
+<div class="section level3">
+<h3 id="standard-errors">Standard errors<a class="anchor" aria-label="anchor" href="#standard-errors"></a>
+</h3>
+<p>Standard errors come two ways. <code>se = "analytic"</code> uses the
+closed-form variance in Lee (2009, Proposition 3), which is derived for
+one design and one assumption: a single unweighted sample with one group
+trimmed. It is the default, and it is available in exactly that cell.
+<code>se = "bootstrap"</code> resamples units within treatment arm and
+works everywhere, which is what the other three cells need, and why the
+call below sets a seed: without one the standard errors move a little
+from run to run. Asking for analytic standard errors where they do not
+apply is an error rather than a silent substitution.</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">343</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
-<span>               se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">500</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">[</span></span>
+<span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>               Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>               R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>               Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>               R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>               se <span class="op">=</span> <span class="st">"bootstrap"</span>,</span>
+<span>               sims <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>               data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">[</span></span>
 <span>                 <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"estimate_lower"</span>, <span class="st">"estimate_upper"</span>,</span>
 <span>                   <span class="st">"std.error_lower"</span>, <span class="st">"std.error_upper"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper </span></span>
 <span><span class="co">#&gt;         -0.2681          0.5676          0.1044          0.1058</span></span></code></pre></div>
-<p>Standard errors come two ways. <code>se = "analytic"</code>, the
-default, uses the closed-form variance in Lee (2009, Proposition 3),
-which covers the single-stage case only. <code>se = "bootstrap"</code>
-resamples units within treatment arm and works for both, which is why
-the double-sampling call above asks for it, and why it also sets a seed:
-without one the standard errors move a little from run to run.
-Requesting analytic standard errors on the double-sampling path is an
-error rather than a silent substitution, since Lee’s derivation assumes
-independent sampling and trimming of one group only.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="reading-the-output">Reading the output<a class="anchor" aria-label="anchor" href="#reading-the-output"></a>
 </h2>
 <p>Every estimator returns a named numeric vector, and every one returns
 the same six elements under the same names.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>,</span>
-<span>                    minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>                    Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>                    R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                    Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>                    R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                    minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                    maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                    data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
 <span><span class="va">out</span></span>
 <span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
 <span><span class="co">#&gt;         -0.3417          0.5718          0.1134          0.1054         -0.5283 </span></span>
@@ -421,7 +631,7 @@ Imbens-Manski interval. Note that the third pair are standard errors
 rather than variances. The names are broom’s, which is the point of
 them: <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> returns the same six quantities in a data
 frame, under exactly the same names.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 10</span></span></span>
 <span><span class="co">#&gt;   term       estimate std.error conf.low conf.high estimate_lower estimate_upper</span></span>
@@ -443,9 +653,14 @@ endpoint with <code>term</code>.</p>
 formula, the remaining columns are named as strings rather than passed
 bare, so <code>R1</code> becomes <code>R1 = "R1"</code>. The interface
 changed, not the argument.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span>, R1 <span class="op">=</span> <span class="st">"R1"</span>, Attempt <span class="op">=</span> <span class="st">"Attempt"</span>, R2 <span class="op">=</span> <span class="st">"R2"</span>,</span>
-<span>             minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span>,</span>
+<span>             R1 <span class="op">=</span> <span class="st">"R1"</span>,</span>
+<span>             Attempt <span class="op">=</span> <span class="st">"Attempt"</span>,</span>
+<span>             R2 <span class="op">=</span> <span class="st">"R2"</span>,</span>
+<span>             minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>             maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>             data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
 <span><span class="co">#&gt;         -0.3417          0.5718          0.1134          0.1054         -0.5283 </span></span>
 <span><span class="co">#&gt;       conf.high </span></span>
@@ -472,12 +687,197 @@ and Kern (2017) sketch the optimization; the package does not yet
 implement it.</p>
 </div>
 <div class="section level2">
+<h2 id="all-of-the-estimators-at-once">All of the estimators at once<a class="anchor" aria-label="anchor" href="#all-of-the-estimators-at-once"></a>
+</h2>
+<p>Nine estimates have gone past, and they do not all estimate the same
+thing. Two questions separate them. <em>Whose</em> effect is it:
+everyone who took Wave 1, or only the subjects who would have reported
+either way, or only the ones who did report? And <em>what is
+assumed</em> to get there?</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Estimator</th>
+<th>Estimand</th>
+<th>Assumption</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Naive difference in means</td>
+<td>Effect among Wave 2 respondents</td>
+<td>Attrition is ignorable</td>
+</tr>
+<tr class="even">
+<td>Extreme value</td>
+<td>Effect among all 1,980</td>
+<td>Outcome lies in [0, 6]</td>
+</tr>
+<tr class="odd">
+<td>Extreme value, double sampled</td>
+<td>Effect among all 1,980</td>
+<td>The above, plus a random follow-up sample</td>
+</tr>
+<tr class="even">
+<td>Extreme value, double sampled, poststratified</td>
+<td>Effect among all 1,980</td>
+<td>The above; party identification only sharpens the estimate</td>
+</tr>
+<tr class="odd">
+<td>Sensitivity at delta = 0.5</td>
+<td>Effect among all 1,980</td>
+<td>The above, plus ignorability for half the follow-up
+nonrespondents</td>
+</tr>
+<tr class="even">
+<td>Trimming, monotonicity</td>
+<td>Effect among always reporters</td>
+<td>The article never raised the chance of responding</td>
+</tr>
+<tr class="odd">
+<td>Trimming, monotonicity, double sampled</td>
+<td>Effect among always reporters</td>
+<td>The above, plus a random follow-up sample</td>
+</tr>
+<tr class="even">
+<td>Trimming, no monotonicity</td>
+<td>Effect among always reporters</td>
+<td>Random assignment only</td>
+</tr>
+<tr class="odd">
+<td>Trimming, no monotonicity, double sampled</td>
+<td>Effect among always reporters</td>
+<td>Random assignment plus a random follow-up sample</td>
+</tr>
+</tbody>
+</table>
+<p>The figure below shortens “double sampled” to DS.</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">343</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="st">"Extreme value"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                 minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"Extreme value, double sampled"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                 minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"Extreme value, DS, poststratified"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                 strata <span class="op">=</span> <span class="va">X_party_id</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"Sensitivity at delta = 0.5"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_ds_sens.html">estimator_ds_sens</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                      delta <span class="op">=</span> <span class="fl">0.5</span>, minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"Trimming, monotonicity"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                   monotonicity <span class="op">=</span> <span class="st">"treatment_decreases_response"</span>,</span>
+<span>                   se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">500</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"Trimming, monotonicity, DS"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                   monotonicity <span class="op">=</span> <span class="st">"treatment_decreases_response"</span>,</span>
+<span>                   se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">500</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"Trimming, no monotonicity"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R1</span>, monotonicity <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>                   se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">500</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span>,</span>
+<span>  <span class="st">"Trimming, no monotonicity, DS"</span> <span class="op">=</span></span>
+<span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R1 <span class="op">=</span> <span class="va">R1</span>, Attempt <span class="op">=</span> <span class="va">Attempt</span>, R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                   monotonicity <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>                   se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">500</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: 178 of 500 bootstrap replicates did not yield bounds (monotonicity</span></span>
+<span><span class="co">#&gt; violated in the resample). Standard errors are computed from the 322 that did.</span></span>
+<span><span class="co">#&gt; Warning: 34 of 500 bootstrap replicates did not yield bounds (monotonicity</span></span>
+<span><span class="co">#&gt; violated in the resample). Standard errors are computed from the 466 that did.</span></span>
+<span></span>
+<span><span class="va">estimands</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tribble.html" class="external-link">tribble</a></span><span class="op">(</span></span>
+<span>  <span class="op">~</span><span class="va">estimator</span>,                          <span class="op">~</span><span class="va">estimand</span>,</span>
+<span>  <span class="st">"Naive difference in means"</span>,         <span class="st">"Wave 2\nrespondents"</span>,</span>
+<span>  <span class="st">"Extreme value"</span>,                     <span class="st">"All 1,980\nsubjects"</span>,</span>
+<span>  <span class="st">"Extreme value, double sampled"</span>,     <span class="st">"All 1,980\nsubjects"</span>,</span>
+<span>  <span class="st">"Extreme value, DS, poststratified"</span>, <span class="st">"All 1,980\nsubjects"</span>,</span>
+<span>  <span class="st">"Sensitivity at delta = 0.5"</span>,        <span class="st">"All 1,980\nsubjects"</span>,</span>
+<span>  <span class="st">"Trimming, monotonicity"</span>,            <span class="st">"Always\nreporters"</span>,</span>
+<span>  <span class="st">"Trimming, monotonicity, DS"</span>,        <span class="st">"Always\nreporters"</span>,</span>
+<span>  <span class="st">"Trimming, no monotonicity"</span>,         <span class="st">"Always\nreporters"</span>,</span>
+<span>  <span class="st">"Trimming, no monotonicity, DS"</span>,     <span class="st">"Always\nreporters"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The naive estimator claims a point rather than a region, which the plot shows as</span></span>
+<span><span class="co"># an identification region of zero width</span></span>
+<span><span class="va">naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span>, data <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">levendusky_replication</span>, <span class="va">R1</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">gg_df</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">fits</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">fit</span><span class="op">)</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>, <span class="va">term</span> <span class="op">==</span> <span class="st">"bounds"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/list_c.html" class="external-link">list_rbind</a></span><span class="op">(</span>names_to <span class="op">=</span> <span class="st">"estimator"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">estimator</span>, <span class="va">estimate_lower</span>, <span class="va">estimate_upper</span>, <span class="va">conf.low</span>, <span class="va">conf.high</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/add_row.html" class="external-link">add_row</a></span><span class="op">(</span>estimator <span class="op">=</span> <span class="st">"Naive difference in means"</span>,</span>
+<span>          estimate_lower <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">naive</span><span class="op">)</span><span class="op">[[</span><span class="st">"Z"</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>          estimate_upper <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">naive</span><span class="op">)</span><span class="op">[[</span><span class="st">"Z"</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>          conf.low <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">naive</span><span class="op">)</span><span class="op">[</span><span class="st">"Z"</span>, <span class="fl">1</span><span class="op">]</span>,</span>
+<span>          conf.high <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">naive</span><span class="op">)</span><span class="op">[</span><span class="st">"Z"</span>, <span class="fl">2</span><span class="op">]</span>,</span>
+<span>          .before <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">estimands</span>, by <span class="op">=</span> <span class="st">"estimator"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">estimator</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="va">estimands</span><span class="op">$</span><span class="va">estimator</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    estimand <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">estimand</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">estimands</span><span class="op">$</span><span class="va">estimand</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">gg_df</span>,</span>
+<span>       mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">estimator</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_vline</a></span><span class="op">(</span>xintercept <span class="op">=</span> <span class="fl">0</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>, colour <span class="op">=</span> <span class="st">"grey65"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_linerange.html" class="external-link">geom_linerange</a></span><span class="op">(</span>mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="va">conf.low</span>, xmax <span class="op">=</span> <span class="va">conf.high</span><span class="op">)</span>,</span>
+<span>                 linewidth <span class="op">=</span> <span class="fl">0.5</span>, colour <span class="op">=</span> <span class="st">"#9AA5AE"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_linerange.html" class="external-link">geom_linerange</a></span><span class="op">(</span>mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="va">estimate_lower</span>, xmax <span class="op">=</span> <span class="va">estimate_upper</span><span class="op">)</span>,</span>
+<span>                 linewidth <span class="op">=</span> <span class="fl">2.4</span>, colour <span class="op">=</span> <span class="st">"#205C8A"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">gg_df</span>, <span class="va">estimate_lower</span> <span class="op">==</span> <span class="va">estimate_upper</span><span class="op">)</span>,</span>
+<span>             mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">estimate_lower</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">2.2</span>, colour <span class="op">=</span> <span class="st">"#205C8A"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">facet_grid</a></span><span class="op">(</span>rows <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">estimand</span><span class="op">)</span>, scales <span class="op">=</span> <span class="st">"free_y"</span>, space <span class="op">=</span> <span class="st">"free_y"</span>, switch <span class="op">=</span> <span class="st">"y"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Effect on perceived polarization"</span>,</span>
+<span>       y <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>       subtitle <span class="op">=</span> <span class="st">"Thick: identification region\nThin: 95 percent confidence interval"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">10</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>strip.placement <span class="op">=</span> <span class="st">"outside"</span>,</span>
+<span>        strip.text.y.left <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">0</span>, hjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>,</span>
+<span>        panel.grid.major.y <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_blank</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>        plot.subtitle <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">8.5</span>, colour <span class="op">=</span> <span class="st">"grey30"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="attrition_files/figure-html/unnamed-chunk-25-1.png" class="r-plt" alt="Identification regions and confidence intervals for nine estimators, grouped by the population each one is about." width="672"></p>
+<p>Read down the panels rather than across them. Inside a panel the
+estimators are comparable, and the pattern is the one the paper is
+about: the assumption-free region is uselessly wide, the follow-up
+shrinks it by a factor of 3.6 at a cost of chasing 100 people, and
+poststratification tightens the interval a little more. The sensitivity
+row sits inside the double-sampling row because it assumes away half of
+what that row leaves open.</p>
+<p>Across panels the comparison is not like for like. The naive point
+sits in a panel of its own because it describes the 1,444 subjects who
+answered, a group selected after treatment, and it is a point rather
+than a region only because ignorability is assumed rather than shown.
+The trimming rows sit in a third panel because they describe the always
+reporters, a subgroup whose membership shifts with the assumption used
+to bound it, which is why a narrow trimming interval and a wide extreme
+value interval are not evidence about each other.</p>
+<p>One detail visible only in the console: the bootstrap for the
+double-sampled trimming row discards the resamples in which the response
+rates cross over and monotonicity fails in the assumed direction. A gap
+of 0.011 between the two rates is small enough that this happens often,
+and the standard error is computed from the replicates that survived.
+The direction is an assumption these data are in no position to
+support.</p>
+</div>
+<div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <p>Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L.
 Kern (2017). Combining Double Sampling and Bounds to Address
 Nonignorable Missing Outcomes in Randomized Experiments. <em>Political
 Analysis</em> 25(2):188-206. <a href="https://doi.org/10.1017/pan.2016.6" class="external-link uri">https://doi.org/10.1017/pan.2016.6</a></p>
+<p>Hansen, Morris H., and William N. Hurwitz (1946). The Problem of
+Non-Response in Sample Surveys. <em>Journal of the American Statistical
+Association</em> 41(236):517-529. <a href="https://doi.org/10.1080/01621459.1946.10501894" class="external-link uri">https://doi.org/10.1080/01621459.1946.10501894</a></p>
 <p>Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals
 for Partially Identified Parameters. <em>Econometrica</em>
 72(6):1845-1857. <a href="https://doi.org/10.1111/j.1468-0262.2004.00555.x" class="external-link uri">https://doi.org/10.1111/j.1468-0262.2004.00555.x</a></p>
@@ -490,6 +890,23 @@ Communication</em> 33(2):283-301. <a href="https://doi.org/10.1080/10584609.2015
 <p>Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
 <em>American Economic Review Papers and Proceedings</em>
 80(2):319-323.</p>
+<p>Miratrix, Luke W., Jasjeet S. Sekhon, and Bin Yu (2013). Adjusting
+Treatment Effect Estimates by Post-Stratification in Randomized
+Experiments. <em>Journal of the Royal Statistical Society, Series B</em>
+75(2):369-396. <a href="https://doi.org/10.1111/j.1467-9868.2012.01048.x" class="external-link uri">https://doi.org/10.1111/j.1467-9868.2012.01048.x</a></p>
+<p>Neyman, Jerzy (1938). Contribution to the Theory of Sampling Human
+Populations. <em>Journal of the American Statistical Association</em>
+33(201):101-116. <a href="https://doi.org/10.1080/01621459.1938.10503378" class="external-link uri">https://doi.org/10.1080/01621459.1938.10503378</a></p>
+<p>Horowitz, Joel L., and Charles F. Manski (1995). Identification and
+Robustness with Contaminated and Corrupted Data. <em>Econometrica</em>
+63(2):281-302. <a href="https://doi.org/10.2307/2951627" class="external-link uri">https://doi.org/10.2307/2951627</a></p>
+<p>Imai, Kosuke (2008). Sharp Bounds on the Causal Effects in Randomized
+Experiments with “Truncation-by-Death”. <em>Statistics &amp; Probability
+Letters</em> 78(2):144-149. <a href="https://doi.org/10.1016/j.spl.2007.05.015" class="external-link uri">https://doi.org/10.1016/j.spl.2007.05.015</a></p>
+<p>Zhang, Junni L., and Donald B. Rubin (2003). Estimation of Causal
+Effects via Principal Stratification When Some Outcomes are Truncated by
+“Death”. <em>Journal of Educational and Behavioral Statistics</em>
+28(4):353-368. <a href="https://doi.org/10.3102/10769986028004353" class="external-link uri">https://doi.org/10.3102/10769986028004353</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

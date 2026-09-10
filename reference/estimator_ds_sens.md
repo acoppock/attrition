@@ -89,6 +89,18 @@ The names are those of the `bounds` row of
 [`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_bounds.md),
 which returns the same quantities as a data frame.
 
+## References
+
+Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern
+(2017). Combining Double Sampling and Bounds to Address Nonignorable
+Missing Outcomes in Randomized Experiments. *Political Analysis*
+25(2):188-206.
+[doi:10.1017/pan.2016.6](https://doi.org/10.1017/pan.2016.6)
+
+Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
+Partially Identified Parameters. *Econometrica* 72(6):1845-1857.
+[doi:10.1111/j.1468-0262.2004.00555.x](https://doi.org/10.1111/j.1468-0262.2004.00555.x)
+
 ## Examples
 
 ``` r

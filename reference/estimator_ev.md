@@ -59,6 +59,27 @@ The names are those of the `bounds` row of
 [`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_bounds.md),
 which returns the same quantities as a data frame.
 
+## References
+
+Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
+*American Economic Review Papers and Proceedings* 80(2):319-323.
+
+Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
+Partially Identified Parameters. *Econometrica* 72(6):1845-1857.
+[doi:10.1111/j.1468-0262.2004.00555.x](https://doi.org/10.1111/j.1468-0262.2004.00555.x)
+
+Miratrix, Luke W., Jasjeet S. Sekhon, and Bin Yu (2013). Adjusting
+Treatment Effect Estimates by Post-Stratification in Randomized
+Experiments. *Journal of the Royal Statistical Society, Series B*
+75(2):369-396.
+[doi:10.1111/j.1467-9868.2012.01048.x](https://doi.org/10.1111/j.1467-9868.2012.01048.x)
+
+Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern
+(2017). Combining Double Sampling and Bounds to Address Nonignorable
+Missing Outcomes in Randomized Experiments. *Political Analysis*
+25(2):188-206.
+[doi:10.1017/pan.2016.6](https://doi.org/10.1017/pan.2016.6)
+
 ## Examples
 
 ``` r

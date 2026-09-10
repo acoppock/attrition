@@ -17,10 +17,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/attrition.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/drawing-the-bounds.html">Drawing the extreme value bounds</a></li>
-  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -51,6 +47,8 @@
 <span>  R1 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Attempt <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  R2 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  monotonicity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"treatment_increases_response"</span>, <span class="st">"treatment_decreases_response"</span>,</span>
+<span>    <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  se <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"analytic"</span>, <span class="st">"bootstrap"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
@@ -94,6 +92,21 @@ Must be numeric and take values 0 or 1.</p></dd>
 Must be numeric and take values 0 or 1.</p></dd>
 
 
+<dt id="arg-monotonicity">monotonicity<a class="anchor" aria-label="anchor" href="#arg-monotonicity"></a></dt>
+<dd><p>The selection assumption, which is separate from the choice
+of design and is available on both paths.
+<code>"treatment_increases_response"</code> assumes \(R_i(1) \ge R_i(0)\), which
+makes the control respondents the always-reporters and trims the treatment
+group; <code>"treatment_decreases_response"</code> assumes the reverse and trims the
+control group; <code>"none"</code> assumes neither and trims both groups, by the
+largest share of each that could fail to be always-reporters. The default is
+<code>"treatment_increases_response"</code> on the single-stage <code>R</code> path, which
+is Lee (2009), and <code>"none"</code> on the double-sampling path, which is what the
+follow-up makes affordable; either default gives way to an explicit value. The
+assumption is the researcher's to make rather than the data's to choose, so
+nothing here picks a direction from the observed response rates.</p></dd>
+
+
 <dt id="arg-strata">strata<a class="anchor" aria-label="anchor" href="#arg-strata"></a></dt>
 <dd><p>Not supported; supplying any value raises an error.</p></dd>
 
@@ -104,9 +117,12 @@ Must be numeric and take values 0 or 1.</p></dd>
 
 <dt id="arg-se">se<a class="anchor" aria-label="anchor" href="#arg-se"></a></dt>
 <dd><p>How to obtain standard errors. <code>"analytic"</code> (the default) uses the
-closed-form asymptotic variance of Lee (2009), Proposition 3, and is available for
-the single-stage <code>R</code> path only. <code>"bootstrap"</code> resamples units within
-treatment arm and works for both paths. <code>"none"</code> returns bounds alone.</p></dd>
+closed-form asymptotic variance of Lee (2009), Proposition 3, which covers the
+single-stage, unweighted, one-group-trimmed case and so is available only for the
+single-stage path under an assumed direction. <code>"bootstrap"</code> resamples units
+within treatment arm and works everywhere. <code>"none"</code> returns bounds alone.
+Asking for analytic standard errors where they do not apply is an error rather
+than a silent substitution.</p></dd>
 
 
 <dt id="arg-sims">sims<a class="anchor" aria-label="anchor" href="#arg-sims"></a></dt>
@@ -126,8 +142,9 @@ argument, so passing it positionally assigns it to another argument.</p></dd>
   <code>std.error_lower</code> and <code>std.error_upper</code>, their standard errors;
   and <code>conf.low</code> and <code>conf.high</code>, the joint Imbens-Manski
   confidence interval. The intermediate quantities used to build them follow,
-  and differ between the two paths. All six lead elements are <code>NA</code> when
-  monotonicity is violated. Pass to
+  and differ between the two paths. All six lead elements are <code>NA</code>, with a
+  warning naming the other direction, when monotonicity is violated in the
+  direction assumed. Pass to
   <code><a href="tidy.attrition_trim.html">tidy()</a></code> for a data frame.</p>
     </div>
     <div class="section level2">
@@ -142,13 +159,44 @@ substantially.</p>
 two response rates are equal: the trimming proportion is then zero, the bounds
 collapse to a point, and the standard errors are not trustworthy. This case
 warns.</p>
+<p>The design and the assumption are separate choices, and <code>estimator_trim</code>
+takes them separately. Which response arguments are supplied picks the design:
+<code>R</code> is the single-stage estimator, <code>R1</code>, <code>Attempt</code> and <code>R2</code>
+the double-sampling one, which recovers outcomes from a random sample of the
+nonrespondents and so has many fewer subjects left to trim for. <code>monotonicity</code>
+picks the assumption, in either design.</p>
+<p>Monotonicity has a direction, and the two directions are not two ways of writing
+the same assumption: each names a different group as the always-reporters and
+trims the other, so they give different bounds on the same data, and only one of
+them is consistent with any given pair of response rates. The estimator under the
+reverse direction is the forward estimator run with the arms relabelled, so the
+bounds it returns are negated and swapped back onto the original contrast.</p>
+<p><code>monotonicity = "none"</code> assumes only random assignment. The share of
+always-reporters is then bounded below by the Frechet-Hoeffding bound
+\(1 - f_0 - f_1\), where \(f_z\) is the missingness rate in arm \(z\), and
+each arm is trimmed by the largest share of its respondents that could fail to be
+always-reporters: \(f_0/(1 - f_1)\) of the treatment group and
+\(f_1/(1 - f_0)\) of the control group. These are the sharp bounds of Imai
+(2008), Proposition 1, building on Zhang and Rubin (2003) and Horowitz and Manski
+(1995). They exist only while \(f_0 + f_1 &lt; 1\); beyond that nothing keeps the
+always-reporter share away from zero, and the estimator says so rather than
+returning a number. Because both arms are trimmed by the same rule, this case has
+no direction to set and is invariant to which arm is called treatment.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating Sharp
+    <p>Horowitz, Joel L., and Charles F. Manski (1995). Identification and Robustness
+with Contaminated and Corrupted Data. <em>Econometrica</em> 63(2):281-302.</p>
+<p>Imai, Kosuke (2008). Sharp Bounds on the Causal Effects in Randomized Experiments
+with "Truncation-by-Death". <em>Statistics &amp; Probability Letters</em> 78(2):144-149.</p>
+<p>Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating Sharp
 Bounds on Treatment Effects. <em>Review of Economic Studies</em> 76(3):1071-1102.</p>
 <p>Tauchmann, Harald (2014). Lee (2009) Treatment-Effect Bounds for Nonrandom
-Sample Selection. <em>Stata Journal</em> 14(4):884-894.</p>
+Sample Selection. <em>Stata Journal</em> 14(4):884-894.
+<a href="https://doi.org/10.1177/1536867X1401400411" class="external-link">doi:10.1177/1536867X1401400411</a></p>
+<p>Zhang, Junni L., and Donald B. Rubin (2003). Estimation of Causal Effects via
+Principal Stratification When Some Outcomes are Truncated by "Death".
+<em>Journal of Educational and Behavioral Statistics</em> 28(4):353-368.</p>
     </div>
 
     <div class="section level2">
@@ -167,7 +215,7 @@ Sample Selection. <em>Stata Journal</em> 14(4):884-894.</p>
 <span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, <span class="va">R</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Single-stage: trimming bounds under monotonicity, with Lee (2009) standard errors</span></span></span>
-<span class="r-in"><span><span class="fu">estimator_trim</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">estimator_trim</span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      0.01761468      0.64239649      0.09007908      0.09972250     -0.13055222 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high       Out0_mono      Out1L_mono      Out1U_mono control_group_N </span>
@@ -178,7 +226,7 @@ Sample Selection. <em>Stata Journal</em> 14(4):884-894.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      0.67967146      2.00000000      4.00000000 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Bootstrap standard errors instead</span></span></span>
-<span class="r-in"><span><span class="fu">estimator_trim</span><span class="op">(</span><span class="va">Y</span>, <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R</span>, se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">200</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">estimator_trim</span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R</span>, se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">200</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      0.01761468      0.64239649      0.08467663      0.09880524     -0.12166598 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high       Out0_mono      Out1L_mono      Out1U_mono control_group_N </span>
@@ -187,6 +235,38 @@ Sample Selection. <em>Stata Journal</em> 14(4):884-894.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    417.00000000      0.16385742      0.18713450      0.32032854      0.81286550 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          pi_r_0              yU              yL </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      0.67967146      2.00000000      4.00000000 </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The other direction, on data built the other way round: here treatment</span></span></span>
+<span class="r-in"><span><span class="co"># lowers response, so the control group holds the extra respondents and is</span></span></span>
+<span class="r-in"><span><span class="co"># the group trimmed</span></span></span>
+<span class="r-in"><span><span class="va">R_rev</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="va">N</span>, <span class="fl">1</span>, prob <span class="op">=</span> <span class="fl">0.8</span> <span class="op">-</span> <span class="fl">0.1</span> <span class="op">*</span> <span class="va">Z</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">Y_rev</span> <span class="op">&lt;-</span> <span class="va">Y_star</span></span></span>
+<span class="r-in"><span><span class="va">Y_rev</span><span class="op">[</span><span class="va">R_rev</span> <span class="op">==</span> <span class="fl">0</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="va">df_rev</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_rev</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R_rev</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">estimator_trim</span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R</span>,</span></span>
+<span class="r-in"><span>               monotonicity <span class="op">=</span> <span class="st">"treatment_decreases_response"</span>, data <span class="op">=</span> <span class="va">df_rev</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.10825411      0.64774281      0.09089730      0.09435331     -0.04125865 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high       Out1_mono      Out0L_mono      Out0U_mono control_group_N </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.80294018      3.30056180      3.19230769      2.65281899    397.00000000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   treat_group_N               Q              f1              f0          pi_r_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    356.00000000      0.14872263      0.30604288      0.18480493      0.69395712 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          pi_r_0              yU              yL </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.81519507      4.00000000      2.00000000 </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># No direction at all: both groups trimmed, randomization the only assumption.</span></span></span>
+<span class="r-in"><span><span class="co"># Wider, and available in either design.</span></span></span>
+<span class="r-in"><span><span class="fu">estimator_trim</span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R</span>, monotonicity <span class="op">=</span> <span class="st">"none"</span>,</span></span>
+<span class="r-in"><span>               se <span class="op">=</span> <span class="st">"bootstrap"</span>, sims <span class="op">=</span> <span class="fl">200</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      -0.8567460       1.4592918       0.1331254       0.1180387      -1.0757179 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       conf.high           Out0L           Out0U           Out1L           Out1U </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       1.6534482       2.4142259       3.4083333       2.5515873       3.8735178 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> control_group_N   treat_group_N           trim0           trim1              f1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     331.0000000     417.0000000       0.2753308       0.3940732       0.1871345 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              f0          pi_r_1          pi_r_0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       0.3203285       0.8128655       0.6796715 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

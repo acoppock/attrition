@@ -36,12 +36,6 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="articles/attrition.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/drawing-the-bounds.html">Drawing the extreme value bounds</a></li>
-  </ul>
-</li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -109,7 +103,7 @@
 </tr>
 <tr>
 <td><code><a href="reference/estimator_trim.html">estimator_trim()</a></code></td>
-<td>Treatment moves response in one direction only (Lee 2009). The outcome need not be bounded.</td>
+<td>Treatment moves response in one direction only (Lee 2009), or nothing beyond random assignment (Imai 2008). The outcome need not be bounded.</td>
 </tr>
 </tbody>
 </table>
@@ -174,12 +168,12 @@
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
-<p><code><a href="articles/attrition.html">vignette("attrition")</a></code> works through the design and all five estimators on the shipped data, reproducing the paper’s Table 3 along the way. <code><a href="articles/drawing-the-bounds.html">vignette("drawing-the-bounds")</a></code> draws the imputation that <code><a href="reference/estimator_ev.html">estimator_ev()</a></code> averages over and checks the picture against the estimates.</p>
+<p><code><a href="articles/attrition.html">vignette("attrition")</a></code> works through the design and all five estimators on the shipped data, reproducing the paper’s Table 3 along the way. It also draws the imputation that <code><a href="reference/estimator_ev.html">estimator_ev()</a></code> averages over and checks the picture against the estimates.</p>
 </div>
 <div class="section level2">
 <h2 id="ai-statement">AI statement<a class="anchor" aria-label="anchor" href="#ai-statement"></a>
 </h2>
-<p>attrition 1.0.0 was prepared by Alexander Coppock working with Claude (Anthropic), across the rewrite of the estimators, the test suite and the documentation. The method and the original implementation come from Coppock, Gerber, Green, and Kern (2017). The 1.0.0 release rewrote the internals, added a formula interface and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> methods, corrected several defects in the earlier code, and wrote both vignettes.</p>
+<p>attrition 1.0.0 was prepared by Alexander Coppock working with Claude (Anthropic), across the rewrite of the estimators, the test suite and the documentation. The method and the original implementation come from Coppock, Gerber, Green, and Kern (2017). The 1.0.0 release rewrote the internals, added a formula interface and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> methods, corrected several defects in the earlier code, and wrote the vignette.</p>
 <p>The code base has been reviewed but not written line by line, so the guarantee offered is not that every line has been vouched for. It is that the package reproduces the published analysis it implements. <code><a href="articles/attrition.html">vignette("attrition")</a></code> reproduces Table 3 of the paper, and the test suite holds each estimator to the published quantities, which have not changed. The analytic variance added to <code><a href="reference/estimator_trim.html">estimator_trim()</a></code> was checked three ways: against the algebraically distinct form in Tauchmann’s Stata <code>leebounds</code>, against the Monte Carlo standard deviation of the estimator across sample sizes from 1,000 to 64,000, and by the coverage of a conventional interval around each bound endpoint.</p>
 </div>
 <div class="section level2">
