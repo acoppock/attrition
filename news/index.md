@@ -11,6 +11,22 @@ First release.
   what the object is, which is the replication study reported in the
   paper.
 
+- `levendusky_replication` is now the analyzed contrast alone, a tibble
+  of 1,980 rows and 10 columns prepared the way the FEDAI package
+  prepares its studies. The placebo condition and the two contrasts
+  defined only against it went with it, since no result in the paper or
+  the package used them, which retires the
+  `droplevels(subset(levendusky_replication, !is.na(Z1)))` line that
+  every example, vignette and test used to open with. Columns carry
+  their roles in their names: `Z` and `Z_condition` for the assignment,
+  `Y_polarization_w2` for the outcome (`L_dif_w2` in the archive),
+  `X_party_id` for the poststratification covariate, and `R1`, `Attempt`
+  and `R2` unchanged, matching the arguments they are passed to. The
+  published quantities are unchanged; the test suite still holds each
+  estimator to Table 3. `data-raw/levendusky_replication.R` now builds
+  the data by downloading the deposited file from the Harvard Dataverse
+  rather than from a copy checked into the repository.
+
 - One vocabulary for estimator output, taken from broom. Every estimator
   returns the same six named elements in the same order:
   `estimate_lower` and `estimate_upper`, the two ends of the

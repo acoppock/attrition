@@ -33,38 +33,31 @@ from 3.25 points wide to 0.91 on an outcome scored from 0 to 6.
 Mechanical Turk, replicating Levendusky and Malhotra (2016). Subjects
 read a news article describing the electorate as sharply divided (the
 polarized condition) or as focused on common ground (the moderate
-condition). A third group read nothing on the topic and is not analyzed.
-The outcome, perceived polarization, was measured immediately and again
-ten days later.
+condition). The outcome, perceived polarization, was measured
+immediately and again ten days later. The experiment ran a third group
+who read nothing on the topic, which the paper does not analyze and
+which is not shipped here, so the 1,980 rows are the
+polarized-versus-moderate contrast and nothing else.
 
-Seven of its twelve columns do the work below.
+Six of its ten columns do the work below.
 [`?levendusky_replication`](https://alexandercoppock.com/attrition/reference/levendusky_replication.md)
 documents them all.
 
 | Column | What it holds |
 |----|----|
-| `L_dif_w2` | Perceived polarization at Wave 2, scored 0 to 6. The outcome, and the only column with missing values. |
-| `Z_lev` | The condition as assigned: `Placebo`, `Moderate`, or `Polarized`. |
-| `Z1` | Polarized (1) versus moderate (0), and `NA` in the placebo condition. The contrast the paper analyzes. |
+| `Y_polarization_w2` | Perceived polarization at Wave 2, scored 0 to 6. The outcome, missing wherever Wave 2 went unanswered. |
+| `Z_condition` | The condition as assigned: `Moderate` or `Polarized`. |
+| `Z` | Polarized (1) versus moderate (0). |
 | `R1` | Answered the second wave on the first attempt. |
 | `Attempt` | Drawn into the follow-up sample and offered the larger incentive. |
 | `R2` | Answered the follow-up attempt. |
-| `pid_3_recoded` | Party identification in three categories, used below for poststratification. |
-
-Every analysis in the paper is the polarized-versus-moderate contrast,
-so the placebo group goes first. Dropping it is what `!is.na(Z1)` does:
-`Z1` is defined only for the two conditions being compared, so filtering
-on its missingness removes the placebo group and nothing else.
-[`droplevels()`](https://rdrr.io/r/base/droplevels.html) then clears the
-emptied factor level, which would otherwise print as a row of zeroes in
-every table that follows.
+| `X_party_id` | Party identification in three categories, used below for poststratification. |
 
 ``` r
 
-dat <- droplevels(subset(levendusky_replication, !is.na(Z1)))
-with(dat, table(Z_lev, R1))
+with(levendusky_replication, table(Z_condition, R1))
 #>            R1
-#> Z_lev         0   1
+#> Z_condition   0   1
 #>   Moderate  264 731
 #>   Polarized 272 713
 ```
@@ -77,10 +70,11 @@ level.
 
 ``` r
 
-summary(lm(L_dif_w2 ~ Z1, data = subset(dat, R1 == 1)))$coefficients
+naive <- lm(Y_polarization_w2 ~ Z, data = subset(levendusky_replication, R1 == 1))
+summary(naive)$coefficients
 #>             Estimate Std. Error t value Pr(>|t|)
 #> (Intercept)   3.5421    0.04647  76.220  0.00000
-#> Z1            0.1259    0.06613   1.903  0.05718
+#> Z             0.1259    0.06613   1.903  0.05718
 ```
 
 The subset matters. Restricting to `R1 == 1` is what makes the estimate
@@ -110,7 +104,7 @@ happen to contain. Here the data happen to contain both.
 
 ``` r
 
-range(dat$L_dif_w2, na.rm = TRUE)
+range(levendusky_replication$Y_polarization_w2, na.rm = TRUE)
 #> [1] 0 6
 ```
 
@@ -119,7 +113,8 @@ interval around the resulting identification region.
 
 ``` r
 
-estimator_ev(L_dif_w2, Z1, R1, minY = 0, maxY = 6, data = dat)
+estimator_ev(Y_polarization_w2, Z, R1,
+             minY = 0, maxY = 6, data = levendusky_replication)
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
 #>        -1.53914         1.70967         0.07899         0.07673        -1.66908 
 #>       conf.high 
@@ -149,18 +144,18 @@ random from each condition and offered \$4.00 instead of the original
 
 ``` r
 
-with(dat, table(Z_lev, Attempt, R2))
+with(levendusky_replication, table(Z_condition, Attempt, R2))
 #> , , R2 = 0
 #> 
 #>            Attempt
-#> Z_lev         0   1
+#> Z_condition   0   1
 #>   Moderate  945  11
 #>   Polarized 935  17
 #> 
 #> , , R2 = 1
 #> 
 #>            Attempt
-#> Z_lev         0   1
+#> Z_condition   0   1
 #>   Moderate    0  39
 #>   Polarized   0  33
 ```
@@ -173,7 +168,8 @@ nonrespondents, the outcomes it recovers estimate the mean outcome among
 
 ``` r
 
-estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
+estimator_ds(Y_polarization_w2, Z, R1, Attempt, R2,
+             minY = 0, maxY = 6, data = levendusky_replication)
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
 #>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
 #>       conf.high 
@@ -210,8 +206,8 @@ identification.
 
 ``` r
 
-estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, strata = pid_3_recoded,
-             minY = 0, maxY = 6, data = dat)
+estimator_ds(Y_polarization_w2, Z, R1, Attempt, R2, strata = X_party_id,
+             minY = 0, maxY = 6, data = levendusky_replication)
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
 #>         -0.3444          0.5257          0.1122          0.1039         -0.5290 
 #>       conf.high 
@@ -244,8 +240,8 @@ returns a point estimate.
 
 ``` r
 
-estimator_ds_sens(L_dif_w2, Z1, R1, Attempt, R2, delta = 0.5,
-                  minY = 0, maxY = 6, data = dat)
+estimator_ds_sens(Y_polarization_w2, Z, R1, Attempt, R2, delta = 0.5,
+                  minY = 0, maxY = 6, data = levendusky_replication)
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
 #>        -0.09162         0.36516         0.10428         0.09859        -0.26314 
 #>       conf.high 
@@ -260,8 +256,8 @@ amount.
 
 ``` r
 
-sens <- sensitivity_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6,
-                       alpha = 0.10, data = dat)
+sens <- sensitivity_ds(Y_polarization_w2, Z, R1, Attempt, R2, minY = 0, maxY = 6,
+                       alpha = 0.10, data = levendusky_replication)
 sens$sensitivity_plot
 ```
 
@@ -291,8 +287,8 @@ includes zero, and `delta_star` is `NA` to say so.
 
 ``` r
 
-sensitivity_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6,
-               alpha = 0.05, data = dat)$delta_star
+sensitivity_ds(Y_polarization_w2, Z, R1, Attempt, R2, minY = 0, maxY = 6,
+               alpha = 0.05, data = levendusky_replication)$delta_star
 #> [1] NA
 ```
 
@@ -318,7 +314,7 @@ they do not.
 
 ``` r
 
-with(dat, tapply(R1, Z1, mean))
+with(levendusky_replication, tapply(R1, Z, mean))
 #>      0      1 
 #> 0.7347 0.7239
 ```
@@ -331,7 +327,8 @@ it.
 
 ``` r
 
-estimator_trim(L_dif_w2, Z1, R = R1, data = dat)[c("estimate_lower", "estimate_upper")]
+estimator_trim(Y_polarization_w2, Z, R = R1,
+               data = levendusky_replication)[c("estimate_lower", "estimate_upper")]
 #> estimate_lower estimate_upper 
 #>             NA             NA
 ```
@@ -349,8 +346,8 @@ fail.
 ``` r
 
 set.seed(343)
-estimator_trim(L_dif_w2, Z1, R1 = R1, Attempt = Attempt, R2 = R2,
-               se = "bootstrap", sims = 500, data = dat)[
+estimator_trim(Y_polarization_w2, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+               se = "bootstrap", sims = 500, data = levendusky_replication)[
                  c("estimate_lower", "estimate_upper",
                    "std.error_lower", "std.error_upper")]
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper 
@@ -374,7 +371,8 @@ the same six elements under the same names.
 
 ``` r
 
-out <- estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
+out <- estimator_ds(Y_polarization_w2, Z, R1, Attempt, R2,
+                    minY = 0, maxY = 6, data = levendusky_replication)
 out
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
 #>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
@@ -417,8 +415,8 @@ The interface changed, not the argument.
 
 ``` r
 
-estimator_ds(L_dif_w2 ~ Z1, R1 = "R1", Attempt = "Attempt", R2 = "R2",
-             minY = 0, maxY = 6, data = dat)
+estimator_ds(Y_polarization_w2 ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2",
+             minY = 0, maxY = 6, data = levendusky_replication)
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
 #>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
 #>       conf.high 
