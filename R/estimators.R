@@ -1,120 +1,63 @@
 # Estimators for attrition package
 
+# Extreme value (Manski) bounds from a single round of data collection, with a
+# joint Imbens-Manski interval. Every nonrespondent gets the extreme value, so
+# delta is fixed at one.
 manski_cis <- function(n1_t, n1_c,
                        p1_t, p1_c,
                        y1m_t, y1m_c,
                        s1_t, s1_c,
-                       minY,maxY,alpha){
+                       minY, maxY, alpha){
 
   upper_bound_est <-
-    gen_mean(y1m_t, p1_t, lower_bound = FALSE, minY = minY, maxY = maxY) -
-    gen_mean(y1m_c, p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)
+    gen_mean(y1m_t, p1_t, delta = 1, lower_bound = FALSE, minY = minY, maxY = maxY) -
+    gen_mean(y1m_c, p1_c, delta = 1, lower_bound = TRUE, minY = minY, maxY = maxY)
   lower_bound_est <-
-    gen_mean(y1m_t, p1_t, lower_bound = TRUE, minY = minY, maxY = maxY) -
-    gen_mean(y1m_c, p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)
+    gen_mean(y1m_t, p1_t, delta = 1, lower_bound = TRUE, minY = minY, maxY = maxY) -
+    gen_mean(y1m_c, p1_c, delta = 1, lower_bound = FALSE, minY = minY, maxY = maxY)
 
   upper_bound_var_est <-
-    gen_var(y1m_t, s1_t, p1_t, lower_bound = FALSE, minY = minY, maxY = maxY)/n1_t +
-    gen_var(y1m_c, s1_c, p1_c, lower_bound = TRUE, minY = minY, maxY = maxY)/n1_c
+    gen_var(y1m_t, s1_t, p1_t, delta = 1, lower_bound = FALSE, minY = minY, maxY = maxY)/n1_t +
+    gen_var(y1m_c, s1_c, p1_c, delta = 1, lower_bound = TRUE, minY = minY, maxY = maxY)/n1_c
   lower_bound_var_est <-
-    gen_var(y1m_t, s1_t, p1_t, lower_bound = TRUE, minY = minY, maxY = maxY)/n1_t +
-    gen_var(y1m_c, s1_c, p1_c, lower_bound = FALSE, minY = minY, maxY = maxY)/n1_c
+    gen_var(y1m_t, s1_t, p1_t, delta = 1, lower_bound = TRUE, minY = minY, maxY = maxY)/n1_t +
+    gen_var(y1m_c, s1_c, p1_c, delta = 1, lower_bound = FALSE, minY = minY, maxY = maxY)/n1_c
 
-
-  sig <- im_critical_value(lower_bound_est, upper_bound_est,
-                           lower_bound_var_est, upper_bound_var_est, alpha)
-
-  return(c(estimate_lower = lower_bound_est,
-           estimate_upper = upper_bound_est,
-           std.error_lower = lower_bound_var_est^.5,
-           std.error_upper = upper_bound_var_est^.5,
-           conf.low = lower_bound_est - sig*lower_bound_var_est^.5,
-           conf.high = upper_bound_est + sig*upper_bound_var_est^.5))
+  im_interval(lower_bound_est, upper_bound_est, lower_bound_var_est, upper_bound_var_est, alpha)
 }
 
-ds_manski_cis_2s <- function(n1_t,n2_t,n1_c,n2_c,
-                             p1_t,p2_t,s1_t,s2_nm_t,
-                             y1m_t,y2m_nm_t,
-                             p1_c,p2_c,
-                             s1_c,s2_nm_c,
-                             y1m_c,y2m_nm_c,
-                             minY,maxY,alpha) {
+# Double-sampling bounds with the analytic variance of Coppock, Gerber, Green,
+# and Kern (2017) and a joint Imbens-Manski interval. `m` is the list
+# ds_moments() returns. delta is the share of the follow-up nonrespondents given
+# worst-case treatment: at delta = 1 this is estimator_ds(), and at anything
+# less it is estimator_ds_sens().
+ds_manski_cis_2s <- function(m, minY, maxY, alpha, delta) {
+  t <- m$t
+  ctl <- m$c
 
-  y2m_t_L <- gen_mean(y2m_nm_t,p2_t,lower_bound=TRUE,minY,maxY)
-  y2m_t_U <- gen_mean(y2m_nm_t,p2_t,lower_bound=FALSE,minY,maxY)
-  y2m_c_L <- gen_mean(y2m_nm_c,p2_c,lower_bound=TRUE,minY,maxY)
-  y2m_c_U <- gen_mean(y2m_nm_c,p2_c,lower_bound=FALSE,minY,maxY)
+  y2m_t_L <- gen_mean(t$y2m, t$p2, delta, lower_bound = TRUE, minY, maxY)
+  y2m_t_U <- gen_mean(t$y2m, t$p2, delta, lower_bound = FALSE, minY, maxY)
+  y2m_c_L <- gen_mean(ctl$y2m, ctl$p2, delta, lower_bound = TRUE, minY, maxY)
+  y2m_c_U <- gen_mean(ctl$y2m, ctl$p2, delta, lower_bound = FALSE, minY, maxY)
 
-  s2_t_L <- gen_var(y2m_nm_t,s2_nm_t,p2_t,lower_bound=TRUE,minY,maxY)^.5
-  s2_t_U <- gen_var(y2m_nm_t,s2_nm_t,p2_t,lower_bound=FALSE,minY,maxY)^.5
-  s2_c_L <- gen_var(y2m_nm_c,s2_nm_c,p2_c,lower_bound=TRUE,minY,maxY)^.5
-  s2_c_U <- gen_var(y2m_nm_c,s2_nm_c,p2_c,lower_bound=FALSE,minY,maxY)^.5
+  s2_t_L <- gen_var(t$y2m, t$s2, t$p2, delta, lower_bound = TRUE, minY, maxY)^0.5
+  s2_t_U <- gen_var(t$y2m, t$s2, t$p2, delta, lower_bound = FALSE, minY, maxY)^0.5
+  s2_c_L <- gen_var(ctl$y2m, ctl$s2, ctl$p2, delta, lower_bound = TRUE, minY, maxY)^0.5
+  s2_c_U <- gen_var(ctl$y2m, ctl$s2, ctl$p2, delta, lower_bound = FALSE, minY, maxY)^0.5
 
-  manski_bounds_est <- construct_manski_bounds(p1_t, y1m_t,
-                                               p1_c, y1m_c,
-                                               y2m_t_L, y2m_t_U,
-                                               y2m_c_L, y2m_c_U)
+  bounds <- construct_manski_bounds(t$p1, t$y1m,
+                                    ctl$p1, ctl$y1m,
+                                    y2m_t_L, y2m_t_U,
+                                    y2m_c_L, y2m_c_U)
 
-  lower_bound_est <-   manski_bounds_est[1]
-  upper_bound_est <-   manski_bounds_est[2]
+  lower_bound_var_est <-
+    ds_var(t$n1, t$n2, t$p1, t$p2, t$s1, s2_t_L, t$y1m, y2m_t_L) +
+    ds_var(ctl$n1, ctl$n2, ctl$p1, ctl$p2, ctl$s1, s2_c_U, ctl$y1m, y2m_c_U)
+  upper_bound_var_est <-
+    ds_var(t$n1, t$n2, t$p1, t$p2, t$s1, s2_t_U, t$y1m, y2m_t_U) +
+    ds_var(ctl$n1, ctl$n2, ctl$p1, ctl$p2, ctl$s1, s2_c_L, ctl$y1m, y2m_c_L)
 
-  lower_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_L,y1m_t,y2m_t_L),
-                                   c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_U,y1m_c,y2m_c_U))
-  upper_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_U,y1m_t,y2m_t_U),
-                                   c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
-
-  sig <- im_critical_value(lower_bound_est, upper_bound_est,
-                           lower_bound_var_est, upper_bound_var_est, alpha)
-
-  return(c(estimate_lower = lower_bound_est,
-           estimate_upper = upper_bound_est,
-           std.error_lower = lower_bound_var_est^.5,
-           std.error_upper = upper_bound_var_est^.5,
-           conf.low = lower_bound_est - sig*lower_bound_var_est^.5,
-           conf.high = upper_bound_est + sig*upper_bound_var_est^.5))
-}
-
-ds_manski_cis_2s_sens <- function(n1_t,n2_t,n1_c,n2_c,
-                                  p1_t,p2_t,s1_t,s2_nm_t,
-                                  y1m_t,y2m_nm_t,
-                                  p1_c,p2_c,
-                                  s1_c,s2_nm_c,
-                                  y1m_c,y2m_nm_c,
-                                  minY,maxY,alpha,delta){
-
-  y2m_t_L <- gen_mean_sens(y2m_nm_t, p2_t, delta, lower_bound = TRUE, minY, maxY)
-  y2m_t_U <- gen_mean_sens(y2m_nm_t, p2_t, delta, lower_bound = FALSE, minY, maxY)
-  y2m_c_L <- gen_mean_sens(y2m_nm_c, p2_c, delta, lower_bound = TRUE, minY, maxY)
-  y2m_c_U <- gen_mean_sens(y2m_nm_c, p2_c, delta, lower_bound = FALSE, minY, maxY)
-
-  s2_t_L <- gen_var_sens(y2m_nm_t, s2_nm_t, p2_t, delta, lower_bound = TRUE, minY, maxY)^.5
-  s2_t_U <- gen_var_sens(y2m_nm_t, s2_nm_t, p2_t, delta, lower_bound = FALSE, minY, maxY)^.5
-  s2_c_L <- gen_var_sens(y2m_nm_c, s2_nm_c, p2_c, delta, lower_bound = TRUE, minY, maxY)^.5
-  s2_c_U <- gen_var_sens(y2m_nm_c, s2_nm_c, p2_c, delta, lower_bound = FALSE, minY, maxY)^.5
-
-  manski_bounds_est <- construct_manski_bounds(p1_t, y1m_t,
-                                               p1_c, y1m_c,
-                                               y2m_t_L, y2m_t_U,
-                                               y2m_c_L, y2m_c_U)
-
-  lower_bound_est <-   manski_bounds_est[1]
-  upper_bound_est <-   manski_bounds_est[2]
-
-  lower_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_L,y1m_t,y2m_t_L),
-                                   c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_U,y1m_c,y2m_c_U))
-  upper_bound_var_est <- ds_var_2s(c(n1_t,n2_t,p1_t,p2_t,s1_t,s2_t_U,y1m_t,y2m_t_U),
-                                   c(n1_c,n2_c,p1_c,p2_c,s1_c,s2_c_L,y1m_c,y2m_c_L))
-
-
-  sig <- im_critical_value(lower_bound_est, upper_bound_est,
-                           lower_bound_var_est, upper_bound_var_est, alpha)
-
-  return(c(estimate_lower = lower_bound_est,
-           estimate_upper = upper_bound_est,
-           std.error_lower = lower_bound_var_est^.5,
-           std.error_upper = upper_bound_var_est^.5,
-           conf.low = lower_bound_est - sig*lower_bound_var_est^.5,
-           conf.high = upper_bound_est + sig*upper_bound_var_est^.5))
+  im_interval(bounds[1], bounds[2], lower_bound_var_est, upper_bound_var_est, alpha)
 }
 
 
@@ -332,120 +275,3 @@ trimming_bounds <-
 
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-#' # calculate manski bounds
-##' @export
-# ds_manski <- function(p1,p2,y1m,y2m_nm,minY,maxY) {
-#   const1 <- p1*y1m + (1-p1)*p2*y2m_nm
-#   const2 <- (1-p1)*(1-p2)
-#   return(c(const1+const2*minY,const1+const2*maxY))
-# }
-
-
-#' #' find the n1,n2 (number of attempts to measure) that minimize width of Manski CIs
-#' #' @export
-#' optim_manski_2s <- function(p1_t,p2_t,s1_t,s2_nm_t,
-#'                             y1m_t,y2m_nm_t,
-#'                             c1a_t,c1r_t,c2a_t,c2r_t,
-#'                             p1_c,p2_c,s1_c,s2_nm_c,
-#'                             y1m_c,y2m_nm_c,
-#'                             c1a_c,c1r_c,c2a_c,c2r_c,
-#'                             budget,minY,maxY,
-#'                             mu=1e-04,niter=100,alpha=0.05) {
-#'
-#'
-#'   matout <- matrix(NA,nrow=niter,ncol=5)
-#'   colnames(matout) <- c("n1_t","n2_t","n1_c","n2_c","ci_width")
-#'   iter <- 1
-#'
-#'   while(iter <= niter) {
-#'
-#'     #(c1a_t+c1r_t*p1_t)*n1_t + (c2a_t+c2r_t*p2_t)*n2_t + (c1a_c+c1r_c*p1_c)*n1_c + (c2a_c+c2r_c*p2_c)*n2_c = budget
-#'
-#'     starting_values <- .5*runif(4)*budget/c((c1a_t+c1r_t*p1_t),(c2a_t+c2r_t*p2_t*(1-p1_t)),(c1a_c+c1r_c*p1_c),(c2a_c+c2r_c*p2_c*(1-p1_c)))
-#'
-#'     n1g_t = starting_values[1]
-#'     n2g_t = starting_values[2]
-#'     n1g_c = starting_values[3]
-#'     n2g_c = starting_values[4]
-#'
-#'
-#'     # constraints
-#'     #- (c1a_t+c1r_t*p1_t)*n1_t - (c2a_t+c2r_t*p2_t)*n2_t - (c1a_c+c1r_c*p1_c)*n1_c - (c2a_c+c2r_c*p2_c)*n2_c + budget >= 0
-#'     # n1_t > 2
-#'     # n2_t > 2
-#'     # n1_c > 2
-#'     # n2_c > 2
-#'     # (1-p1_t)*n1_t - n2_t > 2
-#'     # (1-p1_c)*n1_c - n2_c > 2
-#'
-#'     constrMat <- rbind(c(-(c1a_t+c1r_t*p1_t),-(c2a_t+c2r_t*p2_t),-(c1a_c+c1r_c*p1_c),-(c2a_c+c2r_c*p2_c)),
-#'                        c(1,0,0,0),
-#'                        c(0,1,0,0),
-#'                        c(0,0,1,0),
-#'                        c(0,0,0,1),
-#'                        c((1-p1_t),-1,0,0),
-#'                        c(0,0,(1-p1_c),-1)
-#'     ) # are these working?
-#'     constrVec <- c(-budget,2,2,2,2,2,2)
-#'
-#'     # compute width of 95% CIs
-#'     ds_passthrough_2s <- function(ns,p1_t,p2_t,s1_t,s2_nm_t,
-#'                                   y1m_t,y2m_nm_t,
-#'                                   c1a_t,c1r_t,c2a_t,c2r_t,
-#'                                   p1_c,p2_c,s1_c,s2_nm_c,
-#'                                   y1m_c,y2m_nm_c,
-#'                                   minY,maxY,alpha){
-#'       diff(ds_manski_cis_2s(ns[1],ns[2],ns[3],ns[4],p1_t,p2_t,s1_t,s2_nm_t,y1m_t,y2m_nm_t,c1a_t,c1r_t,c2a_t,c2r_t,p1_c,p2_c,s1_c,s2_nm_c,y1m_c,y2m_nm_c,minY,maxY,alpha))
-#'     }
-#'
-#'     optimD <- try(constrOptim(c(n1g_t,n2g_t,n1g_c,n2g_c),
-#'                               ds_passthrough_2s,grad=NULL,ui=constrMat,ci=constrVec,
-#'                               p1_t=p1_t,p2_t=p2_t,
-#'                               s1_t=s1_t,s2_nm_t=s2_nm_t,
-#'                               y1m_t=y1m_t,y2m_nm_t=y2m_nm_t,
-#'                               c1a_t=c1a_t,c1r_t=c1r_t,
-#'                               c2a_t=c2a_t,c2r_t=c2r_t,
-#'                               p1_c=p1_c,p2_c=p2_c,
-#'                               s1_c=s1_c,s2_nm_c=s2_nm_c,
-#'                               y1m_c=y1m_c,y2m_nm_c=y2m_nm_c,
-#'                               minY=minY,maxY=maxY,alpha=alpha,
-#'                               outer.iterations=1000,outer.eps = .Machine$double.eps^.5,mu=mu),silent=TRUE)
-#'
-#'     if(!is.character(optimD)) {
-#'       cat(iter,"")
-#'       matout[iter,] <- c(n1_t = optimD$par[1],n2_t = optimD$par[2],n1_c = optimD$par[3],n2_c = optimD$par[4],ci_width=optimD$value)
-#'       iter <- iter + 1
-#'     }
-#'
-#'   }
-#'   return(matout[order(matout[,5]),])
-#' }
-
-# imputation_estimator_ds <-
-#   function(p1_t,p2_t,y1m_t,y2m_t,p1_c,p2_c,y1m_c,y2m_c, minY, maxY, p) {
-#
-#     y_U_tilde_t <- (1-p)*y2m_t + p*maxY
-#     y_L_tilde_t <- (1-p)*y2m_t + p*minY
-#     y_U_tilde_c <- (1-p)*y2m_c + p*maxY
-#     y_L_tilde_c <- (1-p)*y2m_c + p*minY
-#
-#     const1_t <- p1_t*y1m_t + (1-p1_t)*p2_t*y2m_t
-#     const2_t <- (1-p1_t)*(1-p2_t)
-#     const1_c <- p1_c*y1m_c + (1-p1_c)*p2_c*y2m_c
-#     const2_c <- (1-p1_c)*(1-p2_c)
-#     return(c(const1_t+const2_t*y_L_tilde_t - (const1_c+const2_c*y_U_tilde_c),
-#              const1_t+const2_t*y_U_tilde_t - (const1_c+const2_c*y_L_tilde_c)))
-#   }

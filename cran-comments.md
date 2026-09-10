@@ -1,21 +1,17 @@
-# CRAN submission comments — attrition 1.0.0
+> **Not ready to submit.** The win-builder rounds below checked the build of 2026-09-08. Code under `R/` has changed since (`estimator_trim()`'s `monotonicity` argument, `summary()` methods, the removal of the `dplyr` and `purrr` dependencies, and the deduplication of the double-sampling internals). Rerun win-builder on the current tarball and replace the dated results below before submitting. Delete this banner when that is done.
+
+# CRAN submission comments for attrition 1.0.0
 
 ## Test environments
 
 * macOS 26.6.2 (local), R 4.6.0, on the submitted tarball
-* GitHub Actions, all passing, tests FAIL 0 | WARN 0 | SKIP 0 | PASS 278 on each:
+* GitHub Actions, all passing on the 2026-09-09 build; the local suite on the current build is FAIL 0 | WARN 0 | SKIP 0 | PASS 625:
   * macOS-latest (release)
   * Windows-latest (release)
   * Ubuntu-latest (R-devel, release, oldrel-1)
 * win-builder, x86_64-w64-mingw32, 2026-09-08, both Status: 1 NOTE (the note below):
   * R Under development (unstable) (2026-09-08 r90509 ucrt)
   * R 4.6.1 (2026-06-24 ucrt)
-
-The win-builder rounds checked the build of 2026-09-08. What changed after them
-is the shipped dataset and the documentation describing it: `levendusky_replication`
-now holds only the polarized-versus-moderate contrast the paper analyzes, under
-column names that say what each column holds. Nothing under R/ changed, and the
-test suite holds every estimator to the same published quantities as before.
 
 ## R CMD check results
 
@@ -48,7 +44,8 @@ checks around it. Those chunks are guarded on both packages being available and
 on vayr being at least 1.1.0, the version that added the function the figure
 calls; every other chunk, including all five estimators, runs either way. The
 false branch of the guard was rendered directly to confirm the document
-completes without them.
+completes without them. dplyr and purrr are in Suggests for the vignette's data
+handling only; the package itself does not import them.
 
 ## Reverse dependencies
 

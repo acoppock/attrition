@@ -245,8 +245,8 @@ sens <-
                  alpha = 0.10,
                  data = levendusky_replication)
 
+sens
 sens$sensitivity_plot
-sens$delta_star
 ```
 
 The plot reads left to right, from ignorability at `delta = 0` to the worst case at `delta = 1`. The two lines are the lower and upper bound estimates, which coincide at the left edge, where the estimator returns a point, and separate as more of the follow-up nonrespondents are left unmodeled. The shaded band is the confidence interval around them, and delta\* is marked at the point where that band first reaches the dashed line at zero.
@@ -390,7 +390,7 @@ estimator_ds(Y = Y_polarization_w2 ~ Z,
 
 ## What the design costs and what it buys
 
-Double sampling is not free. Someone has to find the nonrespondents and pay them more, and the budget for that effort competes with the budget for a larger initial sample. The trade is usually worth making, because a larger initial sample does nothing about attrition bias while a follow-up sample reduces it directly. In this study the initial-sample confidence interval was 3.50 points wide and no realistic increase in sample size would have narrowed it much, since almost all of that width came from the 536 unknown outcomes rather than from sampling error. A follow-up on 100 of them narrowed it to 1.23.
+Double sampling is not free. Someone has to find the nonrespondents and pay them more, and the budget for that effort competes with the budget for a larger initial sample. The trade is usually worth making, because a larger initial sample does nothing about attrition bias while a follow-up sample reduces it directly. In this study the initial-sample confidence interval was 3.50 points wide and no realistic increase in sample size would have narrowed it much, since almost all of that width came from the 536 unknown outcomes rather than from sampling error. A follow-up on 100 of them narrowed it to 1.27, and poststratification to 1.23.
 
 The design decision that remains open is how to split a fixed budget between the initial sample and the follow-up, and it depends on quantities not known until the data are in: the response rate in each round, the outcome variance among respondents and nonrespondents, and the relative cost of a first and second contact. Coppock, Gerber, Green, and Kern (2017) sketch the optimization; the package does not yet implement it.
 

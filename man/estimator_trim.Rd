@@ -13,7 +13,6 @@ estimator_trim(
   R2 = NULL,
   monotonicity = c("treatment_increases_response", "treatment_decreases_response",
     "none"),
-  strata = NULL,
   alpha = 0.05,
   se = c("analytic", "bootstrap", "none"),
   sims = 1000,
@@ -52,8 +51,6 @@ is Lee (2009), and \code{"none"} on the double-sampling path, which is what the
 follow-up makes affordable; either default gives way to an explicit value. The
 assumption is the researcher's to make rather than the data's to choose, so
 nothing here picks a direction from the observed response rates.}
-
-\item{strata}{Not supported; supplying any value raises an error.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 

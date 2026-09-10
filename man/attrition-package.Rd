@@ -24,7 +24,7 @@ subjects are a random sample of the nonrespondents, their recovered outcomes
 stand in for all of them, and only the residual group who refuse twice needs
 worst-case treatment. In the application shipped with the package, chasing 100
 of 536 nonrespondents cut the width of the 95 percent confidence interval from
-3.50 to 1.23.
+3.50 to 1.27.
 }
 
 \section{The estimators}{

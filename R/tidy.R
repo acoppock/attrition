@@ -69,3 +69,30 @@ tidy.attrition_trim <- function(x, ...) {
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+
+#' Tidy a sensitivity analysis
+#'
+#' Returns the bounds and joint Imbens-Manski interval at every value of the
+#' sensitivity parameter, one row per `delta`, under the same names the
+#' estimators return.
+#'
+#' @param x An object of class `"attrition_sensitivity"` (produced by
+#'   [sensitivity_ds()]).
+#' @param ... Unused; included for S3 compatibility.
+#'
+#' @return A [tibble::tibble()] with columns `delta`, `estimate_lower`,
+#'   `estimate_upper`, `std.error_lower`, `std.error_upper`, `conf.low`,
+#'   `conf.high`, `outcome`.
+#' @export
+tidy.attrition_sensitivity <- function(x, ...) {
+  tibble::tibble(
+    delta = x$sims_df$delta,
+    estimate_lower = x$sims_df$estimate_lower,
+    estimate_upper = x$sims_df$estimate_upper,
+    std.error_lower = x$sims_df$std.error_lower,
+    std.error_upper = x$sims_df$std.error_upper,
+    conf.low = x$sims_df$conf.low,
+    conf.high = x$sims_df$conf.high,
+    outcome = attr(x, "outcome") %||% NA_character_
+  )
+}

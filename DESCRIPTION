@@ -18,10 +18,8 @@ Description: Implements the double-sampling bounds estimator of Coppock,
 Depends:
     R (>= 4.1.0)
 Imports:
-    dplyr,
     generics,
     ggplot2,
-    purrr,
     tibble
 Encoding: UTF-8
 License: GPL-3
@@ -29,8 +27,10 @@ URL: https://alexandercoppock.com/attrition/,
     https://github.com/acoppock/attrition
 BugReports: https://github.com/acoppock/attrition/issues
 Suggests:
+    dplyr,
     estimatr,
     knitr,
+    purrr,
     rmarkdown,
     testthat (>= 3.0.0),
     vayr (>= 1.1.0)

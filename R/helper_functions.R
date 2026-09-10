@@ -1,4 +1,3 @@
-
 # `data` is this package's last argument rather than its second, so the call a
 # user reflexively types, estimator_ds(y ~ z, df, ...), binds df to the second
 # formal and R reports a missing `data` without saying why. The order is kept
@@ -57,6 +56,15 @@ parse_yz_formula <- function(f, data) {
   list(Y = data[[vars[1L]]], Z = data[[vars[2L]]])
 }
 
+# The three double-sampling response arguments, resolved the same way in every
+# estimator that takes them. The expressions are the caller's substitute()d
+# arguments, so bare column names, strings and one-sided formulas all work.
+resolve_ds_columns <- function(R1_expr, Attempt_expr, R2_expr, data, env) {
+  list(R1 = resolve_column(eval(R1_expr, data, env), data),
+       Attempt = resolve_column(eval(Attempt_expr, data, env), data),
+       R2 = resolve_column(eval(R2_expr, data, env), data))
+}
+
 # Flag the first element whose sign differs from the first element's, treating a
 # zero as a change. Position 1 can never be flagged; the last position can.
 find_sign_changes <- function(x){
@@ -64,6 +72,14 @@ find_sign_changes <- function(x){
   out <- rep(FALSE, length(x))
   if(!is.na(first_change)){out[first_change] <- TRUE}
   return(out)
+}
+
+# Input checks ----
+
+validate_indicator <- function(x, what) {
+  if (!all(x %in% c(0, 1))) {
+    stop("The ", what, " must be numeric and take values zero or one.")
+  }
 }
 
 # Shared argument checks for the bounding estimators. The assumed support of Y
@@ -76,71 +92,71 @@ validate_support <- function(Y, minY, maxY, alpha){
   if(alpha <= 0 | alpha >= 1){stop("The significance level (alpha) must be strictly between zero and one.")}
 }
 
-gen_mean <- function(y_m,p,lower_bound=TRUE,minY,maxY){
-  if (lower_bound == TRUE){
-    return(p*y_m + (1-p)*minY)
-  }else{
-    return(p*y_m+(1-p)*maxY)
+# The checks every double-sampling estimator runs on its resolved arguments.
+validate_ds_inputs <- function(Y, Z, R1, Attempt, R2, minY, maxY, alpha) {
+  if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
+  validate_indicator(Z, "treatment variable (Z)")
+  validate_indicator(R1, "initial sample response variable (R1)")
+  validate_indicator(R2, "follow-up sample response variable (R2)")
+  validate_indicator(Attempt, "follow-up sample attempt variable (Attempt)")
+  validate_support(Y, minY, maxY, alpha)
+}
+
+# The bounds are built from arm-level means, and a mean over an empty cell is
+# NaN rather than a bound. Each arm needs at least one unit of each kind.
+require_in_each_arm <- function(flag, Z, what) {
+  for (z in c(1, 0)) {
+    if (!any(flag & Z == z)) {
+      stop("The ", if (z == 1) "treatment" else "control", " group has no ", what,
+           ", so the bounds are undefined. When strata are supplied, every stratum ",
+           "needs at least one in each group.", call. = FALSE)
+    }
   }
 }
 
-gen_var <- function(y_m , y_s, p, lower_bound=TRUE,minY,maxY) {
-  if (lower_bound==TRUE){
-    const <- minY
-  }else{
-    const <- maxY
+# Moments ----
+
+# The arm-level quantities every double-sampling bound is built from. For each
+# arm: its size, the initial response rate, the mean and standard deviation of
+# the initial respondents' outcomes, the number of follow-up attempts, the
+# follow-up response rate, and the mean and standard deviation among the
+# follow-up respondents.
+ds_moments <- function(Y, Z, R1, Attempt, R2) {
+  require_in_each_arm(R1 == 1, Z, "initial-sample respondents (R1 == 1)")
+  require_in_each_arm(Attempt == 1, Z, "follow-up attempts (Attempt == 1)")
+  require_in_each_arm(R2 == 1, Z, "follow-up respondents (R2 == 1)")
+  arm <- function(z) {
+    in_arm <- Z == z
+    initial <- in_arm & R1 == 1
+    followed <- in_arm & R2 == 1
+    list(n1 = sum(in_arm),
+         p1 = mean(R1[in_arm]),
+         y1m = mean(Y[initial]),
+         s1 = sd(Y[initial]),
+         n2 = sum(in_arm & Attempt == 1),
+         p2 = sum(followed)/sum(in_arm & Attempt == 1),
+         y2m = mean(Y[followed]),
+         s2 = sd(Y[followed]))
   }
-  wm <- gen_mean(y_m,p,lower_bound,minY,maxY)
-  # formula for combined var
-  return(p*y_s^2 + p*(y_m-wm)^2 + (1-p)*(const-wm)^2)
+  list(t = arm(1), c = arm(0))
 }
 
-gen_mean_sens <- function(y_m, p, delta, lower_bound = TRUE, minY, maxY){
-  if (lower_bound==TRUE){
-    const <- minY
-  }else{
-    const <- maxY
-  }
-  return(p*y_m + (1-p)*delta*const + (1-p)*(1-delta)*y_m)
+# Mean outcome in one arm when a share 1 - p of it is unobserved. A fraction
+# delta of that unobserved share is filled with the extreme value (minY for a
+# lower bound, maxY for an upper bound) and the remaining 1 - delta with the
+# observed mean. delta = 1 is the worst case; delta = 0 is ignorability.
+gen_mean <- function(y_m, p, delta, lower_bound = TRUE, minY, maxY){
+  const <- if (lower_bound) minY else maxY
+  p*y_m + (1 - p)*delta*const + (1 - p)*(1 - delta)*y_m
 }
 
-gen_var_sens <- function(y_m, y_s, p, delta, lower_bound = TRUE, minY, maxY) {
-
-  if(lower_bound == TRUE){
-    const <- minY
-  }else{
-    const <- maxY
-  }
-  mixture_weight <- p + (1-p)*(1-delta)
-
-  var_sens <-
-    mixture_weight*y_s^2 +
-    mixture_weight*(1-mixture_weight)*(y_m - const)^2
-
-  return(var_sens)
-}
-
-# Poststratified bounds: stratum bounds combined by stratum share, stratum
-# variances by squared share, with a joint Imbens-Manski interval computed on
-# the pooled quantities. Stratum shares are treated as fixed, not estimated.
-# strata_ests is a 6-row matrix, one column per stratum, as returned by the
-# unstratified estimators. Those carry standard errors, so they are squared back
-# to variances here: it is variances that combine by squared stratum share.
-pool_strata <- function(strata_ests, proportions, alpha) {
-  lower_bound_est <- sum(strata_ests["estimate_lower", ] * proportions)
-  upper_bound_est <- sum(strata_ests["estimate_upper", ] * proportions)
-  lower_bound_var_est <- sum(strata_ests["std.error_lower", ]^2 * proportions^2)
-  upper_bound_var_est <- sum(strata_ests["std.error_upper", ]^2 * proportions^2)
-
-  sig <- im_critical_value(lower_bound_est, upper_bound_est,
-                           lower_bound_var_est, upper_bound_var_est, alpha)
-
-  return(c(estimate_lower = lower_bound_est,
-           estimate_upper = upper_bound_est,
-           std.error_lower = lower_bound_var_est^.5,
-           std.error_upper = upper_bound_var_est^.5,
-           conf.low = lower_bound_est - sig*lower_bound_var_est^.5,
-           conf.high = upper_bound_est + sig*upper_bound_var_est^.5))
+# Variance of the outcome under the same imputation: a mixture of the observed
+# distribution, with weight p + (1 - p)(1 - delta), and a point mass at the
+# extreme value.
+gen_var <- function(y_m, y_s, p, delta, lower_bound = TRUE, minY, maxY) {
+  const <- if (lower_bound) minY else maxY
+  mixture_weight <- p + (1 - p)*(1 - delta)
+  mixture_weight*y_s^2 + mixture_weight*(1 - mixture_weight)*(y_m - const)^2
 }
 
 construct_manski_bounds <-
@@ -161,17 +177,45 @@ ds_var <- function(n1,n2,p1,p2,s1,s2,y1m,y2m) {
   return(return_value)
 }
 
-ds_var_2s <- function(treatment_vec,control_vec) {
-  ts_var <-
-    ds_var(treatment_vec[1],treatment_vec[2],
-           treatment_vec[3],treatment_vec[4],
-           treatment_vec[5],treatment_vec[6],
-           treatment_vec[7],treatment_vec[8]) +
-    ds_var(control_vec[1],control_vec[2],
-           control_vec[3],control_vec[4],
-           control_vec[5],control_vec[6],
-           control_vec[7],control_vec[8])
-  return(ts_var)
+# Poststratification ----
+
+# The estimator is run inside each stratum and the results combined by stratum
+# share. `fit` takes a subset of `df` and returns the six-element vector the
+# unstratified estimator returns.
+poststratify <- function(df, strata, alpha, fit) {
+  if (anyNA(strata)) stop("The stratification variable (strata) must not contain any missing values.")
+  unique_strata <- unique(strata)
+  strata_ests <- vapply(unique_strata, function(s) fit(df[strata == s, , drop = FALSE]), numeric(6))
+  proportions <- vapply(unique_strata, function(s) mean(strata == s), numeric(1))
+  pool_strata(strata_ests, proportions, alpha)
+}
+
+# Poststratified bounds: stratum bounds combined by stratum share, stratum
+# variances by squared share, with a joint Imbens-Manski interval computed on
+# the pooled quantities. Stratum shares are treated as fixed, not estimated.
+# strata_ests is a 6-row matrix, one column per stratum, as returned by the
+# unstratified estimators. Those carry standard errors, so they are squared back
+# to variances here: it is variances that combine by squared stratum share.
+pool_strata <- function(strata_ests, proportions, alpha) {
+  im_interval(lower_est = sum(strata_ests["estimate_lower", ] * proportions),
+              upper_est = sum(strata_ests["estimate_upper", ] * proportions),
+              lower_var = sum(strata_ests["std.error_lower", ]^2 * proportions^2),
+              upper_var = sum(strata_ests["std.error_upper", ]^2 * proportions^2),
+              alpha = alpha)
+}
+
+# Imbens-Manski interval ----
+
+# The six quantities every estimator reports: the two bound estimates, their
+# standard errors, and the joint Imbens-Manski interval around the region.
+im_interval <- function(lower_est, upper_est, lower_var, upper_var, alpha) {
+  sig <- im_critical_value(lower_est, upper_est, lower_var, upper_var, alpha)
+  c(estimate_lower = lower_est,
+    estimate_upper = upper_est,
+    std.error_lower = lower_var^0.5,
+    std.error_upper = upper_var^0.5,
+    conf.low = lower_est - sig*lower_var^0.5,
+    conf.high = upper_est + sig*upper_var^0.5)
 }
 
 # Coverage of the Imbens-Manski interval at critical value ca, in excess of the

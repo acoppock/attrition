@@ -94,22 +94,23 @@ test_that("estimator_ds with poststratification produces stable results on synth
 
 # ── Helper function unit tests ───────────────────────────────────────────────
 
-test_that("gen_var and gen_var_sens(delta=1) are equal", {
-  gv  <- attrition:::gen_var(5, 2, 0.5, minY = 0, maxY = 5)
-  gvs <- attrition:::gen_var_sens(5, 2, 0.5, delta = 1, minY = 0, maxY = 5)
-  expect_equal(gv, gvs)
+test_that("gen_var at delta = 1 is the two-point mixture variance", {
+  # Observed share p with sd s and mean y_m, unobserved share 1 - p at the
+  # extreme value: p s^2 + p (1 - p) (y_m - const)^2
+  gv <- attrition:::gen_var(5, 2, 0.5, delta = 1, lower_bound = TRUE, minY = 0, maxY = 5)
+  expect_equal(gv, 0.5 * 4 + 0.5 * 0.5 * 25)
 })
 
-test_that("gen_var_sens(delta=0) equals gen_var with no imputation", {
-  # At delta=0, gen_mean_sens returns p*y_m + (1-p)*y_m = y_m regardless of bound
-  # so variance contribution from missing = 0 and only observed variance remains
-  gvs0 <- attrition:::gen_var_sens(3, 1, 0.8, delta = 0, minY = 0, maxY = 5)
-  expect_true(is.numeric(gvs0) && gvs0 >= 0)
+test_that("gen_var at delta = 0 is the observed variance alone", {
+  # With every nonrespondent drawn from the observed distribution, nothing is
+  # imputed at the extreme and only the observed variance remains
+  gv0 <- attrition:::gen_var(3, 1, 0.8, delta = 0, lower_bound = TRUE, minY = 0, maxY = 5)
+  expect_equal(gv0, 1)
 })
 
 test_that("gen_mean lower bound <= upper bound", {
-  lb <- attrition:::gen_mean(3, 0.7, lower_bound = TRUE,  minY = 0, maxY = 5)
-  ub <- attrition:::gen_mean(3, 0.7, lower_bound = FALSE, minY = 0, maxY = 5)
+  lb <- attrition:::gen_mean(3, 0.7, delta = 1, lower_bound = TRUE,  minY = 0, maxY = 5)
+  ub <- attrition:::gen_mean(3, 0.7, delta = 1, lower_bound = FALSE, minY = 0, maxY = 5)
   expect_lte(lb, ub)
 })
 
@@ -608,20 +609,19 @@ test_that("increasing delta widens bounds in estimator_ds_sens", {
 # ── Helper function unit tests (extended) ────────────────────────────────────
 
 test_that("gen_mean returns exact values", {
-  expect_equal(attrition:::gen_mean(3, 0.5, lower_bound = TRUE,  minY = 0, maxY = 5), 1.5)
-  expect_equal(attrition:::gen_mean(3, 0.5, lower_bound = FALSE, minY = 0, maxY = 5), 4.0)
+  expect_equal(attrition:::gen_mean(3, 0.5, delta = 1, lower_bound = TRUE,  minY = 0, maxY = 5), 1.5)
+  expect_equal(attrition:::gen_mean(3, 0.5, delta = 1, lower_bound = FALSE, minY = 0, maxY = 5), 4.0)
   # At p = 1 all outcomes observed; bound doesn't matter
-  expect_equal(attrition:::gen_mean(3, 1.0, lower_bound = TRUE,  minY = 0, maxY = 5), 3.0)
-  expect_equal(attrition:::gen_mean(3, 1.0, lower_bound = FALSE, minY = 0, maxY = 5), 3.0)
+  expect_equal(attrition:::gen_mean(3, 1.0, delta = 1, lower_bound = TRUE,  minY = 0, maxY = 5), 3.0)
+  expect_equal(attrition:::gen_mean(3, 1.0, delta = 1, lower_bound = FALSE, minY = 0, maxY = 5), 3.0)
 })
 
-test_that("gen_mean_sens: delta=1 matches gen_mean; delta=0 returns y_m", {
-  sens1 <- attrition:::gen_mean_sens(3, 0.5, delta = 1, lower_bound = TRUE,  minY = 0, maxY = 5)
-  base  <- attrition:::gen_mean(3, 0.5, lower_bound = TRUE, minY = 0, maxY = 5)
-  expect_equal(sens1, base)
+test_that("gen_mean at delta = 0 returns the observed mean whichever bound is asked for", {
   # delta = 0: p*y_m + (1-p)*0*const + (1-p)*1*y_m = y_m
-  expect_equal(attrition:::gen_mean_sens(3, 0.5, delta = 0, lower_bound = TRUE,  minY = 0, maxY = 5), 3.0)
-  expect_equal(attrition:::gen_mean_sens(3, 0.5, delta = 0, lower_bound = FALSE, minY = 0, maxY = 5), 3.0)
+  expect_equal(attrition:::gen_mean(3, 0.5, delta = 0, lower_bound = TRUE,  minY = 0, maxY = 5), 3.0)
+  expect_equal(attrition:::gen_mean(3, 0.5, delta = 0, lower_bound = FALSE, minY = 0, maxY = 5), 3.0)
+  # and delta = 0.5 sits halfway between the two
+  expect_equal(attrition:::gen_mean(3, 0.5, delta = 0.5, lower_bound = TRUE, minY = 0, maxY = 5), 2.25)
 })
 
 test_that("construct_manski_bounds returns correct values", {
@@ -1024,10 +1024,10 @@ test_that("strata accepts quoted string column name", {
   expect_equal(as.numeric(nse), as.numeric(str))
 })
 
-test_that("estimator_trim errors when strata is supplied", {
+test_that("estimator_trim has no strata argument", {
   df <- make_synthetic()
   expect_error(estimator_trim(Y, Z, R = R1, strata = strata, data = df),
-               "not yet supported")
+               "unused argument")
 })
 
 test_that("over-specified formulas are rejected with a clear error", {
@@ -1433,7 +1433,56 @@ test_that("sensitivity_ds returns its three pieces", {
   sens <- sensitivity_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
                          minY = 0, maxY = 6, sims = 5, alpha = 0.10, data = d)
   expect_named(sens, c("sensitivity_plot", "sims_df", "delta_star"))
+  expect_s3_class(sens, "attrition_sensitivity")
   expect_s3_class(sens$sensitivity_plot, "ggplot")
   expect_equal(nrow(sens$sims_df), 5L)
   expect_true(is.numeric(sens$delta_star))
+})
+
+test_that("a sensitivity analysis prints delta* rather than drawing the plot, and tidies to its grid", {
+  d <- levendusky_replication
+  sens <- sensitivity_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                         minY = 0, maxY = 6, sims = 21, alpha = 0.10, data = d)
+  out <- capture.output(ret <- print(sens))
+  expect_identical(ret, sens)
+  expect_true(any(grepl("Y_polarization_w2", out)))
+  expect_true(any(grepl("delta\\* = ", out)))
+  expect_true(any(grepl("90%", out)))
+  expect_true(any(grepl("21 values of delta", out)))
+
+  none <- sensitivity_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                         minY = 0, maxY = 6, sims = 5, alpha = 0.05, data = d)
+  expect_true(is.na(none$delta_star))
+  expect_true(any(grepl("delta\\*: none", capture.output(print(none)))))
+
+  td <- tidy(sens)
+  expect_s3_class(td, "tbl_df")
+  expect_equal(nrow(td), 21L)
+  expect_named(td, c("delta", "estimate_lower", "estimate_upper", "std.error_lower",
+                     "std.error_upper", "conf.low", "conf.high", "outcome"))
+  expect_equal(td$conf.low, sens$sims_df$conf.low)
+  expect_equal(unique(td$outcome), "Y_polarization_w2")
+})
+
+test_that("an arm with no respondents, attempts or follow-up respondents is an error, not NaN", {
+  df <- make_synthetic()
+  no_r <- df
+  no_r$R1[no_r$Z == 1] <- 0
+  expect_error(estimator_ev(Y, Z, R1, minY = 1, maxY = 5, data = no_r),
+               "treatment group has no respondents")
+  no_attempt <- df
+  no_attempt$Attempt[no_attempt$Z == 0] <- 0
+  no_attempt$R2[no_attempt$Z == 0] <- 0
+  expect_error(estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = no_attempt),
+               "control group has no follow-up attempts")
+  no_r2 <- df
+  no_r2$R2[no_r2$Z == 1] <- 0
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, delta = 0.5, minY = 1, maxY = 5, data = no_r2),
+               "treatment group has no follow-up respondents")
+  # and inside a stratum, the same guard fires and says so
+  stratum_empty <- df
+  stratum_empty$Attempt[stratum_empty$strata == 1 & stratum_empty$Z == 1] <- 0
+  stratum_empty$R2[stratum_empty$strata == 1 & stratum_empty$Z == 1] <- 0
+  expect_error(estimator_ds(Y, Z, R1, Attempt, R2, strata = strata, minY = 1, maxY = 5,
+                            data = stratum_empty), "every stratum")
 })

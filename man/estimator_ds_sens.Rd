@@ -38,13 +38,14 @@ Must be numeric and take values 0 or 1.}
 
 \item{maxY}{The maximum possible value of the outcome (Y) variable.}
 
-\item{delta}{Sensitivity parameter in [0, 1]. At delta = 1 (default) worst-case bounds apply; at delta = 0 ignorability holds for all follow-up non-responders.}
+\item{delta}{Sensitivity parameter in [0, 1]. At delta = 1 worst-case bounds apply; at delta = 0 ignorability holds for all follow-up non-responders.}
 
 \item{strata}{Stratification variable: unquoted column name or a quoted string column name.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 
-\item{data}{A dataframe}
+\item{data}{A dataframe. Must be given by name: \code{data} is the last
+argument, so passing it positionally assigns it to another argument.}
 }
 \value{
 A named numeric vector with elements \code{estimate_lower} and
@@ -57,7 +58,7 @@ A named numeric vector with elements \code{estimate_lower} and
 }
 \description{
 Interpolates between worst-case bounds and ignorability. \code{delta} is the
-fraction of the follow-up nonrespondents whose outcomes are left unmodelled;
+fraction of the follow-up nonrespondents whose outcomes are left unmodeled;
 the remaining 1 - \code{delta} are assumed to be drawn from a distribution
 with the mean and variance observed among the follow-up respondents. At
 \code{delta = 1} the estimator reproduces \code{\link{estimator_ds}}, and at

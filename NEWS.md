@@ -1,231 +1,49 @@
 # attrition 1.0.0
 
-First release.
+First release. The package implements the estimators of Coppock, Gerber, Green, and Kern (2017) for randomized experiments with nonignorable missing outcomes.
 
-## New features
+## Estimators
 
-* The shipped dataset is `levendusky_replication` rather than `levendusky`.
-  The old name read as the author's name rather than as what the object is,
-  which is the replication study reported in the paper.
+* `estimator_ev()`: worst-case (Manski 1990) bounds from a single round of data collection, with a joint Imbens-Manski (2004) confidence interval.
 
-* `levendusky_replication` is now the analyzed contrast alone, a tibble of
-  1,980 rows and 10 columns prepared the way the FEDAI package prepares its
-  studies. The placebo condition and the two contrasts defined only against it
-  went with it, since no result in the paper or the package used them, which
-  retires the `droplevels(subset(levendusky_replication, !is.na(Z1)))` line
-  that every example, vignette and test used to open with. Columns carry their
-  roles in their names: `Z` and `Z_condition` for the assignment,
-  `Y_polarization_w2` for the outcome (`L_dif_w2` in the archive),
-  `X_party_id` for the poststratification covariate, and `R1`, `Attempt` and
-  `R2` unchanged, matching the arguments they are passed to. The published
-  quantities are unchanged; the test suite still holds each estimator to
-  Table 3. `data-raw/levendusky_replication.R` now builds the data by
-  downloading the deposited file from the Harvard Dataverse rather than from a
-  copy checked into the repository.
+* `estimator_ds()`: the double-sampling bounds of the paper, with its analytic variance. A random sample of the initial nonrespondents is pursued a second time, and only the subjects who refuse twice get worst-case treatment.
 
-* `estimator_trim()` takes a `monotonicity` argument, and it separates the
-  selection assumption from the design. Previously the two were welded
-  together: `R` meant Lee's monotone estimator in one hardwired direction, and
-  `R1`/`Attempt`/`R2` meant the assumption-free one, with no way to ask for any
-  other combination. The argument now takes
-  `"treatment_increases_response"` (Lee's direction: control respondents are the
-  always-reporters, the treatment group is trimmed),
-  `"treatment_decreases_response"` (the reverse, trimming the control group), or
-  `"none"`, and all three work in either design. The defaults are unchanged, so
-  existing calls return exactly what they did: monotone on the single-stage
-  path, none on the double-sampling path.
+* `estimator_ds_sens()` and `sensitivity_ds()`: the interpolation between worst-case bounds and ignorability, indexed by `delta`, the share of follow-up nonrespondents left unmodeled, and a sweep over `delta` for delta*, the smallest value at which the confidence interval reaches zero.
 
-  `"none"` gives the sharp bounds of Imai (2008, Proposition 1), which build on
-  Zhang and Rubin (2003) and Horowitz and Manski (1995): the always-reporter
-  share is bounded below by the Frechet-Hoeffding bound `1 - f0 - f1`, and each
-  arm is trimmed by the largest share of its respondents that could fail to be
-  always-reporters. Nothing about double sampling was ever what licensed
-  dropping monotonicity; the follow-up just shrinks the never-reporter share
-  from 27 percent to 1.4 percent, which is what makes the assumption-free bounds
-  worth reporting. On the paper's data all four cells now estimate, from 0.08
-  points wide to 2.98.
+* `estimator_trim()`: trimming bounds on the effect among always-reporters. The design and the selection assumption are separate choices. Which response arguments are supplied picks the design, single sample (`R`) or double sampling (`R1`, `Attempt`, `R2`); `monotonicity` picks the assumption, `"treatment_increases_response"` (Lee 2009), `"treatment_decreases_response"`, or `"none"`, which gives the sharp bounds of Imai (2008, Proposition 1) under random assignment alone. All four combinations estimate. Standard errors come from Lee (2009, Proposition 3) where that derivation applies, which is the single-sample, one-group-trimmed case, and from a bootstrap resampled within treatment arm everywhere else; asking for analytic standard errors where they do not apply is an error rather than a silent substitution.
 
-  The direction matters in the other direction too. Only one direction is
-  consistent with any given pair of response rates, and the paper's own data
-  contradict Lee's: the polarized group responded at 0.724 against the control
-  group's 0.735. That case used to return `NA` in silence with no recourse. It
-  now warns, names the direction the response rates do admit, and can be asked
-  for it.
+* `estimator_ev()`, `estimator_ds()`, `estimator_ds_sens()` and `sensitivity_ds()` take a `strata` argument for poststratification on a discrete covariate, which targets the same identification region and estimates it more precisely.
 
-* Two degenerate cases in the trimming bounds are errors rather than silent
-  `NaN`s: missingness rates summing to one or more, where nothing bounds the
-  always-reporter share away from zero and the assumption-free bounds do not
-  exist, and a trimming proportion so large for the group it applies to that one
-  side retains no observations. Both are caught in the bootstrap as well, which
-  drops the replicate and reports how many survived.
+## Output
 
-* Analytic standard errors are offered only where Lee (2009, Proposition 3)
-  derives them, which is a single unweighted sample with one group trimmed.
-  Asking for them in the other three cells is an error naming the reason rather
-  than a silent substitution of the bootstrap.
+* Every estimator returns the same six named elements in the same order, under broom's names: `estimate_lower` and `estimate_upper`, the two ends of the identification region; `std.error_lower` and `std.error_upper`, their standard errors; and `conf.low` and `conf.high`, the joint Imbens-Manski interval. `estimator_trim()` follows them with the intermediate quantities of the path taken.
 
-* `summary()` methods for both result classes. There were none, so `summary()`
-  fell through to the default, which treats the six returned quantities as a
-  sample and reports their mean and quartiles: on a trimming result, where the
-  vector carries group sizes as well as bounds, it announced a "Mean" of 104.55.
-  The methods now report the identification region, its standard errors and the
-  Imbens-Manski interval at the level actually requested, each labelled, under a
-  line naming the estimand and the assumptions that produced it. For trimming
-  bounds that means the design, the direction of the selection assumption, how
-  much of which group was trimmed, and where the standard errors came from.
-  Both return the `tidy()` data frame invisibly.
+* `print()`, `summary()` and `tidy()` methods for every result. `summary()` names the estimand and the assumptions that produced the numbers; for trimming bounds that includes the design, the direction assumed, how much of which group was trimmed, and where the standard errors came from. `tidy()` returns a three-row tibble, a `bounds` row carrying the whole vector and a row per endpoint, so `DeclareDesign::declare_estimator()` can select an endpoint with `term`. `sensitivity_ds()` returns a classed list whose `print()` reports delta* and whose `tidy()` returns the bounds at every value of `delta`.
 
-* Results carry the confidence level they were computed at, and sensitivity
-  results carry their `delta`, so a stored result still knows what produced it.
+* A formula interface on every estimator, `estimator_ds(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2", ...)`, which is what `declare_estimator(.method = ...)` expects. Response, attempt and stratification arguments accept an unquoted column name, a quoted string, or a one-sided formula.
 
-* Every estimator's help page cites the papers behind it, where four of the five
-  previously cited nothing at all: Manski (1990) and Imbens and Manski (2004) for
-  the worst-case bounds and their joint interval, Neyman (1938) and Hansen and
-  Hurwitz (1946) for the double-sampling design, and Miratrix, Sekhon and Yu
-  (2013) for poststratification. Every entry in the package, including those
-  already there, was checked field by field against Crossref.
+## Guards
 
-* The vignette closes with a figure putting all nine estimators on one axis,
-  grouped by the population each one is about, since they do not all estimate the
-  same thing: the naive difference in means describes the subjects who answered,
-  the extreme value and double-sampling estimators describe all 1,980, and the
-  trimming estimators describe the always reporters.
+* The assumed support of the outcome must cover the observed outcomes, `alpha` and `delta` must lie in their ranges, and every treatment group needs at least one respondent, one follow-up attempt and one follow-up respondent (within every stratum, when strata are supplied). Each of these is an error naming the problem rather than a `NaN` or a bound that is not a bound.
 
-* The two vignettes are one. `vignette("drawing-the-bounds")` is gone, and the
-  figure it drew, along with the check that the picture and the estimates agree,
-  is now a section of `vignette("attrition")` drawn on the paper's own data
-  rather than on a simulated experiment. The chunks needing vayr and estimatr
-  are guarded individually, so the rest of the vignette builds without them.
+* A monotonicity violation in the direction assumed returns `NA` bounds with a warning naming the direction the response rates do admit. A zero trimming proportion warns that Lee's interior-point condition fails. Missingness rates summing to one or more, or a trimming proportion that leaves one side of a group empty, are errors, and the bootstrap drops the replicates in which they occur and reports how many survived.
 
-* One vocabulary for estimator output, taken from broom. Every estimator
-  returns the same six named elements in the same order: `estimate_lower` and
-  `estimate_upper`, the two ends of the identification region;
-  `std.error_lower` and `std.error_upper`, their standard errors; and
-  `conf.low` and `conf.high`, the joint Imbens-Manski interval. They are the
-  names `tidy()` uses for the same quantities, so the `bounds` row of the tidy
-  output is the returned vector transcribed.
+## Data
 
-  Previously `estimator_ev()`, `estimator_ds()` and `estimator_ds_sens()`
-  returned `ci_lower`/`ci_upper`/`low_est`/`upp_est`/`low_var`/`upp_var` while
-  `estimator_trim()` returned `lower_bound`/`upper_bound`/`lower_se`/`upper_se`,
-  so the same two ideas had two abbreviations and two scales, and `tidy()`
-  introduced a third set of names. The uncertainty is now reported as a
-  standard error everywhere, where three of the estimators previously reported
-  a variance under a name that did not say so.
+* `levendusky_replication`: the replication study reported in the paper, a two-wave survey experiment in which 536 of 1,980 subjects did not answer the second wave and 100 of them were followed up at a higher incentive. The tibble holds the polarized-versus-moderate contrast the paper analyzes, with columns named for the roles they play. `data-raw/levendusky_replication.R` rebuilds it from the Harvard Dataverse deposit.
 
-  `estimator_trim()`'s two paths also returned different vectors in different
-  orders. Both now lead with the same six elements, with the path-specific
-  intermediates after.
+* `vignette("attrition")` works through the design and all five estimators on those data, reproduces Table 3 of the paper, draws the imputation the worst-case bounds average over, and closes with every estimator on one axis, grouped by the population each one describes.
 
-* `sensitivity_ds()` calls the sensitivity parameter `delta` throughout, as the
-  prose and the plot always did. `sims_df` gains a `delta` column in place of
-  `p`, and the returned list carries `delta_star`, a single number giving
-  delta* or `NA` when no delta* exists. It replaces `p_star`, which was the
-  plot's annotation data frame when a delta* existed and an explanatory
-  character string when none did, so reading the answer off it took two `$`
-  and failed in the second case.
+## Changes from the development version on GitHub
 
-* Formula interface on all estimators: `estimator_ev(Y ~ Z, R = "R", ...)`,
-  `estimator_ds(Y ~ Z, R1 = "R1", Attempt = "Attempt", R2 = "R2", ...)`, and
-  likewise for `estimator_trim()`, `estimator_ds_sens()`, and
-  `sensitivity_ds()`. Response, attempt, and stratification arguments accept
-  either an unquoted column name or a quoted string. The formula form is what
-  `DeclareDesign::declare_estimator(.method = ...)` expects.
+For anyone who installed the pre-release package from GitHub:
 
-* `tidy()` methods for all estimator output classes (`attrition_bounds`,
-  `attrition_trim`) via the `generics` package. Each method returns a
-  three-row tibble with rows `"bounds"`, `"lower_bound"`, and `"upper_bound"`,
-  suitable for use with DeclareDesign. The `"bounds"` row carries the joint
-  Imbens-Manski confidence interval in `conf.low`/`conf.high`, the bound point
-  estimates in `estimate_lower`/`estimate_upper` and their standard errors in
-  `std.error_lower`/`std.error_upper`; the individual rows carry one endpoint
-  each in broom's `estimate`/`std.error`, selectable via the `term` argument.
+* Output names changed. The bounding estimators returned `low_est`, `upp_est`, `low_var`, `upp_var`, `ci_lower` and `ci_upper`, and `estimator_trim()` returned `lower_bound`, `upper_bound`, `lower_se` and `upper_se`. The third pair of the old names held variances; the new `std.error_lower` and `std.error_upper` are standard errors.
 
-* S3 classes on all estimator return values: `estimator_ds()` returns class
-  `c("attrition_ds", "attrition_bounds")`, `estimator_ev()` returns
-  `c("attrition_ev", "attrition_bounds")`, `estimator_ds_sens()` returns
-  `c("attrition_ds_sens", "attrition_bounds")`, and `estimator_trim()` returns
-  `c("attrition_trim")`.
+* The dataset was `levendusky` and held all three experimental conditions with the archive's column names. It is now `levendusky_replication`, the analyzed contrast alone.
 
-* Stratified estimators now index results by name rather than position,
-  preventing silent errors if the output vector order ever changes.
+* `sensitivity_ds()` returns `delta_star`, a single number or `NA`, in place of `p_star`, and its `sims_df` has a `delta` column in place of `p`.
 
-* `sensitivity_ds()` no longer calls `require()` at runtime; all dependencies
-  are declared via `@importFrom`.
+* The Imbens-Manski critical value was found by a bounded optimizer whose search interval only covered `alpha` near 0.05, so confidence intervals at other levels were wrong: at `alpha = 0.01` it returned 2.000 against a correct 2.326. The root is now found with `uniroot()` on a bracket derived from `alpha`. Bound estimates and variances are unaffected.
 
-* `reshape2` dependency replaced by `tibble`; `generics` added for `tidy`
-  re-export.
-
-* `estimator_trim()` gains standard errors and confidence intervals, via a new
-  `se` argument. `se = "analytic"` (the default) uses the closed-form asymptotic
-  variance of Lee (2009), Proposition 3, and covers the single-stage `R` path.
-  `se = "bootstrap"` resamples units within treatment arm and covers both that
-  path and the weighted double-sampling path, for which no analytic variance
-  exists in the literature. `se = "none"` returns bounds alone. The bound
-  standard errors feed the existing Imbens-Manski machinery, so
-  `tidy.attrition_trim()` now returns `std.error`, `conf.low` and `conf.high`
-  instead of `NA` throughout.
-
-  The analytic variance was validated three ways: Lee's published term for the
-  estimated trimming proportion agrees to machine precision with the
-  algebraically distinct form used by Tauchmann's Stata `leebounds`; the mean
-  analytic standard error tracks the Monte Carlo standard deviation of the
-  estimator across sample sizes from 1,000 to 64,000; and a conventional 95%
-  interval around each bound endpoint covers the true population endpoint 95.4%
-  and 94.9% of the time.
-
-  Requesting `se = "analytic"` on the double-sampling path is an error rather
-  than a silent substitution, since Lee's derivation assumes i.i.d. sampling and
-  trimming of one group only. A zero trimming proportion warns, because the
-  bounds then collapse to a point on the boundary of the parameter space and
-  Lee's interior-point condition fails.
-
-* Worked examples on every exported function.
-
-* A second vignette, "Drawing the extreme value bounds", which draws the
-  imputation that `estimator_ev()` averages over using `vayr` and checks that a
-  difference in means inside each imputed scenario recovers the two bound
-  estimates. It also shows why the Imbens-Manski interval is narrower than
-  stacking a confidence interval on each bound. `vayr` and `estimatr` are
-  suggested packages and the vignette does not evaluate without them.
-
-## Bug fixes
-
-* The Imbens-Manski critical value was found by minimizing an absolute value
-  with `optim(..., method = "Brent", lower = 1, upper = 2)`. That interval only
-  covers alpha near 0.05, so at other significance levels the optimizer
-  returned a boundary value and the confidence intervals were silently wrong:
-  at `alpha = 0.01` it returned 2.000 against a correct 2.326, and at
-  `alpha = 0.001` it returned 2.000 against a correct 3.090. The search
-  interval is now derived from alpha, and the root is found with `uniroot()`
-  on the signed coverage excess rather than by minimizing its absolute value.
-  Bound point estimates and variances are unaffected.
-
-* `estimator_trim()` reported every failure inside `trimming_bounds()` as a
-  monotonicity violation, because it caught all errors and returned `NA`
-  bounds. It now catches only a classed monotonicity condition.
-
-* The monotonicity violation message named the wrong group. `Q < 0` means the
-  treatment group is more likely to be missing than the control group.
-
-* `trimming_bounds()` built its weighted CDFs with a loop that counted
-  backwards when a treatment group had one observed outcome, silently
-  appending an `NA`, and threw an opaque error when a group had none. Both are
-  now `cumsum()`, with an explicit check for empty groups.
-
-* `sensitivity_ds()` could not detect a delta* at the last point of the delta
-  grid, reporting a genuine crossing near delta = 1 as no crossing at all.
-
-* `minY`, `maxY`, `alpha`, `delta`, and `sims` are validated. Previously a
-  reversed `minY`/`maxY` returned a lower bound above the upper bound, an
-  assumed support that did not cover the observed outcomes returned bounds
-  that are not bounds, and a `delta` outside `[0, 1]` returned `NaN`
-  variances.
-
-* `estimator_ev()`: fixed a copy-paste error where `n1_c_s` was incorrectly
-  referenced as `n1_c_c` in the unstratified path.
-
-* `estimator_ds()` and `estimator_ds_sens()`: replaced a commented-out
-  sentinel initialization (`-99`) with `NA_real_` for `c1a_t`, `c1r_t`,
-  `c2a_t`, `c2r_t`. These arguments were never used and have since been
-  removed from the internal estimators altogether.
+* `estimator_trim()` with `R1`, `Attempt` and `R2` previously trimmed both groups without a way to assume monotonicity, and with `R` assumed monotonicity in one fixed direction. Both defaults are unchanged, and the `monotonicity` argument now reaches the other combinations.

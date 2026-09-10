@@ -107,79 +107,26 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
   # Formula interface: estimator_ds(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
   # R1/Attempt/R2 may be unquoted column names (NSE) or quoted strings.
   yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
-  Y  <- yz$Y
-  Z  <- yz$Z
-  R1      <- resolve_column(eval(substitute(R1),      data, parent.frame()), data)
-  Attempt <- resolve_column(eval(substitute(Attempt), data, parent.frame()), data)
-  R2      <- resolve_column(eval(substitute(R2),      data, parent.frame()), data)
-  if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-  if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
-  if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
-  if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
-  if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
-
-  validate_support(Y, minY, maxY, alpha)
-
+  Y <- yz$Y
+  Z <- yz$Z
+  ds <- resolve_ds_columns(substitute(R1), substitute(Attempt), substitute(R2), data, parent.frame())
+  R1 <- ds$R1
+  Attempt <- ds$Attempt
+  R2 <- ds$R2
   strata <- resolve_column(eval(substitute(strata), data, parent.frame()), data)
-  if(is.null(strata)) {
-    n1_c <- sum(Z==0)
-    n1_t <- sum(Z==1)
+  validate_ds_inputs(Y, Z, R1, Attempt, R2, minY, maxY, alpha)
 
-    p1_c <- sum(R1==1 & Z==0)/n1_c
-    p1_t <- sum(R1==1 & Z==1)/n1_t
-
-    y1m_c <- mean(Y[R1==1 & Z==0])
-    y1m_t <- mean(Y[R1==1 & Z==1])
-
-    n2_c <- sum(Attempt ==1 & Z ==0)
-    n2_t <- sum(Attempt ==1 & Z ==1)
-
-    p2_c <- sum(R2==1 & Z==0)/n2_c
-    p2_t <- sum(R2==1 & Z==1)/n2_t
-
-    y2m_nm_c <- mean(Y[R2==1 & Z==0])
-    y2m_nm_t <- mean(Y[R2==1 & Z==1])
-
-    s1_c <- sd(Y[R1==1 & Z==0])
-    s1_t <- sd(Y[R1==1 & Z==1])
-    s2_nm_c <- sd(Y[R2==1 & Z==0])
-    s2_nm_t <- sd(Y[R2==1 & Z==1])
-
-    cis_out <- ds_manski_cis_2s(n1_t=n1_t,n2_t=n2_t,
-                                n1_c=n1_c,n2_c=n2_c,
-                                p1_t=p1_t,p2_t=p2_t,
-                                s1_t=s1_t,s1_c=s1_c,
-                                s2_nm_t=s2_nm_t,
-                                s2_nm_c=s2_nm_c,
-                                y1m_t=y1m_t,y1m_c=y1m_c,
-                                y2m_nm_t=y2m_nm_t,
-                                y2m_nm_c=y2m_nm_c,
-                                p1_c=p1_c,p2_c=p2_c,
-                                minY=minY,maxY=maxY,alpha=alpha)
-    return(structure(cis_out, class = c("attrition_ds", "attrition_bounds", "numeric"),
-                   alpha = alpha, outcome = yz$outcome))
-  }else{
-    # With a stratification variable, estimate within each stratum by calling
-    # this function recursively, then poststratify.
-
-    if(sum(is.na(strata))!=0){stop("The stratification variable (strata) must not contain any missing values.")}
-
-    unique_strata <- unique(strata)
-    ds_df <- data.frame(Y, R1, Z, Attempt, R2, strata)
-
-    strata_ests <- vapply(unique_strata, function(s)
+  if (is.null(strata)) {
+    out <- ds_manski_cis_2s(ds_moments(Y, Z, R1, Attempt, R2), minY, maxY, alpha, delta = 1)
+  } else {
+    # Estimate within each stratum by calling this function recursively, then poststratify.
+    out <- poststratify(data.frame(Y, Z, R1, Attempt, R2), strata, alpha, function(d)
       estimator_ds(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
-                   minY = minY, maxY = maxY, alpha = alpha,
-                   data = subset(ds_df, strata == s)),
-      numeric(6))
-    proportions <- vapply(unique_strata, function(s) mean(strata == s), numeric(1))
-
-    out <- pool_strata(strata_ests, proportions, alpha)
-    return(structure(out, class = c("attrition_ds", "attrition_bounds", "numeric"),
-                   alpha = alpha, strata = TRUE, outcome = yz$outcome))
+                   minY = minY, maxY = maxY, alpha = alpha, data = d))
   }
+  structure(out, class = c("attrition_ds", "attrition_bounds", "numeric"),
+            alpha = alpha, strata = if (is.null(strata)) NULL else TRUE, outcome = yz$outcome)
 }
-
 
 #' Extreme Value (Manski) Bounds
 #'
@@ -252,58 +199,38 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
   if (missing(data)) require_data("estimator_ev")
   # Formula interface: estimator_ev(outcome ~ treatment, R = "col_name", data = ., ...)
   yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
-  Y  <- yz$Y
-  Z  <- yz$Z
-  R  <- resolve_column(eval(substitute(R), data, parent.frame()), data)
+  Y <- yz$Y
+  Z <- yz$Z
+  R <- resolve_column(eval(substitute(R), data, parent.frame()), data)
+  strata <- resolve_column(eval(substitute(strata), data, parent.frame()), data)
   if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-  if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
-  if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
-
+  validate_indicator(Z, "treatment variable (Z)")
+  validate_indicator(R, "response variable (R)")
   validate_support(Y, minY, maxY, alpha)
 
-  strata <- resolve_column(eval(substitute(strata), data, parent.frame()), data)
-  if(is.null(strata)) {
+  if (is.null(strata)) {
+    require_in_each_arm(R == 1, Z, "respondents (R == 1)")
     n1_c <- sum(Z==0)
     n1_t <- sum(Z==1)
-
-    p1_c <- sum(R==1 & Z==0)/n1_c
-    p1_t <- sum(R==1 & Z==1)/n1_t
-
+    p1_c <- mean(R[Z==0])
+    p1_t <- mean(R[Z==1])
     y1m_c <- mean(Y[R==1 & Z==0])
     y1m_t <- mean(Y[R==1 & Z==1])
-
     s1_c <- sd(Y[R==1 & Z==0])
     s1_t <- sd(Y[R==1 & Z==1])
 
-    cis_out <- manski_cis(n1_t = n1_t, n1_c = n1_c,
-                          p1_t = p1_t, p1_c = p1_c,
-                          y1m_t = y1m_t, y1m_c = y1m_c,
-                          s1_t = s1_t, s1_c = s1_c,
-                          minY = minY, maxY = maxY, alpha = alpha)
-
-    return(structure(cis_out, class = c("attrition_ev", "attrition_bounds", "numeric"),
-                   alpha = alpha, outcome = yz$outcome))
-  }else{
-    # With a stratification variable, estimate within each stratum by calling
-    # this function recursively, then poststratify.
-
-    if(sum(is.na(strata))!=0){stop("The stratification variable (strata) must not contain any missing values.")}
-
-    unique_strata <- unique(strata)
-    ds_df <- data.frame(Y, Z, R, strata)
-
-    strata_ests <- vapply(unique_strata, function(s)
-      estimator_ev(Y = Y, Z = Z, R = R,
-                   minY = minY, maxY = maxY, alpha = alpha,
-                   data = subset(ds_df, strata == s)),
-      numeric(6))
-    proportions <- vapply(unique_strata, function(s) mean(strata == s), numeric(1))
-
-    out <- pool_strata(strata_ests, proportions, alpha)
-    return(structure(out, class = c("attrition_ev", "attrition_bounds", "numeric"),
-                   alpha = alpha, strata = TRUE, outcome = yz$outcome))
+    out <- manski_cis(n1_t = n1_t, n1_c = n1_c,
+                      p1_t = p1_t, p1_c = p1_c,
+                      y1m_t = y1m_t, y1m_c = y1m_c,
+                      s1_t = s1_t, s1_c = s1_c,
+                      minY = minY, maxY = maxY, alpha = alpha)
+  } else {
+    # Estimate within each stratum by calling this function recursively, then poststratify.
+    out <- poststratify(data.frame(Y, Z, R), strata, alpha, function(d)
+      estimator_ev(Y = Y, Z = Z, R = R, minY = minY, maxY = maxY, alpha = alpha, data = d))
   }
-
+  structure(out, class = c("attrition_ev", "attrition_bounds", "numeric"),
+            alpha = alpha, strata = if (is.null(strata)) NULL else TRUE, outcome = yz$outcome)
 }
 
 #' Trimming Bounds
@@ -341,7 +268,6 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #'   follow-up makes affordable; either default gives way to an explicit value. The
 #'   assumption is the researcher's to make rather than the data's to choose, so
 #'   nothing here picks a direction from the observed response rates.
-#' @param strata Not supported; supplying any value raises an error.
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param se How to obtain standard errors. \code{"analytic"} (the default) uses the
 #'   closed-form asymptotic variance of Lee (2009), Proposition 3, which covers the
@@ -461,7 +387,6 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 estimator_trim <-
   function(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL,
            monotonicity = c("treatment_increases_response", "treatment_decreases_response", "none"),
-           strata = NULL,
            alpha = 0.05, se = c("analytic", "bootstrap", "none"), sims = 1000, data){
     if (missing(data)) require_data("estimator_trim")
     monotonicity_supplied <- !missing(monotonicity)
@@ -477,10 +402,8 @@ estimator_trim <-
     Attempt_val <- resolve_column(eval(substitute(Attempt), data, parent.frame()), data)
     R2_val      <- resolve_column(eval(substitute(R2),      data, parent.frame()), data)
 
-    strata <- resolve_column(eval(substitute(strata), data, parent.frame()), data)
-    if (!is.null(strata)) stop("Stratification is not yet supported for trimming bounds.")
     if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-    if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
+    validate_indicator(Z, "treatment variable (Z)")
     se <- match.arg(se)
     if(!is.numeric(alpha) | length(alpha) != 1L){stop("The significance level (alpha) must be a single number.")}
     if(alpha <= 0 | alpha >= 1){stop("The significance level (alpha) must be strictly between zero and one.")}
@@ -534,7 +457,7 @@ estimator_trim <-
     }
 
     if (single_stage) {
-      if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
+      validate_indicator(R, "response variable (R)")
       estimate <- function(idx) {
         trimming_bounds(Out = Y[idx], Treat = Z_trim[idx], Fail = as.numeric(R[idx] == 0),
                         Weight = rep(1, length(idx)), monotonicity = assume_monotonicity)
@@ -546,9 +469,9 @@ estimator_trim <-
       R1      <- R1_val
       Attempt <- Attempt_val
       R2      <- R2_val
-      if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
-      if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
-      if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
+      validate_indicator(R1, "initial sample response variable (R1)")
+      validate_indicator(R2, "follow-up sample response variable (R2)")
+      validate_indicator(Attempt, "follow-up sample attempt variable (Attempt)")
       estimate <- function(idx) {
         Yi <- Y[idx]; Zi <- Z_trim[idx]; R1i <- R1[idx]; Ai <- Attempt[idx]; R2i <- R2[idx]
         Weight <- rep(NA, length(idx))
@@ -628,7 +551,7 @@ estimator_trim <-
 #' Extreme Value Bounds with Double Sampling with Sensitivity
 #'
 #' Interpolates between worst-case bounds and ignorability. \code{delta} is the
-#' fraction of the follow-up nonrespondents whose outcomes are left unmodelled;
+#' fraction of the follow-up nonrespondents whose outcomes are left unmodeled;
 #' the remaining 1 - \code{delta} are assumed to be drawn from a distribution
 #' with the mean and variance observed among the follow-up respondents. At
 #' \code{delta = 1} the estimator reproduces \code{\link{estimator_ds}}, and at
@@ -648,8 +571,9 @@ estimator_trim <-
 #' @param maxY The maximum possible value of the outcome (Y) variable.
 #' @param strata Stratification variable: unquoted column name or a quoted string column name.
 #' @param alpha The desired significance level. 0.05 by default.
-#' @param data A dataframe
-#' @param delta Sensitivity parameter in [0, 1]. At delta = 1 (default) worst-case bounds apply; at delta = 0 ignorability holds for all follow-up non-responders.
+#' @param delta Sensitivity parameter in [0, 1]. At delta = 1 worst-case bounds apply; at delta = 0 ignorability holds for all follow-up non-responders.
+#' @param data A dataframe. Must be given by name: \code{data} is the last
+#'   argument, so passing it positionally assigns it to another argument.
 #'
 #' @return A named numeric vector with elements \code{estimate_lower} and
 #'   \code{estimate_upper}, the two ends of the identification region;
@@ -698,81 +622,29 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
   if (missing(data)) require_data("estimator_ds_sens")
   # Formula interface: estimator_ds_sens(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
   yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
-  Y  <- yz$Y
-  Z  <- yz$Z
-  R1      <- resolve_column(eval(substitute(R1),      data, parent.frame()), data)
-  Attempt <- resolve_column(eval(substitute(Attempt), data, parent.frame()), data)
-  R2      <- resolve_column(eval(substitute(R2),      data, parent.frame()), data)
-  if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-  if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
-  if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
-  if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
-  if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
-
-  validate_support(Y, minY, maxY, alpha)
+  Y <- yz$Y
+  Z <- yz$Z
+  ds <- resolve_ds_columns(substitute(R1), substitute(Attempt), substitute(R2), data, parent.frame())
+  R1 <- ds$R1
+  Attempt <- ds$Attempt
+  R2 <- ds$R2
+  strata <- resolve_column(eval(substitute(strata), data, parent.frame()), data)
+  validate_ds_inputs(Y, Z, R1, Attempt, R2, minY, maxY, alpha)
   if(!is.numeric(delta) | length(delta) != 1L){stop("The sensitivity parameter (delta) must be a single number.")}
   if(delta < 0 | delta > 1){stop("The sensitivity parameter (delta) must be between zero and one.")}
 
-  strata <- resolve_column(eval(substitute(strata), data, parent.frame()), data)
-  if(is.null(strata)) {
-    n1_c <- sum(Z==0)
-    n1_t <- sum(Z==1)
-
-    p1_c <- sum(R1==1 & Z==0)/n1_c
-    p1_t <- sum(R1==1 & Z==1)/n1_t
-
-    y1m_c <- mean(Y[R1==1 & Z==0])
-    y1m_t <- mean(Y[R1==1 & Z==1])
-
-    n2_c <- sum(Attempt ==1 & Z ==0)
-    n2_t <- sum(Attempt ==1 & Z ==1)
-
-    p2_c <- sum(R2==1 & Z==0)/n2_c
-    p2_t <- sum(R2==1 & Z==1)/n2_t
-
-    y2m_nm_c <- mean(Y[R2==1 & Z==0])
-    y2m_nm_t <- mean(Y[R2==1 & Z==1])
-
-    s1_c <- sd(Y[R1==1 & Z==0])
-    s1_t <- sd(Y[R1==1 & Z==1])
-    s2_nm_c <- sd(Y[R2==1 & Z==0])
-    s2_nm_t <- sd(Y[R2==1 & Z==1])
-
-    cis_out <- ds_manski_cis_2s_sens(n1_t=n1_t,n2_t=n2_t,
-                                     n1_c=n1_c,n2_c=n2_c,
-                                     p1_t=p1_t,p2_t=p2_t,
-                                     s1_t=s1_t,s1_c=s1_c,
-                                     s2_nm_t=s2_nm_t,
-                                     s2_nm_c=s2_nm_c,
-                                     y1m_t=y1m_t,y1m_c=y1m_c,
-                                     y2m_nm_t=y2m_nm_t,
-                                     y2m_nm_c=y2m_nm_c,
-                                     p1_c=p1_c,p2_c=p2_c,
-                                     minY=minY,maxY=maxY,alpha=alpha, delta = delta)
-    return(structure(cis_out, class = c("attrition_ds_sens", "attrition_bounds", "numeric"),
-                   alpha = alpha, delta = delta, outcome = yz$outcome))
-  }else{
-    # With a stratification variable, estimate within each stratum by calling
-    # this function recursively, then poststratify.
-
-    if(sum(is.na(strata))!=0){stop("The stratification variable (strata) must not contain any missing values.")}
-
-    unique_strata <- unique(strata)
-    ds_df <- data.frame(Y, R1, Z, Attempt, R2, strata)
-
-    strata_ests <- vapply(unique_strata, function(s)
+  if (is.null(strata)) {
+    out <- ds_manski_cis_2s(ds_moments(Y, Z, R1, Attempt, R2), minY, maxY, alpha, delta = delta)
+  } else {
+    # Estimate within each stratum by calling this function recursively, then poststratify.
+    out <- poststratify(data.frame(Y, Z, R1, Attempt, R2), strata, alpha, function(d)
       estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
-                        minY = minY, maxY = maxY, alpha = alpha, delta = delta,
-                        data = subset(ds_df, strata == s)),
-      numeric(6))
-    proportions <- vapply(unique_strata, function(s) mean(strata == s), numeric(1))
-
-    out <- pool_strata(strata_ests, proportions, alpha)
-    return(structure(out, class = c("attrition_ds_sens", "attrition_bounds", "numeric"),
-                   alpha = alpha, delta = delta, strata = TRUE, outcome = yz$outcome))
+                        minY = minY, maxY = maxY, alpha = alpha, delta = delta, data = d))
   }
+  structure(out, class = c("attrition_ds_sens", "attrition_bounds", "numeric"),
+            alpha = alpha, delta = delta, strata = if (is.null(strata)) NULL else TRUE,
+            outcome = yz$outcome)
 }
-
 
 #' Sensitivity Analysis
 #'
@@ -802,15 +674,15 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #'   argument, so passing it positionally assigns it to another argument.
 #' @param sims Number of values of delta at which to evaluate the bounds. Defaults to 100.
 #'
-#' @return A list with three elements: \code{sensitivity_plot}, a ggplot object;
-#'   \code{sims_df}, a data frame of bounds and confidence intervals at each
-#'   value of \code{delta}; and \code{delta_star}, a single number giving
-#'   delta*, or \code{NA} when no delta* exists, which happens when the
-#'   confidence interval already contains zero at delta = 0.
+#' @return An object of class \code{"attrition_sensitivity"}: a list with three
+#'   elements, \code{sensitivity_plot}, a ggplot object; \code{sims_df}, a data
+#'   frame of bounds and confidence intervals at each value of \code{delta}; and
+#'   \code{delta_star}, a single number giving delta*, or \code{NA} when no
+#'   delta* exists, which happens when the confidence interval already contains
+#'   zero at delta = 0. Printing reports delta*;
+#'   \code{\link[=tidy.attrition_sensitivity]{tidy()}} returns \code{sims_df}.
 #' @importFrom ggplot2 ggplot aes geom_line geom_ribbon geom_point geom_text
-#' @importFrom ggplot2 geom_hline xlab ylab theme_bw theme element_blank
-#' @importFrom grid unit
-#' @importFrom purrr map
+#' @importFrom ggplot2 geom_hline xlab ylab theme_bw
 #' @importFrom stats complete.cases pnorm qnorm sd setNames uniroot var weighted.mean
 #' @export
 #'
@@ -835,6 +707,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #'
 #' sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
 #'                        sims = 20, data = df)
+#' sens
 #' sens$sensitivity_plot
 #' sens$delta_star
 #'
@@ -847,48 +720,31 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
   if (missing(data)) require_data("sensitivity_ds")
   # Formula interface: sensitivity_ds(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
   yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
-  Y  <- yz$Y
-  Z  <- yz$Z
-  R1      <- resolve_column(eval(substitute(R1),      data, parent.frame()), data)
-  Attempt <- resolve_column(eval(substitute(Attempt), data, parent.frame()), data)
-  R2      <- resolve_column(eval(substitute(R2),      data, parent.frame()), data)
-  if(!is.numeric(Y)){stop("The outcome variable (Y) must be numeric.")}
-  if(!all(Z %in% c(0,1))){stop("The treatment variable (Z) must be numeric and take values zero or one.")}
-  if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
-  if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
-  if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
-  validate_support(Y, minY, maxY, alpha)
-  if(!is.numeric(sims) | length(sims) != 1L | any(sims < 2)){stop("The number of simulations (sims) must be a single number of at least two.")}
-
+  Y <- yz$Y
+  Z <- yz$Z
+  ds <- resolve_ds_columns(substitute(R1), substitute(Attempt), substitute(R2), data, parent.frame())
+  R1 <- ds$R1
+  Attempt <- ds$Attempt
+  R2 <- ds$R2
   strata <- resolve_column(eval(substitute(strata), data, parent.frame()), data)
+  validate_ds_inputs(Y, Z, R1, Attempt, R2, minY, maxY, alpha)
+  if(!is.numeric(sims) | length(sims) != 1L | any(sims < 2)){stop("The number of simulations (sims) must be a single number of at least two.")}
 
   deltas <- seq(0, 1, length.out = sims)
 
-  if (is.null(strata)) {
-    df <- data.frame(Y, Z, R1, R2, Attempt)
-    sims_df <-
-      map(deltas, \(d) estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, alpha = alpha,
-                                         R2 = R2, minY = minY, maxY = maxY, data = df, delta = d)) |>
-      (\(lst) do.call(rbind, lst))() |>
-      as.data.frame() |>
-      dplyr::mutate(delta = deltas,
-                    change_lower = find_sign_changes(conf.low),
-                    change_upper = find_sign_changes(conf.high),
-                    change_any = change_lower | change_upper)
-  } else {
-    df <- data.frame(Y, Z, R1, R2, Attempt, strata)
-    sims_df <-
-      map(deltas, \(d) estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt,
-                                         strata = strata, alpha = alpha,
-                                         R2 = R2, minY = minY, maxY = maxY, data = df, delta = d)) |>
-      (\(lst) do.call(rbind, lst))() |>
-      as.data.frame() |>
-      dplyr::mutate(delta = deltas,
-                    change_lower = find_sign_changes(conf.low),
-                    change_upper = find_sign_changes(conf.high),
-                    change_any = change_lower | change_upper)
-  }
+  # The strata column is present only when strata were supplied; otherwise the
+  # `strata` argument below resolves to the NULL in this frame.
+  df <- data.frame(Y, Z, R1, R2, Attempt)
+  if (!is.null(strata)) df$strata <- strata
+  fits <- lapply(deltas, function(d)
+    estimator_ds_sens(Y = Y, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2, strata = strata,
+                      minY = minY, maxY = maxY, alpha = alpha, delta = d, data = df))
 
+  sims_df <- as.data.frame(do.call(rbind, fits))
+  sims_df$delta <- deltas
+  sims_df$change_lower <- find_sign_changes(sims_df$conf.low)
+  sims_df$change_upper <- find_sign_changes(sims_df$conf.high)
+  sims_df$change_any <- sims_df$change_lower | sims_df$change_upper
 
   points_df <-
     data.frame(delta = c(0, 1, 1),
@@ -909,10 +765,7 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
     ylab(paste0("Identification Regions and ", round((1-alpha)*100), "% Confidence Intervals")) +
     xlab(expression(paste("Sensitivity Parameter ", delta, " (0 = Ignorability)"))) +
     geom_hline(yintercept = 0, linetype = "dashed") +
-    theme_bw() +
-    theme(legend.position = "bottom",
-          legend.key.width = unit(3, "lines"),
-          legend.title = element_blank())
+    theme_bw()
 
 
   # delta*: the smallest delta at which the confidence interval reaches zero.
@@ -931,6 +784,6 @@ sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata
       geom_text(data = star_df, aes(label = label, y = value, vjust = vjust), parse = TRUE)
   }
 
-  return(list(sensitivity_plot = g, sims_df = sims_df, delta_star = delta_star))
-
+  structure(list(sensitivity_plot = g, sims_df = sims_df, delta_star = delta_star),
+            class = "attrition_sensitivity", alpha = alpha, outcome = yz$outcome)
 }

@@ -64,10 +64,12 @@ reference:
     contents:
       - tidy.attrition_bounds
       - tidy.attrition_trim
+      - tidy.attrition_sensitivity
       - summary.attrition_bounds
       - summary.attrition_trim
       - print.attrition_bounds
       - print.attrition_trim
+      - print.attrition_sensitivity
       - reexports
   - title: Data
     contents:

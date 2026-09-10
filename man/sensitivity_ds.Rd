@@ -48,11 +48,13 @@ Must be numeric and take values 0 or 1.}
 argument, so passing it positionally assigns it to another argument.}
 }
 \value{
-A list with three elements: \code{sensitivity_plot}, a ggplot object;
-  \code{sims_df}, a data frame of bounds and confidence intervals at each
-  value of \code{delta}; and \code{delta_star}, a single number giving
-  delta*, or \code{NA} when no delta* exists, which happens when the
-  confidence interval already contains zero at delta = 0.
+An object of class \code{"attrition_sensitivity"}: a list with three
+  elements, \code{sensitivity_plot}, a ggplot object; \code{sims_df}, a data
+  frame of bounds and confidence intervals at each value of \code{delta}; and
+  \code{delta_star}, a single number giving delta*, or \code{NA} when no
+  delta* exists, which happens when the confidence interval already contains
+  zero at delta = 0. Printing reports delta*;
+  \code{\link[=tidy.attrition_sensitivity]{tidy()}} returns \code{sims_df}.
 }
 \description{
 Searches over \code{delta}, the sensitivity parameter of
@@ -84,6 +86,7 @@ df <- data.frame(Y, Z, R1, Attempt, R2)
 
 sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
                        sims = 20, data = df)
+sens
 sens$sensitivity_plot
 sens$delta_star
 
