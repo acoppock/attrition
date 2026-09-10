@@ -1,6 +1,13 @@
 # Trimming Bounds
 
-Trimming Bounds
+Bounds the average treatment effect among the subjects who would report
+an outcome under either assignment, the always-reporters, by trimming a
+tail of the arm with respondents to spare. The outcome need not be
+bounded, which is what distinguishes this from
+[`estimator_ev`](https://alexandercoppock.com/attrition/reference/estimator_ev.md).
+Two separate choices shape the estimate: which response arguments are
+supplied picks the design, and `monotonicity` picks the selection
+assumption, which decides which arm is trimmed and by how much.
 
 ## Usage
 

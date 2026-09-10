@@ -1,8 +1,13 @@
 # Sensitivity Analysis
 
-This function performs a line search over values of delta, the
-sensitivity parameter, in order to find (if it exists) delta\*, the
-value of delta where the confidence interval no longer includes zero.
+Searches over `delta`, the sensitivity parameter of
+[`estimator_ds_sens`](https://alexandercoppock.com/attrition/reference/estimator_ds_sens.md),
+for delta\*: the smallest value at which the confidence interval starts
+to include zero. A delta\* near zero means the finding rests on assuming
+away nearly all of the missingness; a delta\* near one means it survives
+almost any amount. Returns the search, a plot of it, and delta\* itself,
+which is `NA` when the interval already includes zero under
+ignorability.
 
 ## Usage
 

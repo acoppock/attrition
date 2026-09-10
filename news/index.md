@@ -72,6 +72,25 @@ First release.
   error naming the reason rather than a silent substitution of the
   bootstrap.
 
+- [`summary()`](https://rdrr.io/r/base/summary.html) methods for both
+  result classes. There were none, so
+  [`summary()`](https://rdrr.io/r/base/summary.html) fell through to the
+  default, which treats the six returned quantities as a sample and
+  reports their mean and quartiles: on a trimming result, where the
+  vector carries group sizes as well as bounds, it announced a “Mean” of
+  104.55. The methods now report the identification region, its standard
+  errors and the Imbens-Manski interval at the level actually requested,
+  each labelled, under a line naming the estimand and the assumptions
+  that produced it. For trimming bounds that means the design, the
+  direction of the selection assumption, how much of which group was
+  trimmed, and where the standard errors came from. Both return the
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) data frame
+  invisibly.
+
+- Results carry the confidence level they were computed at, and
+  sensitivity results carry their `delta`, so a stored result still
+  knows what produced it.
+
 - Every estimator’s help page cites the papers behind it, where four of
   the five previously cited nothing at all: Manski (1990) and Imbens and
   Manski (2004) for the worst-case bounds and their joint interval,

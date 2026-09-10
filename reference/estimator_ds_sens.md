@@ -1,9 +1,12 @@
 # Extreme Value Bounds with Double Sampling with Sensitivity
 
-This function yields extreme value bounds under the assumption that the
-outcomes of 1-delta of the missing second-round units are ignorable,
-that is, that they are drawn from an unknown distribution with mean and
-variance equal to the observed second-round groups.
+Interpolates between worst-case bounds and ignorability. `delta` is the
+fraction of the follow-up nonrespondents whose outcomes are left
+unmodelled; the remaining 1 - `delta` are assumed to be drawn from a
+distribution with the mean and variance observed among the follow-up
+respondents. At `delta = 1` the estimator reproduces
+[`estimator_ds`](https://alexandercoppock.com/attrition/reference/estimator_ds.md),
+and at `delta = 0` it returns a point estimate.
 
 ## Usage
 

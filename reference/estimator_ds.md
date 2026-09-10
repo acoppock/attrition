@@ -1,6 +1,12 @@
 # Extreme Value Bounds with Double Sampling
 
-Extreme Value Bounds with Double Sampling
+Bounds the average treatment effect when some outcomes are missing and a
+random sample of the initial nonrespondents was pursued a second time.
+Because that sample was drawn at random, the outcomes it recovers
+estimate the mean outcome among all nonrespondents, so only the subjects
+who refused twice need worst-case treatment and the identification
+region narrows accordingly. Reports the region with a joint
+Imbens-Manski confidence interval.
 
 ## Usage
 

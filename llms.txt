@@ -237,6 +237,10 @@ expects.
   : Tidy an attrition bounds object
 - [`tidy(`*`<attrition_trim>`*`)`](https://alexandercoppock.com/attrition/reference/tidy.attrition_trim.md)
   : Tidy a trimming bounds object
+- [`summary(`*`<attrition_bounds>`*`)`](https://alexandercoppock.com/attrition/reference/summary.attrition_bounds.md)
+  : Summarize bounds
+- [`summary(`*`<attrition_trim>`*`)`](https://alexandercoppock.com/attrition/reference/summary.attrition_trim.md)
+  : Summarize trimming bounds
 - [`print(`*`<attrition_bounds>`*`)`](https://alexandercoppock.com/attrition/reference/print.attrition_bounds.md)
   : Print bounds
 - [`print(`*`<attrition_trim>`*`)`](https://alexandercoppock.com/attrition/reference/print.attrition_trim.md)
