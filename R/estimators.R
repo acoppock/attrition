@@ -191,6 +191,30 @@ lee_variance <- function(trim_out, n_treat, n_control) {
   c(lower_var = var_bound("lower"), upper_var = var_bound("upper"))
 }
 
+# Map a trimming result computed on relabelled arms back to the original ones.
+# Reverse monotonicity is the forward estimator run with the arms swapped, so
+# what comes back is the effect of control: each bound is negated and the pair
+# swapped, and every quantity carrying a group label moves with them. The U/L
+# suffix names the bound a quantity feeds, which is what it names in the
+# forward case too, so Out0L_mono is the trimmed control mean behind the lower
+# bound even though it is the higher of the two control means.
+reverse_monotonicity_labels <- function(out) {
+  c(upper_bound     = -unname(out["lower_bound"]),
+    lower_bound     = -unname(out["upper_bound"]),
+    Out1_mono       =  unname(out["Out0_mono"]),
+    Out0L_mono      =  unname(out["Out1U_mono"]),
+    Out0U_mono      =  unname(out["Out1L_mono"]),
+    control_group_N =  unname(out["treat_group_N"]),
+    treat_group_N   =  unname(out["control_group_N"]),
+    Q               =  unname(out["Q"]),
+    f1              =  unname(out["f0"]),
+    f0              =  unname(out["f1"]),
+    pi_r_1          =  unname(out["pi_r_0"]),
+    pi_r_0          =  unname(out["pi_r_1"]),
+    yU              =  unname(out["yL"]),
+    yL              =  unname(out["yU"]))
+}
+
 trimming_bounds <-
   function(Out, Treat, Fail, Weight, monotonicity = FALSE) {
 
@@ -240,6 +264,11 @@ trimming_bounds <-
 
       keep_U <- OutS1.CDF > Q
       keep_L <- OutS1.CDF < (1-Q)
+      if (!any(keep_U) || !any(keep_L)) {
+        stop("Trimming ", signif(Q, 3), " of the trimmed group leaves nothing behind on one ",
+             "side. The group has too few distinct weighted observations to support a ",
+             "trimming proportion this large.", call. = FALSE)
+      }
       Out1U_mono <- weighted.mean(OutS1$Out[keep_U], OutS1$Weight[keep_U])
       Out1L_mono <- weighted.mean(OutS1$Out[keep_L], OutS1$Weight[keep_L])
 
@@ -262,20 +291,44 @@ trimming_bounds <-
 
     }else{
 
+      # Without monotonicity the always-reporter share is only bounded below, by the
+      # Frechet-Hoeffding bound 1 - f0 - f1 (Imai 2008, Eq. 5). Each group is trimmed
+      # by the largest share of its respondents that could fail to be always-reporters,
+      # which is that bound subtracted from the group's own response rate. The bounds
+      # exist only while the Frechet bound is positive.
+      if (f0 + f1 >= 1) {
+        stop("The two missingness rates sum to ", signif(f0 + f1, 4), ", which is not less ",
+             "than one, so nothing bounds the always-reporter share away from zero and the ",
+             "trimming bounds are undefined. Monotonicity, or a design that recovers some ",
+             "of the missing outcomes, is what makes this case tractable.", call. = FALSE)
+      }
+
       trim0 <- (f1)/(1-f0)
       trim1 <- (f0)/(1-f1)
 
-      Out0U <- weighted.mean(OutS0$Out[OutS0.CDF>trim0], OutS0$Weight[OutS0.CDF>trim0])
-      Out0L <- weighted.mean(OutS0$Out[OutS0.CDF<(1-trim0)], OutS0$Weight[OutS0.CDF<(1-trim0)])
+      keep0_U <- OutS0.CDF > trim0
+      keep0_L <- OutS0.CDF < (1-trim0)
+      keep1_U <- OutS1.CDF > trim1
+      keep1_L <- OutS1.CDF < (1-trim1)
+      if (!any(keep0_U) || !any(keep0_L) || !any(keep1_U) || !any(keep1_L)) {
+        stop("Trimming ", signif(trim0, 3), " of the control group and ", signif(trim1, 3),
+             " of the treatment group leaves nothing behind on one side. The groups have too ",
+             "few distinct weighted observations to support trimming proportions this large.",
+             call. = FALSE)
+      }
 
-      Out1U <- weighted.mean(OutS1$Out[OutS1.CDF>trim1], OutS1$Weight[OutS1.CDF>trim1])
-      Out1L <- weighted.mean(OutS1$Out[OutS1.CDF<(1-trim1)], OutS1$Weight[OutS1.CDF<(1-trim1)])
+      Out0U <- weighted.mean(OutS0$Out[keep0_U], OutS0$Weight[keep0_U])
+      Out0L <- weighted.mean(OutS0$Out[keep0_L], OutS0$Weight[keep0_L])
+
+      Out1U <- weighted.mean(OutS1$Out[keep1_U], OutS1$Weight[keep1_U])
+      Out1L <- weighted.mean(OutS1$Out[keep1_L], OutS1$Weight[keep1_L])
 
       upper_bound = Out1U - Out0L
       lower_bound = Out1L - Out0U
 
       return(c(upper_bound = upper_bound, lower_bound = lower_bound, Out0L=Out0L, Out0U=Out0U, Out1L=Out1L, Out1U=Out1U,
-               control_group_N = nrow(OutS0), treat_group_N = nrow(OutS1), trim0 = trim0, trim1 = trim1))
+               control_group_N = nrow(OutS0), treat_group_N = nrow(OutS1), trim0 = trim0, trim1 = trim1,
+               f1 = f1, f0 = f0, pi_r_1 = 1 - f1, pi_r_0 = 1 - f0))
 
     }
   }

@@ -80,4 +80,11 @@ sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
                        sims = 20, data = df)
 sens$sensitivity_plot
 sens$delta_star
+
+}
+\references{
+Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern (2017).
+Combining Double Sampling and Bounds to Address Nonignorable Missing Outcomes
+in Randomized Experiments. \emph{Political Analysis} 25(2):188-206.
+\doi{10.1017/pan.2016.6}
 }

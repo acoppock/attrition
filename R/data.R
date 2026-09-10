@@ -46,11 +46,31 @@
 #' difference between the two guesses.
 #'
 #' The response indicators rather than the missing values define who responded.
-#' Sixteen subjects have a Wave 2 outcome recorded in the archive despite
-#' \code{R1 == 0} and \code{Attempt == 0}, which is why 448 outcomes are
-#' \code{NA} where 536 subjects did not respond. Every estimator here keys on
-#' \code{R1}, \code{Attempt}, and \code{R2}, as the paper does, so those sixteen
-#' outcomes go unused.
+#' Sixteen subjects have a Wave 2 outcome recorded despite \code{R1 == 0} and
+#' \code{Attempt == 0}, which is why 448 outcomes are \code{NA} where 536 subjects
+#' did not respond. They are partial completions: they started the Wave 2 survey
+#' and abandoned it, and the pre-analysis plan averages the policy items a subject
+#' did answer, so answering even one of the four yields a value for the outcome.
+#' Every subject who completed the survey answered all four; ten of these sixteen
+#' answered fewer, and their missingness across the rest of the Wave 2
+#' questionnaire follows the order the questions were asked. \code{R1} marks
+#' completing the survey, and every estimator here keys on \code{R1},
+#' \code{Attempt}, and \code{R2}, as the paper does, so those sixteen outcomes go
+#' unused.
+#'
+#' They are shipped rather than dropped, because the paper counts them. Each enters
+#' every bound as part of its arm's size and its nonrespondent count, and none enters
+#' through its outcome, so the naive difference in means among respondents is
+#' identical whether they are kept or dropped while the bounds are not: dropping them
+#' moves the first column of Table 3 from (-1.54, 1.71) to (-1.50, 1.68) and narrows
+#' every interval in the table. Narrowing an identification region by deleting
+#' subjects whose outcomes are unknown narrows it without learning anything, and
+#' breaking off partway through a survey is itself a post-treatment behavior, split
+#' seven and nine across the two arms here. A researcher who wants to depart from the
+#' paper's handling can drop them with
+#' \code{subset(levendusky_replication, !(R1 == 0 & Attempt == 0 & !is.na(Y_polarization_w2)))},
+#' or count them as respondents, which uses the answers they did give and narrows the
+#' first column further, to (-1.49, 1.66).
 #'
 #' @source Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L.
 #'   Kern (2016). Replication Data for: Combining double sampling and bounds to

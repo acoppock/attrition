@@ -259,11 +259,241 @@ test_that("estimator_trim DS path (paper data)", {
 })
 
 test_that("estimator_trim R path returns NA bounds on monotonicity violation (paper data)", {
-  # Control group has slightly higher attrition than treatment → violation
-  out <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, data = levendusky_replication)
+  # Control group responds at the higher rate, so the assumed direction fails
+  expect_warning(
+    out <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, data = levendusky_replication),
+    "treatment_decreases_response"
+  )
   expect_s3_class(out, "attrition_trim")
   expect_true(is.na(out["estimate_lower"]))
   expect_true(is.na(out["estimate_upper"]))
+})
+
+test_that("the other monotonicity direction estimates on the same paper data", {
+  out <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                        monotonicity = "treatment_decreases_response",
+                        data = levendusky_replication)
+  expect_false(anyNA(out[c("estimate_lower", "estimate_upper", "conf.low", "conf.high")]))
+  expect_lt(unname(out["estimate_lower"]), unname(out["estimate_upper"]))
+
+  # The control group is the one trimmed, so the treatment respondent mean goes
+  # in untrimmed and the two group sizes are respondent counts, not arm sizes
+  responders <- subset(levendusky_replication, R1 == 1)
+  expect_equal(unname(out["Out1_mono"]),
+               mean(responders$Y_polarization_w2[responders$Z == 1]))
+  expect_equal(unname(out["treat_group_N"]), sum(responders$Z == 1))
+  expect_equal(unname(out["control_group_N"]), sum(responders$Z == 0))
+
+  # Q is the share of control respondents trimmed, positive in this direction
+  pi_r_1 <- mean(levendusky_replication$R1[levendusky_replication$Z == 1])
+  pi_r_0 <- mean(levendusky_replication$R1[levendusky_replication$Z == 0])
+  expect_equal(unname(out["Q"]), (pi_r_0 - pi_r_1)/pi_r_0)
+  expect_equal(unname(out["pi_r_1"]), pi_r_1)
+  expect_equal(unname(out["pi_r_0"]), pi_r_0)
+})
+
+test_that("reverse monotonicity is the forward estimator on relabelled arms", {
+  rev <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                        monotonicity = "treatment_decreases_response",
+                        data = levendusky_replication)
+
+  relabelled <- levendusky_replication
+  relabelled$Z <- 1 - relabelled$Z
+  fwd <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, data = relabelled)
+
+  expect_equal(unname(rev["estimate_lower"]), -unname(fwd["estimate_upper"]))
+  expect_equal(unname(rev["estimate_upper"]), -unname(fwd["estimate_lower"]))
+  expect_equal(unname(rev["std.error_lower"]), unname(fwd["std.error_upper"]))
+  expect_equal(unname(rev["std.error_upper"]), unname(fwd["std.error_lower"]))
+  expect_equal(unname(rev["conf.low"]),  -unname(fwd["conf.high"]))
+  expect_equal(unname(rev["conf.high"]), -unname(fwd["conf.low"]))
+})
+
+test_that("all four design-by-assumption cells estimate and lead with the same six elements", {
+  six <- c("estimate_lower", "estimate_upper", "std.error_lower", "std.error_upper",
+           "conf.low", "conf.high")
+
+  single_mono <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                                monotonicity = "treatment_decreases_response",
+                                se = "none", data = levendusky_replication)
+  single_none <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                                monotonicity = "none",
+                                se = "none", data = levendusky_replication)
+  ds_mono <- estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                            monotonicity = "treatment_decreases_response",
+                            se = "none", data = levendusky_replication)
+  ds_none <- estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                            monotonicity = "none",
+                            se = "none", data = levendusky_replication)
+
+  for (out in list(single_mono, single_none, ds_mono, ds_none)) {
+    expect_equal(names(out)[1:6], six)
+    expect_false(anyNA(out[c("estimate_lower", "estimate_upper")]))
+    expect_lt(unname(out["estimate_lower"]), unname(out["estimate_upper"]))
+  }
+
+  # The assumption travels with the object
+  expect_equal(attr(single_none, "monotonicity"), "none")
+  expect_equal(attr(ds_mono, "monotonicity"), "treatment_decreases_response")
+  expect_true(attr(single_mono, "single_stage"))
+  expect_false(attr(ds_none, "single_stage"))
+})
+
+test_that("the no-monotonicity bounds are Imai (2008) Proposition 1 at the Frechet bound", {
+  d <- levendusky_replication
+  out <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, monotonicity = "none",
+                        se = "none", data = d)
+
+  # Trim each arm by the largest share of its respondents that could fail to be
+  # always-reporters, which the Frechet-Hoeffding bound puts at f_other/(1 - f_own)
+  f1 <- mean(d$R1[d$Z == 1] == 0)
+  f0 <- mean(d$R1[d$Z == 0] == 0)
+  trim1 <- f0/(1 - f1)
+  trim0 <- f1/(1 - f0)
+  expect_equal(unname(out["trim1"]), trim1)
+  expect_equal(unname(out["trim0"]), trim0)
+
+  y1 <- sort(d$Y_polarization_w2[d$Z == 1 & d$R1 == 1])
+  y0 <- sort(d$Y_polarization_w2[d$Z == 0 & d$R1 == 1])
+  cdf1 <- seq_along(y1)/length(y1)
+  cdf0 <- seq_along(y0)/length(y0)
+
+  expect_equal(unname(out["estimate_upper"]),
+               mean(y1[cdf1 > trim1]) - mean(y0[cdf0 < 1 - trim0]))
+  expect_equal(unname(out["estimate_lower"]),
+               mean(y1[cdf1 < 1 - trim1]) - mean(y0[cdf0 > trim0]))
+})
+
+test_that("dropping monotonicity widens the identification region it is dropped from", {
+  # Where the assumed direction holds, the assumption-free bounds trim more of the
+  # same group and trim the other one too, so they must contain the monotone bounds
+  df <- make_synthetic()
+
+  mono <- estimator_trim(Y, Z, R = R1, se = "none", data = df)
+  none <- estimator_trim(Y, Z, R = R1, monotonicity = "none", se = "none", data = df)
+  expect_lt(unname(none["estimate_lower"]), unname(mono["estimate_lower"]))
+  expect_gt(unname(none["estimate_upper"]), unname(mono["estimate_upper"]))
+
+  ds_mono <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                            monotonicity = "treatment_increases_response",
+                            se = "none", data = df)
+  ds_none <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                            se = "none", data = df)
+  expect_lt(unname(ds_none["estimate_lower"]), unname(ds_mono["estimate_lower"]))
+  expect_gt(unname(ds_none["estimate_upper"]), unname(ds_mono["estimate_upper"]))
+})
+
+test_that("the no-monotonicity bounds do not depend on which arm is called treatment", {
+  # Both groups are trimmed by the same rule, so relabelling the arms must give back
+  # the same interval with its sign flipped. Nothing here has a direction to set.
+  d <- levendusky_replication
+  relabelled <- d
+  relabelled$Z <- 1 - relabelled$Z
+
+  a <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, monotonicity = "none",
+                      se = "none", data = d)
+  b <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, monotonicity = "none",
+                      se = "none", data = relabelled)
+  expect_equal(unname(a["estimate_lower"]), -unname(b["estimate_upper"]))
+  expect_equal(unname(a["estimate_upper"]), -unname(b["estimate_lower"]))
+})
+
+test_that("double sampling under monotonicity is the same estimator on relabelled arms", {
+  d <- levendusky_replication
+  relabelled <- d
+  relabelled$Z <- 1 - relabelled$Z
+
+  rev <- estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                        monotonicity = "treatment_decreases_response",
+                        se = "none", data = d)
+  fwd <- estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                        monotonicity = "treatment_increases_response",
+                        se = "none", data = relabelled)
+  expect_equal(unname(rev["estimate_lower"]), -unname(fwd["estimate_upper"]))
+  expect_equal(unname(rev["estimate_upper"]), -unname(fwd["estimate_lower"]))
+
+  # The follow-up weights are ratios computed within an arm, so relabelling leaves
+  # the trimming proportion itself untouched
+  expect_equal(unname(rev["Q"]), unname(fwd["Q"]))
+})
+
+test_that("analytic standard errors are offered only where Lee (2009) derives them", {
+  d <- levendusky_replication
+
+  # The one cell that has them: single sample, one group trimmed
+  ok <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                       monotonicity = "treatment_decreases_response", data = d)
+  expect_false(anyNA(ok[c("std.error_lower", "std.error_upper")]))
+
+  expect_error(
+    estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, monotonicity = "none", data = d),
+    "both groups are trimmed"
+  )
+  expect_error(
+    estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                   monotonicity = "treatment_decreases_response", se = "analytic", data = d),
+    "sampling weights"
+  )
+  expect_error(
+    estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                   se = "analytic", data = d),
+    "trims both groups"
+  )
+})
+
+test_that("the bootstrap runs in every cell and brackets the bounds", {
+  df <- make_synthetic()
+  set.seed(343)
+  # A resample thin on follow-up responders can violate monotonicity, and the
+  # bootstrap says so and uses the replicates that survived rather than failing
+  expect_warning(
+    ds_mono <- estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                              monotonicity = "treatment_increases_response",
+                              se = "bootstrap", sims = 100, data = df),
+    "did not yield bounds"
+  )
+  cells <- list(
+    single_mono = estimator_trim(Y, Z, R = R1, se = "bootstrap", sims = 100, data = df),
+    single_none = estimator_trim(Y, Z, R = R1, monotonicity = "none",
+                                 se = "bootstrap", sims = 100, data = df),
+    ds_mono = ds_mono,
+    ds_none = estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                             se = "bootstrap", sims = 100, data = df)
+  )
+  for (out in cells) {
+    expect_true(all(out[c("std.error_lower", "std.error_upper")] > 0))
+    expect_lt(unname(out["conf.low"]), unname(out["estimate_lower"]))
+    expect_gt(unname(out["conf.high"]), unname(out["estimate_upper"]))
+  }
+})
+
+test_that("the no-monotonicity bounds refuse to exist when the Frechet bound is not positive", {
+  # Missingness rates summing to one or more leave the always-reporter share
+  # unbounded away from zero, so there is nothing left to trim toward
+  set.seed(9)
+  n <- 400
+  df <- data.frame(Y = rnorm(n), Z = rep(0:1, each = n/2))
+  df$R <- rbinom(n, 1, prob = 0.4)  # about 60 percent missing in both arms
+  expect_error(
+    estimator_trim(Y, Z, R = R, monotonicity = "none", se = "none", data = df),
+    "not less than one"
+  )
+  # The monotone version is unaffected by that condition
+  expect_silent(estimator_trim(Y, Z, R = R, se = "none", data = df))
+})
+
+test_that("a trimming proportion too large for the group is an error, not a NaN", {
+  # Two treated respondents with a trimming proportion of 0.5: the lower-bound side
+  # retains nothing
+  df <- data.frame(
+    Y = c(1, 2, 3, 4, 5, 6, 7, 8),
+    Z = c(1, 1, 1, 1, 0, 0, 0, 0),
+    R = c(1, 1, 0, 0, 1, 0, 0, 0)
+  )
+  expect_error(
+    estimator_trim(Y, Z, R = R, se = "none", data = df),
+    "leaves nothing behind"
+  )
 })
 
 test_that("estimator_ds_sens(delta=1) exactly matches estimator_ds (paper data)", {
@@ -569,10 +799,22 @@ test_that("estimator_trim validates inputs", {
 test_that("estimator_trim returns NA bounds when monotonicity is violated", {
   df   <- make_synthetic()
   df$Z <- 1L - df$Z  # flip treatment — control now has higher response rate
-  out  <- estimator_trim(Y, Z, R = R1, data = df)
+  expect_warning(out <- estimator_trim(Y, Z, R = R1, data = df),
+                 "treatment_decreases_response")
   expect_s3_class(out, "attrition_trim")
   expect_true(is.na(out["estimate_lower"]))
   expect_true(is.na(out["estimate_upper"]))
+
+  # The same data estimate under the direction they do admit, and the warning
+  # there names the direction that was just assumed away
+  rev <- estimator_trim(Y, Z, R = R1, monotonicity = "treatment_decreases_response",
+                        data = df)
+  expect_false(anyNA(rev[c("estimate_lower", "estimate_upper")]))
+  expect_warning(
+    estimator_trim(Y, Z, R = R1, monotonicity = "treatment_decreases_response",
+                   data = make_synthetic()),
+    "treatment_increases_response"
+  )
 })
 
 test_that("tidy carries the outcome name from either interface", {

@@ -24,6 +24,32 @@
 #'   confidence interval. The names are those of the \code{bounds} row of
 #'   \code{\link[=tidy.attrition_bounds]{tidy()}}, which returns the same
 #'   quantities as a data frame.
+#'
+#' @references
+#' Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern (2017).
+#' Combining Double Sampling and Bounds to Address Nonignorable Missing Outcomes
+#' in Randomized Experiments. \emph{Political Analysis} 25(2):188-206.
+#' \doi{10.1017/pan.2016.6}
+#'
+#' Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
+#' Partially Identified Parameters. \emph{Econometrica} 72(6):1845-1857.
+#' \doi{10.1111/j.1468-0262.2004.00555.x}
+#'
+#' Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
+#' \emph{American Economic Review Papers and Proceedings} 80(2):319-323.
+#'
+#' Neyman, Jerzy (1938). Contribution to the Theory of Sampling Human Populations.
+#' \emph{Journal of the American Statistical Association} 33(201):101-116.
+#' \doi{10.1080/01621459.1938.10503378}
+#'
+#' Hansen, Morris H., and William N. Hurwitz (1946). The Problem of Non-Response in
+#' Sample Surveys. \emph{Journal of the American Statistical Association}
+#' 41(236):517-529. \doi{10.1080/01621459.1946.10501894}
+#'
+#' Miratrix, Luke W., Jasjeet S. Sekhon, and Bin Yu (2013). Adjusting Treatment
+#' Effect Estimates by Post-Stratification in Randomized Experiments.
+#' \emph{Journal of the Royal Statistical Society, Series B} 75(2):369-396.
+#' \doi{10.1111/j.1467-9868.2012.01048.x}
 #' @export
 #'
 #' @examples
@@ -190,6 +216,24 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 #'
 #' # Equivalently, via the formula interface
 #' estimator_ev(Y ~ Z, R = "R", minY = 1, maxY = 5, data = df)
+#'
+#' @references
+#' Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
+#' \emph{American Economic Review Papers and Proceedings} 80(2):319-323.
+#'
+#' Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
+#' Partially Identified Parameters. \emph{Econometrica} 72(6):1845-1857.
+#' \doi{10.1111/j.1468-0262.2004.00555.x}
+#'
+#' Miratrix, Luke W., Jasjeet S. Sekhon, and Bin Yu (2013). Adjusting Treatment
+#' Effect Estimates by Post-Stratification in Randomized Experiments.
+#' \emph{Journal of the Royal Statistical Society, Series B} 75(2):369-396.
+#' \doi{10.1111/j.1467-9868.2012.01048.x}
+#'
+#' Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern (2017).
+#' Combining Double Sampling and Bounds to Address Nonignorable Missing Outcomes
+#' in Randomized Experiments. \emph{Political Analysis} 25(2):188-206.
+#' \doi{10.1017/pan.2016.6}
 estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data){
   if (missing(data)) require_data("estimator_ev")
   # Formula interface: estimator_ev(outcome ~ treatment, R = "col_name", data = ., ...)
@@ -263,12 +307,27 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #'   Must be numeric and take values 0 or 1.
 #' @param R2 The follow-up response indicator. Unquoted or quoted string column name.
 #'   Must be numeric and take values 0 or 1.
+#' @param monotonicity The selection assumption, which is separate from the choice
+#'   of design and is available on both paths.
+#'   \code{"treatment_increases_response"} assumes \eqn{R_i(1) \ge R_i(0)}, which
+#'   makes the control respondents the always-reporters and trims the treatment
+#'   group; \code{"treatment_decreases_response"} assumes the reverse and trims the
+#'   control group; \code{"none"} assumes neither and trims both groups, by the
+#'   largest share of each that could fail to be always-reporters. The default is
+#'   \code{"treatment_increases_response"} on the single-stage \code{R} path, which
+#'   is Lee (2009), and \code{"none"} on the double-sampling path, which is what the
+#'   follow-up makes affordable; either default gives way to an explicit value. The
+#'   assumption is the researcher's to make rather than the data's to choose, so
+#'   nothing here picks a direction from the observed response rates.
 #' @param strata Not supported; supplying any value raises an error.
 #' @param alpha The desired significance level. 0.05 by default.
 #' @param se How to obtain standard errors. \code{"analytic"} (the default) uses the
-#'   closed-form asymptotic variance of Lee (2009), Proposition 3, and is available for
-#'   the single-stage \code{R} path only. \code{"bootstrap"} resamples units within
-#'   treatment arm and works for both paths. \code{"none"} returns bounds alone.
+#'   closed-form asymptotic variance of Lee (2009), Proposition 3, which covers the
+#'   single-stage, unweighted, one-group-trimmed case and so is available only for the
+#'   single-stage path under an assumed direction. \code{"bootstrap"} resamples units
+#'   within treatment arm and works everywhere. \code{"none"} returns bounds alone.
+#'   Asking for analytic standard errors where they do not apply is an error rather
+#'   than a silent substitution.
 #' @param sims Number of bootstrap replicates when \code{se = "bootstrap"}. 1000 by default.
 #' @param data A dataframe. Must be given by name: \code{data} is the last
 #'   argument, so passing it positionally assigns it to another argument.
@@ -279,8 +338,9 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #'   \code{std.error_lower} and \code{std.error_upper}, their standard errors;
 #'   and \code{conf.low} and \code{conf.high}, the joint Imbens-Manski
 #'   confidence interval. The intermediate quantities used to build them follow,
-#'   and differ between the two paths. All six lead elements are \code{NA} when
-#'   monotonicity is violated. Pass to
+#'   and differ between the two paths. All six lead elements are \code{NA}, with a
+#'   warning naming the other direction, when monotonicity is violated in the
+#'   direction assumed. Pass to
 #'   \code{\link[=tidy.attrition_trim]{tidy()}} for a data frame.
 #'
 #' @details
@@ -296,12 +356,49 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #' collapse to a point, and the standard errors are not trustworthy. This case
 #' warns.
 #'
+#' The design and the assumption are separate choices, and \code{estimator_trim}
+#' takes them separately. Which response arguments are supplied picks the design:
+#' \code{R} is the single-stage estimator, \code{R1}, \code{Attempt} and \code{R2}
+#' the double-sampling one, which recovers outcomes from a random sample of the
+#' nonrespondents and so has many fewer subjects left to trim for. \code{monotonicity}
+#' picks the assumption, in either design.
+#'
+#' Monotonicity has a direction, and the two directions are not two ways of writing
+#' the same assumption: each names a different group as the always-reporters and
+#' trims the other, so they give different bounds on the same data, and only one of
+#' them is consistent with any given pair of response rates. The estimator under the
+#' reverse direction is the forward estimator run with the arms relabelled, so the
+#' bounds it returns are negated and swapped back onto the original contrast.
+#'
+#' \code{monotonicity = "none"} assumes only random assignment. The share of
+#' always-reporters is then bounded below by the Frechet-Hoeffding bound
+#' \eqn{1 - f_0 - f_1}, where \eqn{f_z} is the missingness rate in arm \eqn{z}, and
+#' each arm is trimmed by the largest share of its respondents that could fail to be
+#' always-reporters: \eqn{f_0/(1 - f_1)} of the treatment group and
+#' \eqn{f_1/(1 - f_0)} of the control group. These are the sharp bounds of Imai
+#' (2008), Proposition 1, building on Zhang and Rubin (2003) and Horowitz and Manski
+#' (1995). They exist only while \eqn{f_0 + f_1 < 1}; beyond that nothing keeps the
+#' always-reporter share away from zero, and the estimator says so rather than
+#' returning a number. Because both arms are trimmed by the same rule, this case has
+#' no direction to set and is invariant to which arm is called treatment.
+#'
 #' @references
+#' Horowitz, Joel L., and Charles F. Manski (1995). Identification and Robustness
+#' with Contaminated and Corrupted Data. \emph{Econometrica} 63(2):281-302.
+#'
+#' Imai, Kosuke (2008). Sharp Bounds on the Causal Effects in Randomized Experiments
+#' with "Truncation-by-Death". \emph{Statistics & Probability Letters} 78(2):144-149.
+#'
 #' Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating Sharp
 #' Bounds on Treatment Effects. \emph{Review of Economic Studies} 76(3):1071-1102.
 #'
 #' Tauchmann, Harald (2014). Lee (2009) Treatment-Effect Bounds for Nonrandom
 #' Sample Selection. \emph{Stata Journal} 14(4):884-894.
+#' \doi{10.1177/1536867X1401400411}
+#'
+#' Zhang, Junni L., and Donald B. Rubin (2003). Estimation of Causal Effects via
+#' Principal Stratification When Some Outcomes are Truncated by "Death".
+#' \emph{Journal of Educational and Behavioral Statistics} 28(4):353-368.
 #' @export
 #'
 #' @examples
@@ -319,14 +416,34 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 #' df <- data.frame(Y, Z, R)
 #'
 #' # Single-stage: trimming bounds under monotonicity, with Lee (2009) standard errors
-#' estimator_trim(Y, Z, R = R, data = df)
+#' estimator_trim(Y = Y, Z = Z, R = R, data = df)
 #'
 #' # Bootstrap standard errors instead
-#' estimator_trim(Y, Z, R = R, se = "bootstrap", sims = 200, data = df)
+#' estimator_trim(Y = Y, Z = Z, R = R, se = "bootstrap", sims = 200, data = df)
+#'
+#' # The other direction, on data built the other way round: here treatment
+#' # lowers response, so the control group holds the extra respondents and is
+#' # the group trimmed
+#' R_rev <- rbinom(N, 1, prob = 0.8 - 0.1 * Z)
+#' Y_rev <- Y_star
+#' Y_rev[R_rev == 0] <- NA
+#' df_rev <- data.frame(Y = Y_rev, Z = Z, R = R_rev)
+#'
+#' estimator_trim(Y = Y, Z = Z, R = R,
+#'                monotonicity = "treatment_decreases_response", data = df_rev)
+#'
+#' # No direction at all: both groups trimmed, randomization the only assumption.
+#' # Wider, and available in either design.
+#' estimator_trim(Y = Y, Z = Z, R = R, monotonicity = "none",
+#'                se = "bootstrap", sims = 200, data = df)
 estimator_trim <-
-  function(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL, strata = NULL,
+  function(Y, Z, R = NULL, R1 = NULL, Attempt = NULL, R2 = NULL,
+           monotonicity = c("treatment_increases_response", "treatment_decreases_response", "none"),
+           strata = NULL,
            alpha = 0.05, se = c("analytic", "bootstrap", "none"), sims = 1000, data){
     if (missing(data)) require_data("estimator_trim")
+    monotonicity_supplied <- !missing(monotonicity)
+    monotonicity <- match.arg(monotonicity)
     # Formula interface: estimator_trim(outcome ~ treatment, R = "col" | R1/Attempt/R2 = "col", data = .)
     yz <- resolve_yz(substitute(Y), substitute(Z), data, parent.frame())
     Y  <- yz$Y
@@ -359,12 +476,46 @@ estimator_trim <-
     # One estimation routine per path, taking row indices, so the point estimate
     # and each bootstrap replicate go through identical code. The double-sampling
     # weights are recomputed inside, since they depend on the resampled counts.
-    if (!is.null(R)) {
+    single_stage <- !is.null(R)
+
+    # The design and the assumption are separate choices, and each path has its own
+    # customary default: monotonicity for a single sample, which is Lee (2009), and
+    # none for double sampling, which is what the follow-up makes affordable. Either
+    # default gives way to an explicit monotonicity argument.
+    if (!single_stage && !monotonicity_supplied) monotonicity <- "none"
+    assume_monotonicity <- monotonicity != "none"
+
+    # Reverse monotonicity is the same estimator with the arms relabelled: if
+    # treatment never raises response then control never lowers it, so the control
+    # group is the one holding the extra respondents to trim. Everything from here to
+    # the assembly of the returned vector runs on Z_trim, and the result is mapped
+    # back to the original arms at the end. The relabelling leaves the double-sampling
+    # weights unchanged, since each is a ratio computed within one arm.
+    flip <- assume_monotonicity && monotonicity == "treatment_decreases_response"
+    Z_trim <- if (flip) 1 - Z else Z
+
+    # Lee (2009) Proposition 3 derives the variance for one design and one assumption:
+    # a single unweighted sample with one group trimmed. The other three cells have no
+    # closed form here, and a silent switch to the bootstrap would hide which inference
+    # the number came from.
+    if (se == "analytic" && !(single_stage && assume_monotonicity)) {
+      reason <- if (!single_stage && !assume_monotonicity) {
+        "The double-sampling estimator carries follow-up sampling weights, and without monotonicity it trims both groups."
+      } else if (!single_stage) {
+        "The double-sampling estimator carries follow-up sampling weights."
+      } else {
+        "Without monotonicity both groups are trimmed."
+      }
+      stop("Analytic standard errors follow Lee (2009) Proposition 3, which covers the ",
+           "single-stage, unweighted, one-group-trimmed case only. ", reason,
+           " Use se = \"bootstrap\" (or se = \"none\").")
+    }
+
+    if (single_stage) {
       if(!all(R %in% c(0,1))){stop("The response variable (R) must be numeric and take values zero or one.")}
-      single_stage <- TRUE
       estimate <- function(idx) {
-        trimming_bounds(Out = Y[idx], Treat = Z[idx], Fail = as.numeric(R[idx] == 0),
-                        Weight = rep(1, length(idx)), monotonicity = TRUE)
+        trimming_bounds(Out = Y[idx], Treat = Z_trim[idx], Fail = as.numeric(R[idx] == 0),
+                        Weight = rep(1, length(idx)), monotonicity = assume_monotonicity)
       }
     } else {
       if (is.null(R1_val) || is.null(Attempt_val) || is.null(R2_val)) {
@@ -376,15 +527,8 @@ estimator_trim <-
       if(!all(R1 %in% c(0,1))){stop("The initial sample response variable (R1) must be numeric and take values zero or one.")}
       if(!all(R2 %in% c(0,1))){stop("The follow-up sample response variable (R2) must be numeric and take values zero or one.")}
       if(!all(Attempt %in% c(0,1))){stop("The follow-up sample attempt variable (Attempt) must be numeric and take values zero or one.")}
-      if (se == "analytic") {
-        stop("Analytic standard errors follow Lee (2009) Proposition 3, which covers the ",
-             "single-stage, unweighted, monotonicity case only. The double-sampling ",
-             "estimator trims both groups and carries sampling weights, so use ",
-             "se = \"bootstrap\" (or se = \"none\").")
-      }
-      single_stage <- FALSE
       estimate <- function(idx) {
-        Yi <- Y[idx]; Zi <- Z[idx]; R1i <- R1[idx]; Ai <- Attempt[idx]; R2i <- R2[idx]
+        Yi <- Y[idx]; Zi <- Z_trim[idx]; R1i <- R1[idx]; Ai <- Attempt[idx]; R2i <- R2[idx]
         Weight <- rep(NA, length(idx))
         Weight[R1i==1] <- 1
         Weight[Ai==1 & Zi==1] <- sum(Zi == 1 & R1i == 0)/sum(Zi == 1 & Ai == 1)
@@ -392,7 +536,8 @@ estimator_trim <-
         Fail <- as.numeric(R1i == 0 & R2i == 0)
         Keep <- (R1i == 1 | Ai == 1)
         trimming_bounds(Out = Yi[Keep], Treat = Zi[Keep],
-                        Fail = Fail[Keep], Weight = Weight[Keep], monotonicity = FALSE)
+                        Fail = Fail[Keep], Weight = Weight[Keep],
+                        monotonicity = assume_monotonicity)
       }
     }
 
@@ -400,6 +545,12 @@ estimator_trim <-
     out <- tryCatch(estimate(all_rows),
                     attrition_monotonicity_violation = \(e) NULL)
     if (is.null(out)) {
+      warning("Monotonicity is violated in the direction assumed: the ",
+              if (flip) "treatment" else "control",
+              " group responded at the higher rate, so the trimming proportion is negative ",
+              "and every bound is NA. Setting monotonicity = \"",
+              if (flip) "treatment_increases_response" else "treatment_decreases_response",
+              "\" assumes the direction the response rates do admit.", call. = FALSE)
       return(structure(na_trim, outcome = yz$outcome))
     }
 
@@ -410,10 +561,10 @@ estimator_trim <-
                 "on the boundary of the parameter space. Lee (2009) Proposition 3 assumes an ",
                 "interior point; the standard errors below are not reliable here.", call. = FALSE)
       }
-      variances <- lee_variance(out, n_treat = sum(Z == 1), n_control = sum(Z == 0))
+      variances <- lee_variance(out, n_treat = sum(Z_trim == 1), n_control = sum(Z_trim == 0))
     } else if (se == "bootstrap") {
       boot <- bootstrap_trim_variance(
-        function(idx) estimate(idx)[c("lower_bound", "upper_bound")], Z, sims)
+        function(idx) estimate(idx)[c("lower_bound", "upper_bound")], Z_trim, sims)
       variances <- boot[c("lower_var", "upper_var")]
     }
 
@@ -423,6 +574,13 @@ estimator_trim <-
                                unname(variances["lower_var"]), unname(variances["upper_var"]), alpha)
       conf <- c(conf.low = unname(out["lower_bound"]) - sig*unname(variances["lower_var"])^.5,
                 conf.high = unname(out["upper_bound"]) + sig*unname(variances["upper_var"])^.5)
+    }
+
+    if (flip) {
+      out <- reverse_monotonicity_labels(out)
+      variances <- c(lower_var = unname(variances["upper_var"]),
+                     upper_var = unname(variances["lower_var"]))
+      conf <- c(conf.low = -unname(conf["conf.high"]), conf.high = -unname(conf["conf.low"]))
     }
 
     # Drop the quantities that exist only to feed lee_variance
@@ -438,7 +596,7 @@ estimator_trim <-
     out <- c(core, out[!names(out) %in% c("lower_bound", "upper_bound")])
     return(structure(out, class = c("attrition_trim", "numeric"),
                      se_method = se, single_stage = single_stage,
-                     outcome = yz$outcome))
+                     monotonicity = monotonicity, outcome = yz$outcome))
   }
 
 
@@ -496,6 +654,16 @@ estimator_trim <-
 #'
 #' # delta = 0 assumes ignorability among follow-up non-responders
 #' estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0, data = df)
+#'
+#' @references
+#' Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern (2017).
+#' Combining Double Sampling and Bounds to Address Nonignorable Missing Outcomes
+#' in Randomized Experiments. \emph{Political Analysis} 25(2):188-206.
+#' \doi{10.1017/pan.2016.6}
+#'
+#' Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
+#' Partially Identified Parameters. \emph{Econometrica} 72(6):1845-1857.
+#' \doi{10.1111/j.1468-0262.2004.00555.x}
 estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata = NULL, alpha = 0.05, data){
   if (missing(data)) require_data("estimator_ds_sens")
   # Formula interface: estimator_ds_sens(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)
@@ -604,7 +772,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #'   delta*, or \code{NA} when no delta* exists, which happens when the
 #'   confidence interval already contains zero at delta = 0.
 #' @importFrom ggplot2 ggplot aes geom_line geom_ribbon geom_point geom_text
-#'   geom_hline xlab ylab theme_bw theme element_blank
+#' @importFrom ggplot2 geom_hline xlab ylab theme_bw theme element_blank
 #' @importFrom grid unit
 #' @importFrom purrr map
 #' @importFrom stats complete.cases pnorm qnorm sd setNames uniroot var weighted.mean
@@ -633,6 +801,12 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 #'                        sims = 20, data = df)
 #' sens$sensitivity_plot
 #' sens$delta_star
+#'
+#' @references
+#' Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern (2017).
+#' Combining Double Sampling and Bounds to Address Nonignorable Missing Outcomes
+#' in Randomized Experiments. \emph{Political Analysis} 25(2):188-206.
+#' \doi{10.1017/pan.2016.6}
 sensitivity_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, sims = 100, strata = NULL, alpha = 0.05, data){
   if (missing(data)) require_data("sensitivity_ds")
   # Formula interface: sensitivity_ds(outcome ~ treatment, R1 = "R1", Attempt = "Attempt", R2 = "R2", data = ., ...)

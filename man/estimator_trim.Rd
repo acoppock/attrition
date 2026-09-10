@@ -11,6 +11,8 @@ estimator_trim(
   R1 = NULL,
   Attempt = NULL,
   R2 = NULL,
+  monotonicity = c("treatment_increases_response", "treatment_decreases_response",
+    "none"),
   strata = NULL,
   alpha = 0.05,
   se = c("analytic", "bootstrap", "none"),
@@ -38,14 +40,30 @@ Must be numeric and take values 0 or 1.}
 \item{R2}{The follow-up response indicator. Unquoted or quoted string column name.
 Must be numeric and take values 0 or 1.}
 
+\item{monotonicity}{The selection assumption, which is separate from the choice
+of design and is available on both paths.
+\code{"treatment_increases_response"} assumes \eqn{R_i(1) \ge R_i(0)}, which
+makes the control respondents the always-reporters and trims the treatment
+group; \code{"treatment_decreases_response"} assumes the reverse and trims the
+control group; \code{"none"} assumes neither and trims both groups, by the
+largest share of each that could fail to be always-reporters. The default is
+\code{"treatment_increases_response"} on the single-stage \code{R} path, which
+is Lee (2009), and \code{"none"} on the double-sampling path, which is what the
+follow-up makes affordable; either default gives way to an explicit value. The
+assumption is the researcher's to make rather than the data's to choose, so
+nothing here picks a direction from the observed response rates.}
+
 \item{strata}{Not supported; supplying any value raises an error.}
 
 \item{alpha}{The desired significance level. 0.05 by default.}
 
 \item{se}{How to obtain standard errors. \code{"analytic"} (the default) uses the
-closed-form asymptotic variance of Lee (2009), Proposition 3, and is available for
-the single-stage \code{R} path only. \code{"bootstrap"} resamples units within
-treatment arm and works for both paths. \code{"none"} returns bounds alone.}
+closed-form asymptotic variance of Lee (2009), Proposition 3, which covers the
+single-stage, unweighted, one-group-trimmed case and so is available only for the
+single-stage path under an assumed direction. \code{"bootstrap"} resamples units
+within treatment arm and works everywhere. \code{"none"} returns bounds alone.
+Asking for analytic standard errors where they do not apply is an error rather
+than a silent substitution.}
 
 \item{sims}{Number of bootstrap replicates when \code{se = "bootstrap"}. 1000 by default.}
 
@@ -59,8 +77,9 @@ A named numeric vector leading with the same six elements as the
   \code{std.error_lower} and \code{std.error_upper}, their standard errors;
   and \code{conf.low} and \code{conf.high}, the joint Imbens-Manski
   confidence interval. The intermediate quantities used to build them follow,
-  and differ between the two paths. All six lead elements are \code{NA} when
-  monotonicity is violated. Pass to
+  and differ between the two paths. All six lead elements are \code{NA}, with a
+  warning naming the other direction, when monotonicity is violated in the
+  direction assumed. Pass to
   \code{\link[=tidy.attrition_trim]{tidy()}} for a data frame.
 }
 \description{
@@ -78,6 +97,32 @@ Lee's derivation assumes the bounds are interior points, which fails when the
 two response rates are equal: the trimming proportion is then zero, the bounds
 collapse to a point, and the standard errors are not trustworthy. This case
 warns.
+
+The design and the assumption are separate choices, and \code{estimator_trim}
+takes them separately. Which response arguments are supplied picks the design:
+\code{R} is the single-stage estimator, \code{R1}, \code{Attempt} and \code{R2}
+the double-sampling one, which recovers outcomes from a random sample of the
+nonrespondents and so has many fewer subjects left to trim for. \code{monotonicity}
+picks the assumption, in either design.
+
+Monotonicity has a direction, and the two directions are not two ways of writing
+the same assumption: each names a different group as the always-reporters and
+trims the other, so they give different bounds on the same data, and only one of
+them is consistent with any given pair of response rates. The estimator under the
+reverse direction is the forward estimator run with the arms relabelled, so the
+bounds it returns are negated and swapped back onto the original contrast.
+
+\code{monotonicity = "none"} assumes only random assignment. The share of
+always-reporters is then bounded below by the Frechet-Hoeffding bound
+\eqn{1 - f_0 - f_1}, where \eqn{f_z} is the missingness rate in arm \eqn{z}, and
+each arm is trimmed by the largest share of its respondents that could fail to be
+always-reporters: \eqn{f_0/(1 - f_1)} of the treatment group and
+\eqn{f_1/(1 - f_0)} of the control group. These are the sharp bounds of Imai
+(2008), Proposition 1, building on Zhang and Rubin (2003) and Horowitz and Manski
+(1995). They exist only while \eqn{f_0 + f_1 < 1}; beyond that nothing keeps the
+always-reporter share away from zero, and the estimator says so rather than
+returning a number. Because both arms are trimmed by the same rule, this case has
+no direction to set and is invariant to which arm is called treatment.
 }
 \examples{
 set.seed(343)
@@ -94,15 +139,42 @@ Y[R == 0] <- NA
 df <- data.frame(Y, Z, R)
 
 # Single-stage: trimming bounds under monotonicity, with Lee (2009) standard errors
-estimator_trim(Y, Z, R = R, data = df)
+estimator_trim(Y = Y, Z = Z, R = R, data = df)
 
 # Bootstrap standard errors instead
-estimator_trim(Y, Z, R = R, se = "bootstrap", sims = 200, data = df)
+estimator_trim(Y = Y, Z = Z, R = R, se = "bootstrap", sims = 200, data = df)
+
+# The other direction, on data built the other way round: here treatment
+# lowers response, so the control group holds the extra respondents and is
+# the group trimmed
+R_rev <- rbinom(N, 1, prob = 0.8 - 0.1 * Z)
+Y_rev <- Y_star
+Y_rev[R_rev == 0] <- NA
+df_rev <- data.frame(Y = Y_rev, Z = Z, R = R_rev)
+
+estimator_trim(Y = Y, Z = Z, R = R,
+               monotonicity = "treatment_decreases_response", data = df_rev)
+
+# No direction at all: both groups trimmed, randomization the only assumption.
+# Wider, and available in either design.
+estimator_trim(Y = Y, Z = Z, R = R, monotonicity = "none",
+               se = "bootstrap", sims = 200, data = df)
 }
 \references{
+Horowitz, Joel L., and Charles F. Manski (1995). Identification and Robustness
+with Contaminated and Corrupted Data. \emph{Econometrica} 63(2):281-302.
+
+Imai, Kosuke (2008). Sharp Bounds on the Causal Effects in Randomized Experiments
+with "Truncation-by-Death". \emph{Statistics & Probability Letters} 78(2):144-149.
+
 Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating Sharp
 Bounds on Treatment Effects. \emph{Review of Economic Studies} 76(3):1071-1102.
 
 Tauchmann, Harald (2014). Lee (2009) Treatment-Effect Bounds for Nonrandom
 Sample Selection. \emph{Stata Journal} 14(4):884-894.
+\doi{10.1177/1536867X1401400411}
+
+Zhang, Junni L., and Donald B. Rubin (2003). Estimation of Causal Effects via
+Principal Stratification When Some Outcomes are Truncated by "Death".
+\emph{Journal of Educational and Behavioral Statistics} 28(4):353-368.
 }

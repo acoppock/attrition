@@ -82,4 +82,15 @@ estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 1, data = d
 
 # delta = 0 assumes ignorability among follow-up non-responders
 estimator_ds_sens(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, delta = 0, data = df)
+
+}
+\references{
+Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern (2017).
+Combining Double Sampling and Bounds to Address Nonignorable Missing Outcomes
+in Randomized Experiments. \emph{Political Analysis} 25(2):188-206.
+\doi{10.1017/pan.2016.6}
+
+Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
+Partially Identified Parameters. \emph{Econometrica} 72(6):1845-1857.
+\doi{10.1111/j.1468-0262.2004.00555.x}
 }

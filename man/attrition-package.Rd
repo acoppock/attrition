@@ -56,7 +56,7 @@ and a formula interface for use with \pkg{DeclareDesign}.
 
 \code{vignette("attrition")} walks through the design and all five estimators
 on the replication data in \code{\link{levendusky_replication}}, reproducing the published
-table as it goes.
+table as it goes and drawing the imputation the worst-case bounds average over.
 }
 
 \references{
@@ -65,11 +65,42 @@ Combining Double Sampling and Bounds to Address Nonignorable Missing Outcomes
 in Randomized Experiments. \emph{Political Analysis} 25(2):188-206.
 \doi{10.1017/pan.2016.6}
 
+Hansen, Morris H., and William N. Hurwitz (1946). The Problem of Non-Response in
+Sample Surveys. \emph{Journal of the American Statistical Association}
+41(236):517-529. \doi{10.1080/01621459.1946.10501894}
+
+Horowitz, Joel L., and Charles F. Manski (1995). Identification and Robustness
+with Contaminated and Corrupted Data. \emph{Econometrica} 63(2):281-302.
+\doi{10.2307/2951627}
+
+Imai, Kosuke (2008). Sharp Bounds on the Causal Effects in Randomized Experiments
+with "Truncation-by-Death". \emph{Statistics & Probability Letters} 78(2):144-149.
+\doi{10.1016/j.spl.2007.05.015}
+
 Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
 Partially Identified Parameters. \emph{Econometrica} 72(6):1845-1857.
+\doi{10.1111/j.1468-0262.2004.00555.x}
 
 Lee, David S. (2009). Training, Wages, and Sample Selection: Estimating Sharp
 Bounds on Treatment Effects. \emph{Review of Economic Studies} 76(3):1071-1102.
+\doi{10.1111/j.1467-937X.2009.00536.x}
+
+Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
+\emph{American Economic Review Papers and Proceedings} 80(2):319-323.
+
+Miratrix, Luke W., Jasjeet S. Sekhon, and Bin Yu (2013). Adjusting Treatment
+Effect Estimates by Post-Stratification in Randomized Experiments.
+\emph{Journal of the Royal Statistical Society, Series B} 75(2):369-396.
+\doi{10.1111/j.1467-9868.2012.01048.x}
+
+Neyman, Jerzy (1938). Contribution to the Theory of Sampling Human Populations.
+\emph{Journal of the American Statistical Association} 33(201):101-116.
+\doi{10.1080/01621459.1938.10503378}
+
+Zhang, Junni L., and Donald B. Rubin (2003). Estimation of Causal Effects via
+Principal Stratification When Some Outcomes are Truncated by "Death".
+\emph{Journal of Educational and Behavioral Statistics} 28(4):353-368.
+\doi{10.3102/10769986028004353}
 }
 \seealso{
 Useful links:

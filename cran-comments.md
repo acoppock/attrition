@@ -43,12 +43,12 @@ the titles of the works cited in the Description.
 
 ## Suggested packages
 
-The second vignette, "Drawing the extreme value bounds", uses vayr and estimatr,
-both in Suggests. Its chunks are guarded on both packages being available and on
-vayr being at least 1.1.0, the version that added the two functions it calls, so
-the vignette builds either way. On both win-builder rounds the guard passed and
-the figure rendered, which was confirmed by finding the embedded PNG in
-doc/drawing-the-bounds.html inside the built binary rather than by assuming it.
+The vignette uses vayr and estimatr, both in Suggests, for one figure and the
+checks around it. Those chunks are guarded on both packages being available and
+on vayr being at least 1.1.0, the version that added the function the figure
+calls; every other chunk, including all five estimators, runs either way. The
+false branch of the guard was rendered directly to confirm the document
+completes without them.
 
 ## Reverse dependencies
 

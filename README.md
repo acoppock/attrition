@@ -43,7 +43,7 @@ describe a double sampling design for narrowing the bounds.
 | `estimator_ds()` | The same, plus a random follow-up sample of nonrespondents. |
 | `estimator_ds_sens()` | The same, with ignorability allowed to fail for a fraction `delta` of the follow-up nonrespondents. |
 | `sensitivity_ds()` | A search over `delta` for the point where the interval starts to include zero. |
-| `estimator_trim()` | Treatment moves response in one direction only (Lee 2009). The outcome need not be bounded. |
+| `estimator_trim()` | Treatment moves response in one direction only (Lee 2009), or nothing beyond random assignment (Imai 2008). The outcome need not be bounded. |
 
 The first four take a `strata` argument for poststratification on a
 discrete covariate, which targets the same identification region and
@@ -137,10 +137,9 @@ an endpoint with `term`.
 ## Learning more
 
 `vignette("attrition")` works through the design and all five estimators
-on the shipped data, reproducing the paper’s Table 3 along the way.
-`vignette("drawing-the-bounds")` draws the imputation that
-`estimator_ev()` averages over and checks the picture against the
-estimates.
+on the shipped data, reproducing the paper’s Table 3 along the way. It
+also draws the imputation that `estimator_ev()` averages over and checks
+the picture against the estimates.
 
 ## AI statement
 
@@ -149,7 +148,7 @@ attrition 1.0.0 was prepared by Alexander Coppock working with Claude
 the documentation. The method and the original implementation come from
 Coppock, Gerber, Green, and Kern (2017). The 1.0.0 release rewrote the
 internals, added a formula interface and `tidy()` methods, corrected
-several defects in the earlier code, and wrote both vignettes.
+several defects in the earlier code, and wrote the vignette.
 
 The code base has been reviewed but not written line by line, so the
 guarantee offered is not that every line has been vouched for. It is

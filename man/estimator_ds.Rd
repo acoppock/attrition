@@ -100,3 +100,29 @@ estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, data=df)
 estimator_ds(Y, Z, R1, Attempt, R2, minY=1, maxY=5, strata=strata, data=df)
 
 }
+\references{
+Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern (2017).
+Combining Double Sampling and Bounds to Address Nonignorable Missing Outcomes
+in Randomized Experiments. \emph{Political Analysis} 25(2):188-206.
+\doi{10.1017/pan.2016.6}
+
+Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
+Partially Identified Parameters. \emph{Econometrica} 72(6):1845-1857.
+\doi{10.1111/j.1468-0262.2004.00555.x}
+
+Manski, Charles F. (1990). Nonparametric Bounds on Treatment Effects.
+\emph{American Economic Review Papers and Proceedings} 80(2):319-323.
+
+Neyman, Jerzy (1938). Contribution to the Theory of Sampling Human Populations.
+\emph{Journal of the American Statistical Association} 33(201):101-116.
+\doi{10.1080/01621459.1938.10503378}
+
+Hansen, Morris H., and William N. Hurwitz (1946). The Problem of Non-Response in
+Sample Surveys. \emph{Journal of the American Statistical Association}
+41(236):517-529. \doi{10.1080/01621459.1946.10501894}
+
+Miratrix, Luke W., Jasjeet S. Sekhon, and Bin Yu (2013). Adjusting Treatment
+Effect Estimates by Post-Stratification in Randomized Experiments.
+\emph{Journal of the Royal Statistical Society, Series B} 75(2):369-396.
+\doi{10.1111/j.1467-9868.2012.01048.x}
+}
