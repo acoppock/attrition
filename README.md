@@ -15,29 +15,25 @@ randomized experiments in which some outcomes are missing.
 remotes::install_github("acoppock/attrition")
 ```
 
-## When these estimators apply
+## Estimating bounds when experiments encounter attrition
 
-A randomized experiment has been run and some subjects have no outcome
-recorded. A two-wave survey where part of the sample never comes back
-for the second wave. A field experiment whose endline cannot reach
-everyone. A study where the outcome exists only for subjects who cleared
-an earlier hurdle, as wages do for the subset who found work.
+Attrition occurs when some subjects do not report outcomes or
+measurements are not recorded for some units. Attrition can happen in
+many settings, including:
 
-Each estimator reports the range of average treatment effects consistent
-with the data. Which one fits depends on what researchers are able to
-assume about the subjects they did not observe:
+- A two-wave survey experiment in which part of the sample never comes
+  back for the second wave.
+- A field experiment in which enumerators cannot recontact some
+  participants after treatment has been allocated.
+- More unusual situations, such as a study in which the outcome exists
+  only for subjects who cleared an earlier hurdle, like wages for the
+  subset who found work.
 
-- The outcome has a known minimum and maximum, such as a 0 to 6 scale, a
-  binary indicator, or a bounded index: `estimator_ev()`.
-- The same, and a random sample of the nonrespondents was pursued in a
-  second round: `estimator_ds()`, which is what the paper is about.
-- No minimum and maximum can be fixed, but treatment can be assumed to
-  have only raised a subject’s chance of responding, never lowered it:
-  `estimator_trim()`.
-- The double-sampling design was run, and the question is what fraction
-  of the follow-up nonrespondents would have to violate ignorability
-  before the finding stops holding: `estimator_ds_sens()` and
-  `sensitivity_ds()`.
+Under attrition, naive estimators are biased for the average treatment
+effect. Chapter 7 of Gerber and Green (2012) gives a textbook
+introduction to the problem and to the bounding approaches implemented
+in the `attrition` package. Coppock, Gerber, Green, and Kern (2017)
+describe a double sampling design for narrowing the bounds.
 
 ## The estimators at a glance
 
@@ -55,34 +51,12 @@ estimates it more precisely; `estimator_trim()` does not. All five have
 `tidy()` methods and a formula interface for use with
 [DeclareDesign](https://declaredesign.org).
 
-## When a double-sampling design is worth running
-
-The decision belongs before fielding, because the design is the part
-that does the work. Double sampling is worth planning whenever
-substantial attrition is expected and the nonrespondents could be
-reached by spending more on them than the first round spent: a larger
-incentive, more callbacks, an in-person visit, a switch from web to
-phone.
-
-The procedure is to close the first round, draw a random sample of
-whoever did not respond, and pursue that sample hard. Drawing at random
-is what makes the recovered outcomes stand in for every nonrespondent
-rather than for the subset who happen to be easy to reach, so only the
-subjects who refuse twice remain unknown.
-
-The budget for it belongs to design rather than to analysis. A larger
-initial sample buys precision and does nothing about attrition; a
-follow-up sample reduces the attrition bias directly.
-
-## What double sampling buys
+## Example
 
 The package ships the replication study from the paper as
 `levendusky_replication`: a two-wave survey experiment in which 1,980
 subjects were asked about perceived polarization, and 536 of them did
-not answer the second wave. A third condition read nothing on the topic
-and is not analyzed, which is what the subset below removes: `Z1` is
-defined only for the two conditions being compared, so filtering on its
-missingness drops the unused group and nothing else.
+not answer the second wave.
 
 Refusing any assumption about the missing outcomes gives worst-case
 bounds. Because the outcome runs from 0 to 6, filling every missing
@@ -91,9 +65,9 @@ the data can support, and reversing the fills gives the highest.
 
 ``` r
 library(attrition)
-dat <- droplevels(subset(levendusky_replication, !is.na(Z1)))
 
-estimator_ev(L_dif_w2, Z1, R1, minY = 0, maxY = 6, data = dat)
+estimator_ev(Y_polarization_w2, Z, R1,
+             minY = 0, maxY = 6, data = levendusky_replication)
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
 #>        -1.53914         1.70967         0.07899         0.07673        -1.66908 
 #>       conf.high 
@@ -114,7 +88,8 @@ sample of the nonrespondents, their outcomes stand in for all 536, and
 only the 28 who refused twice still need worst-case treatment.
 
 ``` r
-estimator_ds(L_dif_w2, Z1, R1, Attempt, R2, minY = 0, maxY = 6, data = dat)
+estimator_ds(Y_polarization_w2, Z, R1, Attempt, R2,
+             minY = 0, maxY = 6, data = levendusky_replication)
 #>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
 #>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
 #>       conf.high 
@@ -126,16 +101,23 @@ wide to 0.91.
 
 ## Reading the output
 
-Every estimator returns the same six named elements: `estimate_lower`
-and `estimate_upper`, the two ends of the identification region;
-`std.error_lower` and `std.error_upper`, their standard errors; and
-`conf.low` and `conf.high`, the joint Imbens-Manski interval. Those are
-broom’s names, and `tidy()` returns the same six quantities as a data
-frame under the same names.
+Every estimator returns the same six named elements, under broom’s
+names, and every one has a `tidy()` method:
+
+- the two ends of the identification region: `estimate_lower` and
+  `estimate_upper`
+- their standard errors: `std.error_lower` and `std.error_upper`
+- the joint Imbens-Manski interval: `conf.low` and `conf.high`
 
 ``` r
-tidy(estimator_ds(L_dif_w2 ~ Z1, R1 = "R1", Attempt = "Attempt", R2 = "R2",
-                  minY = 0, maxY = 6, data = dat))
+fit <- 
+  estimator_ds(Y_polarization_w2 ~ Z, 
+               R1 = "R1", 
+               Attempt = "Attempt", 
+               R2 = "R2",
+               minY = 0, maxY = 6, 
+               data = levendusky_replication)
+tidy(fit)
 #> # A tibble: 3 × 10
 #>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
 #>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
@@ -186,6 +168,9 @@ Coppock, Alexander, Alan S. Gerber, Donald P. Green, and Holger L. Kern
 (2017). Combining Double Sampling and Bounds to Address Nonignorable
 Missing Outcomes in Randomized Experiments. *Political Analysis*
 25(2):188-206. <https://doi.org/10.1017/pan.2016.6>
+
+Gerber, Alan S., and Donald P. Green (2012). *Field Experiments: Design,
+Analysis, and Interpretation*. New York: W. W. Norton.
 
 Imbens, Guido W., and Charles F. Manski (2004). Confidence Intervals for
 Partially Identified Parameters. *Econometrica* 72(6):1845-1857.

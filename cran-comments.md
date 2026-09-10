@@ -2,14 +2,20 @@
 
 ## Test environments
 
-* macOS 26.6.2 (local), R 4.6.0
+* macOS 26.6.2 (local), R 4.6.0, on the submitted tarball
 * GitHub Actions, all passing, tests FAIL 0 | WARN 0 | SKIP 0 | PASS 278 on each:
   * macOS-latest (release)
   * Windows-latest (release)
   * Ubuntu-latest (R-devel, release, oldrel-1)
-* win-builder, x86_64-w64-mingw32, both Status: 1 NOTE (the note below):
+* win-builder, x86_64-w64-mingw32, 2026-09-08, both Status: 1 NOTE (the note below):
   * R Under development (unstable) (2026-09-08 r90509 ucrt)
   * R 4.6.1 (2026-06-24 ucrt)
+
+The win-builder rounds checked the build of 2026-09-08. What changed after them
+is the shipped dataset and the documentation describing it: `levendusky_replication`
+now holds only the polarized-versus-moderate contrast the paper analyzes, under
+column names that say what each column holds. Nothing under R/ changed, and the
+test suite holds every estimator to the same published quantities as before.
 
 ## R CMD check results
 

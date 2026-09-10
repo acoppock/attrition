@@ -5,3 +5,9 @@ notes/
 README.html
 .claude/
 docs/
+
+# Downloaded copies of the replication archive, refetched on demand
+data-raw/cache/
+
+# macOS system file
+.DS_Store

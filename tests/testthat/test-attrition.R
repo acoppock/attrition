@@ -13,9 +13,8 @@ library(testthat)
 # more accurate of the two.
 
 test_that("estimator_ev matches Table 3 column 1 (no double sampling)", {
-  dat <- subset(levendusky_replication, !is.na(Z1))
-  out <- estimator_ev(Y = L_dif_w2, Z = Z1, R = R1,
-                      minY = 0, maxY = 6, data = dat)
+  out <- estimator_ev(Y = Y_polarization_w2, Z = Z, R = R1,
+                      minY = 0, maxY = 6, data = levendusky_replication)
   expect_equal(unname(out["conf.low"]), -1.66907903885775,   tolerance = 1e-10)
   expect_equal(unname(out["conf.high"]),  1.83588114554598,   tolerance = 1e-10)
   expect_equal(unname(out["estimate_lower"]), -1.53914496339566,    tolerance = 1e-10)
@@ -25,10 +24,9 @@ test_that("estimator_ev matches Table 3 column 1 (no double sampling)", {
 })
 
 test_that("estimator_ds matches Table 3 column 2 (double sampling)", {
-  dat <- subset(levendusky_replication, !is.na(Z1))
-  out <- estimator_ds(Y = L_dif_w2, Z = Z1, R1 = R1,
+  out <- estimator_ds(Y = Y_polarization_w2, Z = Z, R1 = R1,
                       Attempt = Attempt, R2 = R2,
-                      minY = 0, maxY = 6, data = dat)
+                      minY = 0, maxY = 6, data = levendusky_replication)
   expect_equal(unname(out["conf.low"]), -0.52830967410789,  tolerance = 1e-10)
   expect_equal(unname(out["conf.high"]),  0.745174826433894,  tolerance = 1e-10)
   expect_equal(unname(out["estimate_lower"]), -0.34174537662934,    tolerance = 1e-10)
@@ -38,11 +36,10 @@ test_that("estimator_ds matches Table 3 column 2 (double sampling)", {
 })
 
 test_that("estimator_ds matches Table 3 column 3 (DS + poststratification)", {
-  dat <- subset(levendusky_replication, !is.na(Z1))
-  out <- estimator_ds(Y = L_dif_w2, Z = Z1, R1 = R1,
+  out <- estimator_ds(Y = Y_polarization_w2, Z = Z, R1 = R1,
                       Attempt = Attempt, R2 = R2,
-                      strata = pid_3_recoded,
-                      minY = 0, maxY = 6, data = dat)
+                      strata = X_party_id,
+                      minY = 0, maxY = 6, data = levendusky_replication)
   expect_equal(unname(out["conf.low"]), -0.529010551320638,  tolerance = 1e-10)
   expect_equal(unname(out["conf.high"]),  0.696600307023322,  tolerance = 1e-10)
   expect_equal(unname(out["estimate_lower"]), -0.344389910863888,   tolerance = 1e-10)
@@ -244,9 +241,8 @@ test_that("output classes are set correctly", {
 # ── Additional paper benchmarks ──────────────────────────────────────────────
 
 test_that("estimator_ev with strata (paper data)", {
-  dat <- subset(levendusky_replication, !is.na(Z1))
-  out <- estimator_ev(Y = L_dif_w2, Z = Z1, R = R1, strata = pid_3_recoded,
-                      minY = 0, maxY = 6, data = dat)
+  out <- estimator_ev(Y = Y_polarization_w2, Z = Z, R = R1, strata = X_party_id,
+                      minY = 0, maxY = 6, data = levendusky_replication)
   expect_equal(unname(out["conf.low"]), -1.66862420646393,  tolerance = 1e-10)
   expect_equal(unname(out["conf.high"]),  1.83541087616497,  tolerance = 1e-10)
   expect_equal(unname(out["estimate_lower"]), -1.53858804710012,   tolerance = 1e-10)
@@ -256,35 +252,31 @@ test_that("estimator_ev with strata (paper data)", {
 })
 
 test_that("estimator_trim DS path (paper data)", {
-  dat <- subset(levendusky_replication, !is.na(Z1))
-  out <- estimator_trim(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
-                        se = "none", data = dat)
+  out <- estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                        se = "none", data = levendusky_replication)
   expect_equal(unname(out["estimate_upper"]),  0.567599031583528,  tolerance = 1e-10)
   expect_equal(unname(out["estimate_lower"]), -0.268142333620083,  tolerance = 1e-10)
 })
 
 test_that("estimator_trim R path returns NA bounds on monotonicity violation (paper data)", {
-  dat <- subset(levendusky_replication, !is.na(Z1))
   # Control group has slightly higher attrition than treatment → violation
-  out <- estimator_trim(Y = L_dif_w2, Z = Z1, R = R1, data = dat)
+  out <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, data = levendusky_replication)
   expect_s3_class(out, "attrition_trim")
   expect_true(is.na(out["estimate_lower"]))
   expect_true(is.na(out["estimate_upper"]))
 })
 
 test_that("estimator_ds_sens(delta=1) exactly matches estimator_ds (paper data)", {
-  dat <- subset(levendusky_replication, !is.na(Z1))
-  ds   <- estimator_ds(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
-                       minY = 0, maxY = 6, data = dat)
-  sens <- estimator_ds_sens(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
-                            delta = 1, minY = 0, maxY = 6, data = dat)
+  ds   <- estimator_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                       minY = 0, maxY = 6, data = levendusky_replication)
+  sens <- estimator_ds_sens(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                            delta = 1, minY = 0, maxY = 6, data = levendusky_replication)
   expect_equal(as.numeric(ds), as.numeric(sens), tolerance = 1e-14)
 })
 
 test_that("estimator_ds_sens delta=0.5 (paper data)", {
-  dat <- subset(levendusky_replication, !is.na(Z1))
-  out <- estimator_ds_sens(Y = L_dif_w2, Z = Z1, R1 = R1, Attempt = Attempt, R2 = R2,
-                           delta = 0.5, minY = 0, maxY = 6, data = dat)
+  out <- estimator_ds_sens(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                           delta = 0.5, minY = 0, maxY = 6, data = levendusky_replication)
   expect_equal(unname(out["conf.low"]), -0.263141039257175,  tolerance = 1e-10)
   expect_equal(unname(out["conf.high"]),  0.527330963282511,  tolerance = 1e-10)
   expect_equal(unname(out["estimate_lower"]), -0.0916157282335379,  tolerance = 1e-10)
