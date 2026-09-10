@@ -3,7 +3,7 @@
 ## Test environments
 
 * macOS 26.6.2 (local), R 4.6.0, on the submitted tarball
-* GitHub Actions, all passing on the 2026-09-09 build; the local suite on the current build is FAIL 0 | WARN 0 | SKIP 0 | PASS 625:
+* GitHub Actions, all five passing on the submitted commit at FAIL 0 | WARN 0 | SKIP 0 | PASS 625:
   * macOS-latest (release)
   * Windows-latest (release)
   * Ubuntu-latest (R-devel, release, oldrel-1)
