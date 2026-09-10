@@ -2,5 +2,5 @@
 
 ### All vignettes
 
-- [Bounding treatment effects when subjects go
-  missing](https://alexandercoppock.com/attrition/articles/attrition.md):
+- [Bounding treatment effects when experiments encounter
+  attrition](https://alexandercoppock.com/attrition/articles/attrition.md):

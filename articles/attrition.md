@@ -1,31 +1,19 @@
-# Bounding treatment effects when subjects go missing
+# Bounding treatment effects when experiments encounter attrition
 
 ``` r
 
 library(attrition)
 library(ggplot2)
 library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 library(purrr)
-```
-
-``` r
-
 library(vayr)
 library(estimatr)
 ```
 
 This vignette works through a two-wave survey experiment in which 536 of
 1,980 subjects did not report an outcome. The example is the replication
-study from Coppock, Gerber, Green, and Kern (2017), which ships with the
-package as `levendusky_replication`.
+study from Coppock, Gerber, Green, and Kern (2017, hereafter CGGK),
+which ships with the package as `levendusky_replication`.
 
 We work through the extreme value bounds without double sampling and how
 the extreme value bounds change with the second round data collection.
@@ -146,8 +134,6 @@ bound_means <-
 
 ``` r
 
-# Labelled in the left panel only. The colours carry over to the right one, and
-# a second copy of the same two words would just be more ink.
 label_df <-
   bounded |>
   distinct(scenario, imputed) |>
@@ -186,11 +172,6 @@ moderate group, which is the least favorable arrangement the data admit.
 The right panel reverses them. The black points are the arm means either
 way, and the gap between them within a panel is that panel’s bound.
 
-Those gaps are the estimates, not an illustration of them. A difference
-in means run inside each panel recovers both bound estimates exactly,
-because filling in the missing outcomes and averaging is all the
-estimator does to reach its point estimates.
-
 ``` r
 
 bounded |>
@@ -205,12 +186,13 @@ bounded |>
 #> 2 Upper bound                1.71
 ```
 
-The confidence interval is not drawn twice the same way. The tempting
-move is to put an ordinary interval around each panel’s difference in
-means and take the outermost endpoints, which is wider than it needs to
-be. The Imbens-Manski interval covers the true effect with probability
-0.95 rather than covering the whole identified set, and it uses the fact
-that the effect cannot sit at both ends at once.
+While it might be intuitive to use the endpoints of the 95% confidence
+intervals around the lower and upper estimate to generate a 95%
+confidence interval for the bounds themselves, that procedure exhibits
+greater than nominal coverage. The Imbens-Manski interval covers the
+true effect with probability 0.95 rather than covering the whole
+identified set, and it uses the fact that the effect cannot sit at both
+ends at once.
 
 ``` r
 
@@ -243,12 +225,13 @@ bind_rows(
 
 ## Double sampling
 
-The design is Neyman’s (1938), turned on survey nonresponse by Hansen
-and Hurwitz (1946). After the initial round of data collection, a random
-sample of the nonrespondents was drawn and pursued with more effort. In
-this study, 50 nonrespondents were drawn at random from each condition
-and offered \$4.00 instead of the original \$1.00. Of those 100
-subjects, 72 answered.
+The original double sampling design was developed in Neyman (1938) and
+was applied to survey nonresponse by Hansen and Hurwitz (1946). CGGK
+applies the idea to randomized experiments: after the initial round of
+data collection, a random sample of the nonrespondents was drawn and
+pursued with more effort. In this study, 50 nonrespondents were drawn at
+random from each condition and offered \$4.00 instead of the original
+\$1.00. Of those 100 subjects, 72 answered.
 
 ``` r
 
@@ -360,11 +343,11 @@ estimator_ds_sens(Y = Y_polarization_w2,
 #>         0.52733
 ```
 
-`sensitivity_ds` sweeps `delta` from 0 to 1 and looks for delta\*, the
-smallest value at which the confidence interval starts to include zero.
-A delta\* near zero means the finding rests on assuming away nearly all
-of the missingness; a delta\* near one means it survives almost any
-amount.
+`sensitivity_ds` sweeps `delta` from 0 to 1 and looks for $`\delta^*`$,
+the smallest value at which the confidence interval starts to include
+zero. A $`\delta^*`$ near zero means the finding rests on assuming away
+nearly all of the missingness; a $`\delta^*`$ near one means it survives
+almost any amount.
 
 ``` r
 
@@ -396,14 +379,14 @@ worst case at `delta = 1`. The two lines are the lower and upper bound
 estimates, which coincide at the left edge, where the estimator returns
 a point, and separate as more of the follow-up nonrespondents are left
 unmodeled. The shaded band is the confidence interval around them, and
-delta\* is marked at the point where that band first reaches the dashed
-line at zero.
+$`\delta^*`$ is marked at the point where that band first reaches the
+dashed line at zero.
 
-At the 10 percent level, delta\* is 0.07. The naive result is fragile:
-allowing ignorability to fail for 7 percent of the follow-up
+At the 10 percent level, $`\delta^*`$ is 0.07. The naive result is
+fragile: allowing ignorability to fail for 7 percent of the follow-up
 nonrespondents is enough to erase it. At the 5 percent level there is no
-delta\* at all, because the interval around the naive estimate already
-includes zero, and `delta_star` is `NA`.
+$`\delta^*`$ at all, because the interval around the naive estimate
+already includes zero, and `delta_star` is `NA`.
 
 ``` r
 
@@ -425,16 +408,21 @@ Trimming bounds (Lee, 2009) bracket the effect among subjects who would
 respond in either condition, the so-called “always reporters.” The
 classic version runs on monotonicity: treatment moves response in one
 direction only. If treatment can only make subjects more likely to
-respond, never less, then every control respondent is an always
-reporter, the extra respondents treatment produced are a known fraction
-of the treated respondents, and trimming that fraction off either tail
-of the treated distribution bounds the effect among the always
-reporters.
+respond, never less, then no subject reports under control but not under
+treatment, so every control subject who reported is an always reporter.
+The treated subjects who reported are a mix of always reporters and
+subjects whom treatment induced to report, and the share of the second
+group is the difference in response rates divided by the treated
+response rate. Trimming that share off either tail of the treated
+outcome distribution bounds the effect among the always reporters.
 
-Monotonicity has a direction, and the estimator has to be told which one
-it is. The two directions are not two ways of writing the same
-assumption. Each names a different group as the always reporters and
-trims the other, so they give different bounds on the same data.
+The `monotonicity` argument of `estimator_trim` sets the direction.
+Under `"treatment_increases_response"`, the control subjects who
+reported are the always reporters and the treatment group gets trimmed.
+Under `"treatment_decreases_response"`, the roles flip: the treated
+subjects who reported are the always reporters and the control group
+gets trimmed. The same data give different bounds under the two
+settings.
 
 ``` r
 
@@ -458,16 +446,22 @@ direction they leave open.
 
 ``` r
 
-estimator_trim(Y = Y_polarization_w2,
-               Z = Z,
-               R = R1,
-               data = levendusky_replication)[c("estimate_lower", "estimate_upper")]
+tidy(estimator_trim(Y = Y_polarization_w2,
+                    Z = Z,
+                    R = R1,
+                    data = levendusky_replication))
 #> Warning: Monotonicity is violated in the direction assumed: the control group
 #> responded at the higher rate, so the trimming proportion is negative and every
 #> bound is NA. Setting monotonicity = "treatment_decreases_response" assumes the
 #> direction the response rates do admit.
-#> estimate_lower estimate_upper 
-#>             NA             NA
+#> # A tibble: 3 × 10
+#>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
+#>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
+#> 1 bounds           NA        NA       NA        NA             NA             NA
+#> 2 lower_bou…       NA        NA       NA        NA             NA             NA
+#> 3 upper_bou…       NA        NA       NA        NA             NA             NA
+#> # ℹ 3 more variables: std.error_lower <dbl>, std.error_upper <dbl>,
+#> #   outcome <chr>
 ```
 
 Assuming instead that the polarized article can only have lowered
@@ -476,42 +470,47 @@ runs.
 
 ``` r
 
-estimator_trim(Y = Y_polarization_w2,
-               Z = Z,
-               R = R1,
-               monotonicity = "treatment_decreases_response",
-               data = levendusky_replication)[c("estimate_lower", "estimate_upper")]
-#> estimate_lower estimate_upper 
-#>        0.07884        0.16344
+tidy(estimator_trim(Y = Y_polarization_w2,
+                    Z = Z,
+                    R = R1,
+                    monotonicity = "treatment_decreases_response",
+                    data = levendusky_replication))
+#> # A tibble: 3 × 10
+#>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
+#>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
+#> 1 bounds      NA        NA       -0.0949     0.326         0.0788          0.163
+#> 2 lower_bou…   0.0788    0.102   NA         NA            NA              NA    
+#> 3 upper_bou…   0.163     0.0954  NA         NA            NA              NA    
+#> # ℹ 3 more variables: std.error_lower <dbl>, std.error_upper <dbl>,
+#> #   outcome <chr>
 ```
 
 The bounds are 0.08 to 0.16, far narrower than anything above, because
-only 1.5 percent of control respondents get trimmed. Narrow bounds
-bought this way are worth reading carefully. The response rates did not
-choose the direction and cannot: a gap of 0.011 between two rates
-estimated on about a thousand subjects each is well inside sampling
-noise, and even a large gap would be a consequence of the assumption
-rather than evidence for it. Monotonicity is a claim about how the
-article affected the decision to answer, and it holds or fails whatever
-the two rates happen to be.
+only 1.5 percent of the control subjects who reported get trimmed.
+Narrow bounds bought this way are worth reading carefully. The response
+rates did not choose the direction and cannot: a gap of 0.011 between
+two rates estimated on about a thousand subjects each is well inside
+sampling noise, and even a large gap would be a consequence of the
+assumption rather than evidence for it. Monotonicity is a claim about
+how the article affected the decision to answer, and it holds or fails
+whatever the two rates happen to be.
 
 ### Dropping monotonicity
 
-`monotonicity = "none"` refuses the direction as well, and assumes only
-that treatment was randomly assigned. What survives is a lower bound on
-how many always reporters there can be: at least a share 1 - f0 - f1 of
-the sample, where fz is the missingness rate in arm z, since two events
-covering 1 - f0 and 1 - f1 of the sample must overlap by at least that
-much. Each arm is then trimmed by the largest share of its own
-respondents that could fail to be always reporters, f0/(1 - f1) of the
-treatment group and f1/(1 - f0) of the control group. Those are the
-sharp bounds of Imai (2008, Proposition 1), which build on Zhang and
-Rubin (2003) and Horowitz and Manski (1995). Since both arms are trimmed
-by the same rule, this version has no direction to set, and it exists
-only while f0 + f1 is below 1.
+Setting `monotonicity = "none"` makes no assumption about the effect of
+treatment on response, but nevertheless generates trimmed bounds around
+the effect for always reporters. Each arm is trimmed by the largest
+share of its own reporting subjects that could fail to be always
+reporters: f0/(1 - f1) of the treatment group and f1/(1 - f0) of the
+control group, where f0 and f1 are the missingness rates in the control
+and treatment arms. Those are the sharp bounds of Imai (2008,
+Proposition 1), which build on Zhang and Rubin (2003) and Horowitz and
+Manski (1995). Since both arms are trimmed by the same rule, this
+version has no direction to set, and it exists only while f0 + f1 is
+below 1.
 
-The assumption and the design are separate choices, so there are four
-estimators here rather than two, and `estimator_trim` reaches all four.
+`estimator_trim` can handle either assumption about monotonicity and
+designs with and without double sampling.
 
 ``` r
 
@@ -534,19 +533,18 @@ cells <- list(
                    se = "none", data = levendusky_replication)
 )
 
-tibble(
-  cell = names(cells),
-  lower = map_dbl(cells, "estimate_lower"),
-  upper = map_dbl(cells, "estimate_upper"),
-  width = upper - lower
-)
+cells |>
+  map(tidy) |>
+  list_rbind(names_to = "cell") |>
+  filter(term == "bounds") |>
+  transmute(cell, estimate_lower, estimate_upper, width = estimate_upper - estimate_lower)
 #> # A tibble: 4 × 4
-#>   cell                               lower upper  width
-#>   <chr>                              <dbl> <dbl>  <dbl>
-#> 1 single sample, monotonicity       0.0788 0.163 0.0846
-#> 2 single sample, no monotonicity   -1.36   1.62  2.98  
-#> 3 double sampling, monotonicity     0.0327 0.243 0.210 
-#> 4 double sampling, no monotonicity -0.268  0.568 0.836
+#>   cell                             estimate_lower estimate_upper  width
+#>   <chr>                                     <dbl>          <dbl>  <dbl>
+#> 1 single sample, monotonicity              0.0788          0.163 0.0846
+#> 2 single sample, no monotonicity          -1.36            1.62  2.98  
+#> 3 double sampling, monotonicity            0.0327          0.243 0.210 
+#> 4 double sampling, no monotonicity        -0.268           0.568 0.836
 ```
 
 The two narrowing devices are doing different work. Double sampling
@@ -556,8 +554,8 @@ assumption-free bounds go from 2.98 points wide to 0.84. Monotonicity
 narrows by assumption, and it narrows most where there is most left to
 assume about, which is the single sample. Read the rows against each
 other with one caveat: the always reporters are not the same people in
-every row, because who counts as one is part of what the assumption
-fixes.
+every row, because which subjects count as always reporters depends on
+the monotonicity assumption.
 
 ### Standard errors
 
@@ -574,18 +572,22 @@ is an error rather than a silent substitution.
 ``` r
 
 set.seed(343)
-estimator_trim(Y = Y_polarization_w2,
-               Z = Z,
-               R1 = R1,
-               Attempt = Attempt,
-               R2 = R2,
-               se = "bootstrap",
-               sims = 500,
-               data = levendusky_replication)[
-                 c("estimate_lower", "estimate_upper",
-                   "std.error_lower", "std.error_upper")]
-#>  estimate_lower  estimate_upper std.error_lower std.error_upper 
-#>         -0.2681          0.5676          0.1044          0.1058
+tidy(estimator_trim(Y = Y_polarization_w2,
+                    Z = Z,
+                    R1 = R1,
+                    Attempt = Attempt,
+                    R2 = R2,
+                    se = "bootstrap",
+                    sims = 500,
+                    data = levendusky_replication))
+#> # A tibble: 3 × 10
+#>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
+#>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
+#> 1 bounds       NA        NA       -0.440     0.742         -0.268          0.568
+#> 2 lower_bou…   -0.268     0.104   NA        NA             NA             NA    
+#> 3 upper_bou…    0.568     0.106   NA        NA             NA             NA    
+#> # ℹ 3 more variables: std.error_lower <dbl>, std.error_upper <dbl>,
+#> #   outcome <chr>
 ```
 
 ## Reading the output
@@ -658,33 +660,7 @@ estimator_ds(Y = Y_polarization_w2 ~ Z,
 #>          0.7452
 ```
 
-## What the design costs and what it buys
-
-Double sampling is not free. Someone has to find the nonrespondents and
-pay them more, and the budget for that effort competes with the budget
-for a larger initial sample. The trade is usually worth making, because
-a larger initial sample does nothing about attrition bias while a
-follow-up sample reduces it directly. In this study the initial-sample
-confidence interval was 3.50 points wide and no realistic increase in
-sample size would have narrowed it much, since almost all of that width
-came from the 536 unknown outcomes rather than from sampling error. A
-follow-up on 100 of them narrowed it to 1.27, and poststratification to
-1.23.
-
-The design decision that remains open is how to split a fixed budget
-between the initial sample and the follow-up, and it depends on
-quantities not known until the data are in: the response rate in each
-round, the outcome variance among respondents and nonrespondents, and
-the relative cost of a first and second contact. Coppock, Gerber, Green,
-and Kern (2017) sketch the optimization; the package does not yet
-implement it.
-
 ## All of the estimators at once
-
-Nine estimates have gone past, and they do not all estimate the same
-thing. Two questions separate them. *Whose* effect is it: everyone who
-took Wave 1, or only the subjects who would have reported either way, or
-only the ones who did report? And *what is assumed* to get there?
 
 | Estimator | Estimand | Assumption |
 |----|----|----|
@@ -693,10 +669,10 @@ only the ones who did report? And *what is assumed* to get there?
 | Extreme value, double sampled | Effect among all 1,980 | The above, plus a random follow-up sample |
 | Extreme value, double sampled, poststratified | Effect among all 1,980 | The above; party identification only sharpens the estimate |
 | Sensitivity at delta = 0.5 | Effect among all 1,980 | The above, plus ignorability for half the follow-up nonrespondents |
-| Trimming, monotonicity | Effect among always reporters | The article never raised the chance of responding |
-| Trimming, monotonicity, double sampled | Effect among always reporters | The above, plus a random follow-up sample |
-| Trimming, no monotonicity | Effect among always reporters | Random assignment only |
-| Trimming, no monotonicity, double sampled | Effect among always reporters | Random assignment plus a random follow-up sample |
+| Trimming, monotonicity | Effect among low-effort always reporters | The article never raised the chance of responding |
+| Trimming, monotonicity, double sampled | Effect among low- and high-effort always reporters | The above, plus a random follow-up sample |
+| Trimming, no monotonicity | Effect among low-effort always reporters | Random assignment only |
+| Trimming, no monotonicity, double sampled | Effect among low- and high-effort always reporters | Random assignment plus a random follow-up sample |
 
 The figure below shortens “double sampled” to DS.
 
@@ -815,13 +791,6 @@ The trimming rows sit in a third panel because they describe the always
 reporters, a subgroup whose membership shifts with the assumption used
 to bound it, which is why a narrow trimming interval and a wide extreme
 value interval are not evidence about each other.
-
-One detail visible only in the console: the bootstrap for the
-double-sampled trimming row discards the resamples in which the response
-rates cross over and monotonicity fails in the assumed direction. A gap
-of 0.011 between the two rates is small enough that this happens often,
-and the standard error is computed from the replicates that survived.
-The direction is an assumption these data are in no position to support.
 
 ## References
 
