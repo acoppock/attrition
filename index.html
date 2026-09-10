@@ -57,7 +57,11 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
+<p>Install the released version from CRAN:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"attrition"</span><span class="op">)</span></span></code></pre></div>
+<p>Or the development version from GitHub:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"acoppock/attrition"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -114,47 +118,34 @@
 </h2>
 <p>The package ships the replication study from the paper as <code>levendusky_replication</code>: a two-wave survey experiment in which 1,980 subjects were asked about perceived polarization, and 536 of them did not answer the second wave.</p>
 <p>Refusing any assumption about the missing outcomes gives worst-case bounds. Because the outcome runs from 0 to 6, filling every missing value in one group with 0 and the other with 6 gives the lowest effect the data can support, and reversing the fills gives the highest.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://alexandercoppock.com/attrition/">attrition</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>,</span>
-<span>             minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
-<span><span class="co">#&gt;        -1.53914         1.70967         0.07899         0.07673        -1.66908 </span></span>
-<span><span class="co">#&gt;       conf.high </span></span>
-<span><span class="co">#&gt;         1.83588</span></span></code></pre></div>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="reference/estimator_ev.html">estimator_ev</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>                  Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>                  R <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                  minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                  maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                  data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 10</span></span>
+<span><span class="co">#&gt;   term       estimate std.error conf.low conf.high estimate_lower estimate_upper</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;         &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 bounds        NA      NA         -1.67      1.84          -1.54           1.71</span></span>
+<span><span class="co">#&gt; 2 lower_bou…    -1.54    0.0790    NA        NA             NA             NA   </span></span>
+<span><span class="co">#&gt; 3 upper_bou…     1.71    0.0767    NA        NA             NA             NA   </span></span>
+<span><span class="co">#&gt; # ℹ 3 more variables: std.error_lower &lt;dbl&gt;, std.error_upper &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   outcome &lt;chr&gt;</span></span></code></pre></div>
 <p>The effect lies somewhere between -1.54 and 1.71, which is honest and nearly useless. Little of that width is sampling error: the confidence interval is barely wider than the bounds. A larger sample would not have helped, because the problem is 536 unknown outcomes rather than noise.</p>
 <p>Double sampling addresses the unknown outcomes directly. After the first round of data collection, a random sample of the nonrespondents is drawn and pursued with more effort than the first attempt. Here, 50 nonrespondents per condition were offered $4.00 rather than the original $1.00, and 72 of those 100 answered. Because they are a random sample of the nonrespondents, their outcomes stand in for all 536, and only the 28 who refused twice still need worst-case treatment.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span>, <span class="va">Z</span>, <span class="va">R1</span>, <span class="va">Attempt</span>, <span class="va">R2</span>,</span>
-<span>             minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low </span></span>
-<span><span class="co">#&gt;         -0.3417          0.5718          0.1134          0.1054         -0.5283 </span></span>
-<span><span class="co">#&gt;       conf.high </span></span>
-<span><span class="co">#&gt;          0.7452</span></span></code></pre></div>
-<p>The identification region shrinks by a factor of 3.6, from 3.25 points wide to 0.91.</p>
-</div>
-<div class="section level2">
-<h2 id="reading-the-output">Reading the output<a class="anchor" aria-label="anchor" href="#reading-the-output"></a>
-</h2>
-<p>Every estimator returns the same six named elements, under broom’s names, and every one has a <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> method:</p>
-<ul>
-<li>the two ends of the identification region: <code>estimate_lower</code> and <code>estimate_upper</code>
-</li>
-<li>their standard errors: <code>std.error_lower</code> and <code>std.error_upper</code>
-</li>
-<li>the joint Imbens-Manski interval: <code>conf.low</code> and <code>conf.high</code>
-</li>
-</ul>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> </span>
-<span>  <span class="fu"><a href="reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span><span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span>, </span>
-<span>               R1 <span class="op">=</span> <span class="st">"R1"</span>, </span>
-<span>               Attempt <span class="op">=</span> <span class="st">"Attempt"</span>, </span>
-<span>               R2 <span class="op">=</span> <span class="st">"R2"</span>,</span>
-<span>               minY <span class="op">=</span> <span class="fl">0</span>, maxY <span class="op">=</span> <span class="fl">6</span>, </span>
-<span>               data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="fu"><a href="reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
+<span>                  Z <span class="op">=</span> <span class="va">Z</span>,</span>
+<span>                  R1 <span class="op">=</span> <span class="va">R1</span>,</span>
+<span>                  Attempt <span class="op">=</span> <span class="va">Attempt</span>,</span>
+<span>                  R2 <span class="op">=</span> <span class="va">R2</span>,</span>
+<span>                  minY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                  maxY <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                  data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 3 × 10</span></span>
 <span><span class="co">#&gt;   term       estimate std.error conf.low conf.high estimate_lower estimate_upper</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;         &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;</span></span>
@@ -163,7 +154,7 @@
 <span><span class="co">#&gt; 3 upper_bou…    0.572     0.105   NA        NA             NA             NA    </span></span>
 <span><span class="co">#&gt; # ℹ 3 more variables: std.error_lower &lt;dbl&gt;, std.error_upper &lt;dbl&gt;,</span></span>
 <span><span class="co">#&gt; #   outcome &lt;chr&gt;</span></span></code></pre></div>
-<p>Bounds have no single point estimate, so <code>estimate</code> is <code>NA</code> on the <code>bounds</code> row, which carries the whole vector across its columns. The two rows below split it, one endpoint each, so <code>estimate</code> and <code>std.error</code> mean there what broom means by them and <code>declare_estimator()</code> can select an endpoint with <code>term</code>.</p>
+<p>The identification region shrinks by a factor of 3.6, from 3.25 points wide to 0.91.</p>
 </div>
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
@@ -173,7 +164,7 @@
 <div class="section level2">
 <h2 id="ai-statement">AI statement<a class="anchor" aria-label="anchor" href="#ai-statement"></a>
 </h2>
-<p>attrition 1.0.0 was prepared by Alexander Coppock working with Claude (Anthropic), across the rewrite of the estimators, the test suite and the documentation. The method and the original implementation come from Coppock, Gerber, Green, and Kern (2017). The 1.0.0 release rewrote the internals, added a formula interface and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> methods, corrected several defects in the earlier code, and wrote the vignette.</p>
+<p>attrition 1.0.0 was prepared by Alexander Coppock working with Claude (Anthropic), across the rewrite of the estimators, the test suite, and the documentation. The method and the original implementation come from Coppock, Gerber, Green, and Kern (2017). The 1.0.0 release rewrote the internals, added a formula interface and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> methods, corrected several defects in the earlier code, and wrote the vignette.</p>
 <p>The code base has been reviewed but not written line by line, so the guarantee offered is not that every line has been vouched for. It is that the package reproduces the published analysis it implements. <code><a href="articles/attrition.html">vignette("attrition")</a></code> reproduces Table 3 of the paper, and the test suite holds each estimator to the published quantities, which have not changed. The analytic variance added to <code><a href="reference/estimator_trim.html">estimator_trim()</a></code> was checked three ways: against the algebraically distinct form in Tauchmann’s Stata <code>leebounds</code>, against the Monte Carlo standard deviation of the estimator across sample sizes from 1,000 to 64,000, and by the coverage of a conventional interval around each bound endpoint.</p>
 </div>
 <div class="section level2">
