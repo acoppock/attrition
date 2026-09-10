@@ -55,7 +55,13 @@ A list with three elements: \code{sensitivity_plot}, a ggplot object;
   confidence interval already contains zero at delta = 0.
 }
 \description{
-This function performs a line search over values of delta, the sensitivity parameter, in order to find (if it exists) delta*, the value of delta where the confidence interval no longer includes zero.
+Searches over \code{delta}, the sensitivity parameter of
+\code{\link{estimator_ds_sens}}, for delta*: the smallest value at which the
+confidence interval starts to include zero. A delta* near zero means the
+finding rests on assuming away nearly all of the missingness; a delta* near
+one means it survives almost any amount. Returns the search, a plot of it, and
+delta* itself, which is \code{NA} when the interval already includes zero
+under ignorability.
 }
 \examples{
 set.seed(343)

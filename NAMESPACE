@@ -2,6 +2,8 @@
 
 S3method(print,attrition_bounds)
 S3method(print,attrition_trim)
+S3method(summary,attrition_bounds)
+S3method(summary,attrition_trim)
 S3method(tidy,attrition_bounds)
 S3method(tidy,attrition_trim)
 export(estimator_ds)

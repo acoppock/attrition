@@ -83,7 +83,13 @@ A named numeric vector leading with the same six elements as the
   \code{\link[=tidy.attrition_trim]{tidy()}} for a data frame.
 }
 \description{
-Trimming Bounds
+Bounds the average treatment effect among the subjects who would report an
+outcome under either assignment, the always-reporters, by trimming a tail of
+the arm with respondents to spare. The outcome need not be bounded, which is
+what distinguishes this from \code{\link{estimator_ev}}. Two separate choices
+shape the estimate: which response arguments are supplied picks the design,
+and \code{monotonicity} picks the selection assumption, which decides which
+arm is trimmed and by how much.
 }
 \details{
 The analytic variance has four contributions: the variance of the retained

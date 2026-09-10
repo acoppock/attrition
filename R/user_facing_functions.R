@@ -1,5 +1,12 @@
 #' Extreme Value Bounds with Double Sampling
 #'
+#' Bounds the average treatment effect when some outcomes are missing and a
+#' random sample of the initial nonrespondents was pursued a second time. Because
+#' that sample was drawn at random, the outcomes it recovers estimate the mean
+#' outcome among all nonrespondents, so only the subjects who refused twice need
+#' worst-case treatment and the identification region narrows accordingly.
+#' Reports the region with a joint Imbens-Manski confidence interval.
+#'
 #' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
 #'   for use with \code{declare_estimator(.method = estimator_ds)}. Must be numeric.
 #' @param Z The (unquoted) assignment indicator variable. Must be numeric and take values 0 or 1.
@@ -150,7 +157,7 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
                                 p1_c=p1_c,p2_c=p2_c,
                                 minY=minY,maxY=maxY,alpha=alpha)
     return(structure(cis_out, class = c("attrition_ds", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome))
+                   alpha = alpha, outcome = yz$outcome))
   }else{
     # With a stratification variable, estimate within each stratum by calling
     # this function recursively, then poststratify.
@@ -169,12 +176,19 @@ estimator_ds <- function(Y, Z, R1, Attempt, R2, minY, maxY, strata = NULL, alpha
 
     out <- pool_strata(strata_ests, proportions, alpha)
     return(structure(out, class = c("attrition_ds", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome))
+                   alpha = alpha, strata = TRUE, outcome = yz$outcome))
   }
 }
 
 
 #' Extreme Value (Manski) Bounds
+#'
+#' Bounds the average treatment effect when some outcomes are missing and nothing
+#' is assumed about why. Filling every missing outcome in the treatment group
+#' with the lowest value the outcome can take and every missing outcome in the
+#' control group with the highest gives the smallest average effect the data can
+#' support; reversing the fills gives the largest. Reports the resulting
+#' identification region with a joint Imbens-Manski confidence interval.
 #'
 #' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
 #'   for use with \code{declare_estimator(.method = estimator_ev)}. Must be numeric.
@@ -268,7 +282,7 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
                           minY = minY, maxY = maxY, alpha = alpha)
 
     return(structure(cis_out, class = c("attrition_ev", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome))
+                   alpha = alpha, outcome = yz$outcome))
   }else{
     # With a stratification variable, estimate within each stratum by calling
     # this function recursively, then poststratify.
@@ -287,12 +301,20 @@ estimator_ev <- function(Y, Z, R, minY, maxY, strata = NULL, alpha = 0.05, data)
 
     out <- pool_strata(strata_ests, proportions, alpha)
     return(structure(out, class = c("attrition_ev", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome))
+                   alpha = alpha, strata = TRUE, outcome = yz$outcome))
   }
 
 }
 
 #' Trimming Bounds
+#'
+#' Bounds the average treatment effect among the subjects who would report an
+#' outcome under either assignment, the always-reporters, by trimming a tail of
+#' the arm with respondents to spare. The outcome need not be bounded, which is
+#' what distinguishes this from \code{\link{estimator_ev}}. Two separate choices
+#' shape the estimate: which response arguments are supplied picks the design,
+#' and \code{monotonicity} picks the selection assumption, which decides which
+#' arm is trimmed and by how much.
 #'
 #' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
 #'   for use with \code{declare_estimator(.method = estimator_trim)}. Must be numeric.
@@ -551,7 +573,9 @@ estimator_trim <-
               "and every bound is NA. Setting monotonicity = \"",
               if (flip) "treatment_increases_response" else "treatment_decreases_response",
               "\" assumes the direction the response rates do admit.", call. = FALSE)
-      return(structure(na_trim, outcome = yz$outcome))
+      return(structure(na_trim, se_method = se, single_stage = single_stage,
+                       monotonicity = monotonicity, alpha = alpha,
+                       outcome = yz$outcome))
     }
 
     variances <- c(lower_var = NA_real_, upper_var = NA_real_)
@@ -596,13 +620,19 @@ estimator_trim <-
     out <- c(core, out[!names(out) %in% c("lower_bound", "upper_bound")])
     return(structure(out, class = c("attrition_trim", "numeric"),
                      se_method = se, single_stage = single_stage,
-                     monotonicity = monotonicity, outcome = yz$outcome))
+                     monotonicity = monotonicity, alpha = alpha,
+                     outcome = yz$outcome))
   }
 
 
 #' Extreme Value Bounds with Double Sampling with Sensitivity
 #'
-#' This function yields extreme value bounds under the assumption that the outcomes of 1-delta of the missing second-round units are ignorable, that is, that they are drawn from an unknown distribution with mean and variance equal to the observed second-round groups.
+#' Interpolates between worst-case bounds and ignorability. \code{delta} is the
+#' fraction of the follow-up nonrespondents whose outcomes are left unmodelled;
+#' the remaining 1 - \code{delta} are assumed to be drawn from a distribution
+#' with the mean and variance observed among the follow-up respondents. At
+#' \code{delta = 1} the estimator reproduces \code{\link{estimator_ds}}, and at
+#' \code{delta = 0} it returns a point estimate.
 #'
 #' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}
 #'   for use with \code{declare_estimator(.method = estimator_ds_sens)}. Must be numeric.
@@ -720,7 +750,7 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
                                      p1_c=p1_c,p2_c=p2_c,
                                      minY=minY,maxY=maxY,alpha=alpha, delta = delta)
     return(structure(cis_out, class = c("attrition_ds_sens", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome))
+                   alpha = alpha, delta = delta, outcome = yz$outcome))
   }else{
     # With a stratification variable, estimate within each stratum by calling
     # this function recursively, then poststratify.
@@ -739,14 +769,20 @@ estimator_ds_sens <- function(Y, Z, R1, Attempt, R2, minY, maxY, delta, strata =
 
     out <- pool_strata(strata_ests, proportions, alpha)
     return(structure(out, class = c("attrition_ds_sens", "attrition_bounds", "numeric"),
-                   outcome = yz$outcome))
+                   alpha = alpha, delta = delta, strata = TRUE, outcome = yz$outcome))
   }
 }
 
 
 #' Sensitivity Analysis
 #'
-#' This function performs a line search over values of delta, the sensitivity parameter, in order to find (if it exists) delta*, the value of delta where the confidence interval no longer includes zero.
+#' Searches over \code{delta}, the sensitivity parameter of
+#' \code{\link{estimator_ds_sens}}, for delta*: the smallest value at which the
+#' confidence interval starts to include zero. A delta* near zero means the
+#' finding rests on assuming away nearly all of the missingness; a delta* near
+#' one means it survives almost any amount. Returns the search, a plot of it, and
+#' delta* itself, which is \code{NA} when the interval already includes zero
+#' under ignorability.
 #'
 #' @param Y The (unquoted) outcome variable, or a formula \code{outcome ~ treatment}.
 #'   Must be numeric.

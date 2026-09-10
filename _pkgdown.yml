@@ -64,6 +64,8 @@ reference:
     contents:
       - tidy.attrition_bounds
       - tidy.attrition_trim
+      - summary.attrition_bounds
+      - summary.attrition_trim
       - print.attrition_bounds
       - print.attrition_trim
       - reexports

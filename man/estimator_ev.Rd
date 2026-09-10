@@ -37,7 +37,12 @@ A named numeric vector with elements \code{estimate_lower} and
   quantities as a data frame.
 }
 \description{
-Extreme Value (Manski) Bounds
+Bounds the average treatment effect when some outcomes are missing and nothing
+is assumed about why. Filling every missing outcome in the treatment group
+with the lowest value the outcome can take and every missing outcome in the
+control group with the highest gives the smallest average effect the data can
+support; reversing the fills gives the largest. Reports the resulting
+identification region with a joint Imbens-Manski confidence interval.
 }
 \examples{
 set.seed(343)

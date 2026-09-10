@@ -1086,3 +1086,354 @@ test_that("sensitivity_ds with strata returns correct structure", {
   expect_named(out, c("sensitivity_plot", "sims_df", "delta_star"))
   expect_equal(nrow(out$sims_df), 10L)
 })
+
+# ── Coverage of the surface added with the four trimming cells ───────────────
+
+test_that("the print methods show the quantities and return invisibly", {
+  bounds <- estimator_ev(Y = Y_polarization_w2, Z = Z, R = R1,
+                         minY = 0, maxY = 6, data = levendusky_replication)
+  trim <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                         monotonicity = "treatment_decreases_response",
+                         se = "none", data = levendusky_replication)
+
+  expect_output(print(bounds), "estimate_lower")
+  expect_output(print(bounds), "conf.high")
+  expect_output(print(trim), "estimate_lower")
+  expect_output(print(trim), "Out1_mono")
+
+  # The class vector is what the methods exist to keep out of the output
+  expect_false(any(grepl("attrition_bounds", capture.output(print(bounds)))))
+  expect_false(any(grepl("attrition_trim", capture.output(print(trim)))))
+
+  invisible(capture.output({
+    vis <- withVisible(print(bounds))$visible
+    val <- withVisible(print(trim))$value
+  }))
+  expect_false(vis)
+  expect_equal(unname(val), unname(trim))
+})
+
+test_that("tidy returns the same six quantities in every trimming cell", {
+  d <- levendusky_replication
+  # A thin resample can violate monotonicity, which is warned about and asserted
+  # where the bootstrap itself is under test
+  cells <- suppressWarnings(list(
+    estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                   monotonicity = "treatment_decreases_response", data = d),
+    estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, monotonicity = "none",
+                   se = "bootstrap", sims = 50, data = d),
+    estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                   monotonicity = "treatment_decreases_response",
+                   se = "bootstrap", sims = 50, data = d),
+    estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                   se = "bootstrap", sims = 50, data = d)
+  ))
+  for (out in cells) {
+    td <- tidy(out)
+    expect_equal(td$term, c("bounds", "lower_bound", "upper_bound"))
+    expect_equal(td$estimate[2], unname(out["estimate_lower"]))
+    expect_equal(td$estimate[3], unname(out["estimate_upper"]))
+    expect_equal(td$conf.low[1], unname(out["conf.low"]))
+    expect_equal(unique(td$outcome), "Y_polarization_w2")
+    expect_true(is.na(td$estimate[1]))
+  }
+})
+
+test_that("the formula interface carries the monotonicity argument", {
+  d <- levendusky_replication
+  nse <- estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                        monotonicity = "treatment_decreases_response",
+                        se = "none", data = d)
+  frm <- estimator_trim(Y_polarization_w2 ~ Z, R = "R1",
+                        monotonicity = "treatment_decreases_response",
+                        se = "none", data = d)
+  expect_equal(as.numeric(nse), as.numeric(frm))
+
+  none_frm <- estimator_trim(Y_polarization_w2 ~ Z, R = "R1", monotonicity = "none",
+                             se = "none", data = d)
+  expect_equal(unname(none_frm["estimate_lower"]),
+               unname(estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                                     monotonicity = "none", se = "none",
+                                     data = d)["estimate_lower"]))
+})
+
+test_that("an unrecognised monotonicity value is rejected", {
+  expect_error(
+    estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, monotonicity = "increases",
+                   se = "none", data = levendusky_replication),
+    "should be one of"
+  )
+})
+
+test_that("double sampling under monotonicity relabels its intermediates correctly", {
+  d <- levendusky_replication
+  out <- estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                        monotonicity = "treatment_decreases_response",
+                        se = "none", data = d)
+
+  # Rebuild the follow-up weights and the kept set by hand
+  w <- rep(NA_real_, nrow(d))
+  w[d$R1 == 1] <- 1
+  w[d$Attempt == 1 & d$Z == 1] <- sum(d$Z == 1 & d$R1 == 0)/sum(d$Z == 1 & d$Attempt == 1)
+  w[d$Attempt == 1 & d$Z == 0] <- sum(d$Z == 0 & d$R1 == 0)/sum(d$Z == 0 & d$Attempt == 1)
+  keep <- d$R1 == 1 | d$Attempt == 1
+  fail <- d$R1 == 0 & d$R2 == 0
+
+  # Under this direction the treatment arm is the untrimmed one
+  treated_obs <- keep & !fail & d$Z == 1
+  expect_equal(unname(out["Out1_mono"]),
+               weighted.mean(d$Y_polarization_w2[treated_obs], w[treated_obs]))
+
+  # f1 and f0 name the arm they came from, not the relabelled one
+  f1 <- sum(w[keep & fail & d$Z == 1])/sum(w[keep & d$Z == 1])
+  f0 <- sum(w[keep & fail & d$Z == 0])/sum(w[keep & d$Z == 0])
+  expect_equal(unname(out["f1"]), f1)
+  expect_equal(unname(out["f0"]), f0)
+  expect_equal(unname(out["pi_r_1"]), 1 - f1)
+  expect_equal(unname(out["Q"]), ((1 - f0) - (1 - f1))/(1 - f0))
+
+  # The two trimmed control means bracket the untrimmed one
+  expect_lt(unname(out["Out0U_mono"]), unname(out["Out0L_mono"]))
+})
+
+test_that("the no-monotonicity branch also refuses a trimming proportion it cannot fill", {
+  # Missingness of 0.25 and 0.5 leaves the Frechet bound positive, so the bounds
+  # are defined, but trimming half of two control respondents from the bottom
+  # keeps nothing
+  df <- data.frame(
+    Y = c(1, 2, 3, 4, 5, 6, 7, 8),
+    Z = c(1, 1, 1, 1, 0, 0, 0, 0),
+    R = c(1, 1, 1, 0, 1, 1, 0, 0)
+  )
+  expect_error(
+    estimator_trim(Y, Z, R = R, monotonicity = "none", se = "none", data = df),
+    "leaves nothing behind"
+  )
+})
+
+# ── Input validation that had no test ────────────────────────────────────────
+
+test_that("every estimator checks its response indicators", {
+  df <- make_synthetic()
+  bad <- df; bad$R2[1] <- 2
+  expect_error(estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = bad), "R2")
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, delta = 1, minY = 1, maxY = 5, data = bad), "R2")
+  expect_error(sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 3, data = bad), "R2")
+  expect_error(estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                              se = "none", data = bad), "R2")
+
+  bad2 <- df; bad2$Attempt[1] <- 2
+  expect_error(estimator_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, data = bad2), "Attempt")
+  expect_error(estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                              se = "none", data = bad2), "Attempt")
+
+  bad3 <- df; bad3$R1[1] <- 2
+  expect_error(estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                              se = "none", data = bad3), "R1")
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, delta = 1, minY = 1, maxY = 5, data = bad3), "R1")
+  expect_error(sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 3, data = bad3), "R1")
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, delta = 1, minY = 1, maxY = 5, data = bad2), "Attempt")
+  expect_error(sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 3, data = bad2), "Attempt")
+
+  bad4 <- df; bad4$Z[1] <- 2
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, delta = 1, minY = 1, maxY = 5, data = bad4), "zero or one")
+  expect_error(sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 3, data = bad4), "zero or one")
+
+  bad5 <- df; bad5$Y <- as.character(bad5$Y)
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, delta = 1, minY = 1, maxY = 5, data = bad5), "numeric")
+  expect_error(sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5, sims = 3, data = bad5), "numeric")
+})
+
+test_that("estimator_trim needs one complete set of response arguments", {
+  df <- make_synthetic()
+  expect_error(estimator_trim(Y, Z, R1 = R1, Attempt = Attempt, se = "none", data = df),
+               "Supply either R")
+  expect_error(estimator_trim(Y, Z, R1 = R1, se = "none", data = df), "Supply either R")
+})
+
+test_that("estimator_trim validates the bootstrap replicate count", {
+  df <- make_synthetic()
+  expect_error(estimator_trim(Y, Z, R = R1, se = "bootstrap", sims = 1, data = df), "at least two")
+  expect_error(estimator_trim(Y, Z, R = R1, se = "bootstrap", sims = "many", data = df), "at least two")
+})
+
+test_that("a stratification variable may not be missing", {
+  df <- make_synthetic()
+  df$strata[3] <- NA
+  expect_error(estimator_ds(Y, Z, R1, Attempt, R2, strata = strata,
+                            minY = 1, maxY = 5, data = df), "missing values")
+})
+
+test_that("the formula interface reports a column it cannot find", {
+  df <- make_synthetic()
+  expect_error(estimator_ev(Y ~ Z, R = ~not_a_column, minY = 1, maxY = 5, data = df),
+               "was not found in the data")
+  expect_error(estimator_ev(Y ~ Z, R = ~ R1 + Z, minY = 1, maxY = 5, data = df),
+               "exactly one column")
+  expect_error(attrition:::parse_yz_formula("Y ~ Z", df),
+               "must be a formula or an unquoted column name")
+})
+
+test_that("validate_support checks the significance level", {
+  df <- make_synthetic()
+  expect_error(estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = c(0.05, 0.1), data = df),
+               "single number")
+  expect_error(estimator_ev(Y, Z, R1, minY = 1, maxY = 5, alpha = 0, data = df),
+               "strictly between zero and one")
+})
+
+test_that("the Imbens-Manski critical value is NA when a variance is", {
+  expect_true(is.na(attrition:::im_critical_value(0, 1, NA_real_, NA_real_, 0.05)))
+})
+
+test_that("the sensitivity estimators check delta, alpha and their strata", {
+  df <- make_synthetic()
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, delta = c(0.1, 0.2),
+                                 minY = 1, maxY = 5, data = df), "single number")
+  expect_error(estimator_trim(Y, Z, R = R1, alpha = c(0.05, 0.1), se = "none", data = df),
+               "single number")
+
+  df$strata[3] <- NA
+  expect_error(estimator_ds_sens(Y, Z, R1, Attempt, R2, delta = 1, strata = strata,
+                                 minY = 1, maxY = 5, data = df), "missing values")
+})
+
+test_that("a bootstrap that never produces bounds fails rather than reporting nothing", {
+  expect_error(
+    attrition:::bootstrap_trim_variance(function(idx) stop("no bounds here"),
+                                        Z = rep(0:1, each = 10), sims = 5),
+    "fewer than two replicates"
+  )
+})
+
+# ── Post-estimation methods, on every class the package returns ──────────────
+
+# One fitted object per class, plus the trimming cells, so tidy(), print() and
+# summary() are exercised on all of them rather than on a representative
+all_fits <- function() {
+  d <- levendusky_replication
+  suppressWarnings(list(
+    ev = estimator_ev(Y = Y_polarization_w2, Z = Z, R = R1,
+                      minY = 0, maxY = 6, data = d),
+    ev_strata = estimator_ev(Y = Y_polarization_w2, Z = Z, R = R1, strata = X_party_id,
+                             minY = 0, maxY = 6, data = d),
+    ds = estimator_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                      minY = 0, maxY = 6, data = d),
+    ds_strata = estimator_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt,
+                             R2 = R2, strata = X_party_id, minY = 0, maxY = 6, data = d),
+    ds_sens = estimator_ds_sens(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt,
+                                R2 = R2, delta = 0.5, minY = 0, maxY = 6, data = d),
+    trim_mono = estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                               monotonicity = "treatment_decreases_response", data = d),
+    trim_none = estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1, monotonicity = "none",
+                               se = "bootstrap", sims = 50, data = d),
+    trim_ds_mono = estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt,
+                                  R2 = R2, monotonicity = "treatment_decreases_response",
+                                  se = "bootstrap", sims = 50, data = d),
+    trim_ds_none = estimator_trim(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt,
+                                  R2 = R2, se = "bootstrap", sims = 50, data = d),
+    trim_violated = estimator_trim(Y = Y_polarization_w2, Z = Z, R = R1,
+                                   se = "none", data = d)
+  ))
+}
+
+test_that("tidy returns the same shape for every class", {
+  for (fit in all_fits()) {
+    td <- tidy(fit)
+    expect_s3_class(td, "tbl_df")
+    expect_equal(nrow(td), 3L)
+    expect_equal(td$term, c("bounds", "lower_bound", "upper_bound"))
+    expect_equal(names(td),
+                 c("term", "estimate", "std.error", "conf.low", "conf.high",
+                   "estimate_lower", "estimate_upper", "std.error_lower",
+                   "std.error_upper", "outcome"))
+    expect_equal(unique(td$outcome), "Y_polarization_w2")
+    expect_true(is.na(td$estimate[1]))
+    expect_equal(td$estimate[2:3],
+                 unname(c(fit["estimate_lower"], fit["estimate_upper"])))
+  }
+})
+
+test_that("print shows the vector and returns it invisibly for every class", {
+  for (fit in all_fits()) {
+    expect_output(print(fit), "estimate_lower")
+    expect_false(any(grepl("attr\\(", capture.output(print(fit)))))
+    invisible(capture.output(res <- withVisible(print(fit))))
+    expect_false(res$visible)
+    expect_equal(unname(res$value), unname(fit))
+  }
+})
+
+test_that("summary names the estimand and the assumptions for every class", {
+  for (fit in all_fits()) {
+    out <- capture.output(summary(fit))
+    expect_true(any(grepl("Estimand:", out)))
+    expect_true(any(grepl("Y_polarization_w2", out)))
+    expect_true(any(grepl("Assum", out)))
+    # The numbers are labelled rather than pooled the way summary.default pools them
+    expect_false(any(grepl("Median|1st Qu", out)))
+    # and it hands back the tidy frame rather than printing it twice
+    invisible(capture.output(res <- withVisible(summary(fit))))
+    expect_false(res$visible)
+    expect_equal(res$value, tidy(fit))
+  }
+})
+
+test_that("summary reports the design, the direction and what was trimmed", {
+  fits <- all_fits()
+
+  mono <- capture.output(summary(fits$trim_mono))
+  expect_true(any(grepl("single sample", mono)))
+  expect_true(any(grepl("never raised the chance of responding", mono)))
+  expect_true(any(grepl("1.5% of the control group", mono)))
+  expect_true(any(grepl("analytic \\(Lee 2009", mono)))
+
+  ds_none <- capture.output(summary(fits$trim_ds_none))
+  expect_true(any(grepl("double sampling", ds_none)))
+  expect_true(any(grepl("random assignment alone", ds_none)))
+  expect_true(any(grepl("of the treatment group and .* of the control group", ds_none)))
+  expect_true(any(grepl("bootstrap", ds_none)))
+
+  violated <- capture.output(summary(fits$trim_violated))
+  expect_true(any(grepl("No bounds", violated)))
+  expect_true(any(grepl("never lowered the chance of responding", violated)))
+})
+
+test_that("summary reports the confidence level actually used", {
+  d <- levendusky_replication
+  ninety <- estimator_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                         minY = 0, maxY = 6, alpha = 0.10, data = d)
+  expect_true(any(grepl("90% Imbens-Manski", capture.output(summary(ninety)))))
+  expect_equal(attr(ninety, "alpha"), 0.10)
+
+  ninetyfive <- estimator_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt,
+                             R2 = R2, minY = 0, maxY = 6, data = d)
+  expect_true(any(grepl("95% Imbens-Manski", capture.output(summary(ninetyfive)))))
+})
+
+test_that("summary of a sensitivity fit reports delta and the poststratification", {
+  d <- levendusky_replication
+  sens <- estimator_ds_sens(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt,
+                            R2 = R2, delta = 0.5, minY = 0, maxY = 6, data = d)
+  out <- capture.output(summary(sens))
+  expect_true(any(grepl("delta = 0.5", out)))
+  expect_true(any(grepl("ignorability for 50", out)))
+
+  ps <- estimator_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                     strata = X_party_id, minY = 0, maxY = 6, data = d)
+  expect_true(any(grepl("Poststratified", capture.output(summary(ps)))))
+  expect_false(any(grepl("Poststratified",
+                         capture.output(summary(estimator_ds(
+                           Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt,
+                           R2 = R2, minY = 0, maxY = 6, data = d))))))
+})
+
+test_that("sensitivity_ds returns its three pieces", {
+  d <- levendusky_replication
+  sens <- sensitivity_ds(Y = Y_polarization_w2, Z = Z, R1 = R1, Attempt = Attempt, R2 = R2,
+                         minY = 0, maxY = 6, sims = 5, alpha = 0.10, data = d)
+  expect_named(sens, c("sensitivity_plot", "sims_df", "delta_star"))
+  expect_s3_class(sens$sensitivity_plot, "ggplot")
+  expect_equal(nrow(sens$sims_df), 5L)
+  expect_true(is.numeric(sens$delta_star))
+})

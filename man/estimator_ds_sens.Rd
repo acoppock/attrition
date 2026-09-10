@@ -56,7 +56,12 @@ A named numeric vector with elements \code{estimate_lower} and
   quantities as a data frame.
 }
 \description{
-This function yields extreme value bounds under the assumption that the outcomes of 1-delta of the missing second-round units are ignorable, that is, that they are drawn from an unknown distribution with mean and variance equal to the observed second-round groups.
+Interpolates between worst-case bounds and ignorability. \code{delta} is the
+fraction of the follow-up nonrespondents whose outcomes are left unmodelled;
+the remaining 1 - \code{delta} are assumed to be drawn from a distribution
+with the mean and variance observed among the follow-up respondents. At
+\code{delta = 1} the estimator reproduces \code{\link{estimator_ds}}, and at
+\code{delta = 0} it returns a point estimate.
 }
 \examples{
 set.seed(343)
