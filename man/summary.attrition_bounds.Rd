@@ -16,7 +16,7 @@
 The [tidy()] data frame, invisibly. The report is printed.
 }
 \description{
-Reports the identification region, its standard errors and the joint
+Reports the identification region, its standard errors, and the joint
 Imbens-Manski interval with a line naming the estimand and the assumptions
 that produced them. Where [print()] shows the returned vector, `summary()`
 says what the numbers are of.

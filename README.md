@@ -10,6 +10,14 @@ randomized experiments in which some outcomes are missing.
 
 ## Installation
 
+Install the released version from CRAN:
+
+``` r
+install.packages("attrition")
+```
+
+Or the development version from GitHub:
+
 ``` r
 # install.packages("remotes")
 remotes::install_github("acoppock/attrition")
@@ -66,12 +74,20 @@ the data can support, and reversing the fills gives the highest.
 ``` r
 library(attrition)
 
-estimator_ev(Y_polarization_w2, Z, R1,
-             minY = 0, maxY = 6, data = levendusky_replication)
-#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
-#>        -1.53914         1.70967         0.07899         0.07673        -1.66908 
-#>       conf.high 
-#>         1.83588
+tidy(estimator_ev(Y = Y_polarization_w2,
+                  Z = Z,
+                  R = R1,
+                  minY = 0,
+                  maxY = 6,
+                  data = levendusky_replication))
+#> # A tibble: 3 × 10
+#>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
+#>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
+#> 1 bounds        NA      NA         -1.67      1.84          -1.54           1.71
+#> 2 lower_bou…    -1.54    0.0790    NA        NA             NA             NA   
+#> 3 upper_bou…     1.71    0.0767    NA        NA             NA             NA   
+#> # ℹ 3 more variables: std.error_lower <dbl>, std.error_upper <dbl>,
+#> #   outcome <chr>
 ```
 
 The effect lies somewhere between -1.54 and 1.71, which is honest and
@@ -88,36 +104,14 @@ sample of the nonrespondents, their outcomes stand in for all 536, and
 only the 28 who refused twice still need worst-case treatment.
 
 ``` r
-estimator_ds(Y_polarization_w2, Z, R1, Attempt, R2,
-             minY = 0, maxY = 6, data = levendusky_replication)
-#>  estimate_lower  estimate_upper std.error_lower std.error_upper        conf.low 
-#>         -0.3417          0.5718          0.1134          0.1054         -0.5283 
-#>       conf.high 
-#>          0.7452
-```
-
-The identification region shrinks by a factor of 3.6, from 3.25 points
-wide to 0.91.
-
-## Reading the output
-
-Every estimator returns the same six named elements, under broom’s
-names, and every one has a `tidy()` method:
-
-- the two ends of the identification region: `estimate_lower` and
-  `estimate_upper`
-- their standard errors: `std.error_lower` and `std.error_upper`
-- the joint Imbens-Manski interval: `conf.low` and `conf.high`
-
-``` r
-fit <- 
-  estimator_ds(Y_polarization_w2 ~ Z, 
-               R1 = "R1", 
-               Attempt = "Attempt", 
-               R2 = "R2",
-               minY = 0, maxY = 6, 
-               data = levendusky_replication)
-tidy(fit)
+tidy(estimator_ds(Y = Y_polarization_w2,
+                  Z = Z,
+                  R1 = R1,
+                  Attempt = Attempt,
+                  R2 = R2,
+                  minY = 0,
+                  maxY = 6,
+                  data = levendusky_replication))
 #> # A tibble: 3 × 10
 #>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
 #>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
@@ -128,11 +122,8 @@ tidy(fit)
 #> #   outcome <chr>
 ```
 
-Bounds have no single point estimate, so `estimate` is `NA` on the
-`bounds` row, which carries the whole vector across its columns. The two
-rows below split it, one endpoint each, so `estimate` and `std.error`
-mean there what broom means by them and `declare_estimator()` can select
-an endpoint with `term`.
+The identification region shrinks by a factor of 3.6, from 3.25 points
+wide to 0.91.
 
 ## Learning more
 
@@ -144,7 +135,7 @@ the picture against the estimates.
 ## AI statement
 
 attrition 1.0.0 was prepared by Alexander Coppock working with Claude
-(Anthropic), across the rewrite of the estimators, the test suite and
+(Anthropic), across the rewrite of the estimators, the test suite, and
 the documentation. The method and the original implementation come from
 Coppock, Gerber, Green, and Kern (2017). The 1.0.0 release rewrote the
 internals, added a formula interface and `tidy()` methods, corrected

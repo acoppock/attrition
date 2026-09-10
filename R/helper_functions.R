@@ -58,7 +58,7 @@ parse_yz_formula <- function(f, data) {
 
 # The three double-sampling response arguments, resolved the same way in every
 # estimator that takes them. The expressions are the caller's substitute()d
-# arguments, so bare column names, strings and one-sided formulas all work.
+# arguments, so bare column names, strings, and one-sided formulas all work.
 resolve_ds_columns <- function(R1_expr, Attempt_expr, R2_expr, data, env) {
   list(R1 = resolve_column(eval(R1_expr, data, env), data),
        Attempt = resolve_column(eval(Attempt_expr, data, env), data),

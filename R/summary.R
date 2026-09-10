@@ -1,6 +1,6 @@
 #' Summarize bounds
 #'
-#' Reports the identification region, its standard errors and the joint
+#' Reports the identification region, its standard errors, and the joint
 #' Imbens-Manski interval with a line naming the estimand and the assumptions
 #' that produced them. Where [print()] shows the returned vector, `summary()`
 #' says what the numbers are of.
@@ -46,7 +46,7 @@ summary.attrition_bounds <- function(object, ...) {
 
 #' Summarize trimming bounds
 #'
-#' Reports the identification region, its standard errors and the joint
+#' Reports the identification region, its standard errors, and the joint
 #' Imbens-Manski interval, together with the design and the selection assumption
 #' that produced them. The two are separate choices in [estimator_trim()] and
 #' both change what the numbers mean, so both are named here.
