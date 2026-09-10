@@ -74,12 +74,13 @@ the data can support, and reversing the fills gives the highest.
 ``` r
 library(attrition)
 
-tidy(estimator_ev(Y = Y_polarization_w2,
-                  Z = Z,
-                  R = R1,
-                  minY = 0,
-                  maxY = 6,
-                  data = levendusky_replication))
+fit_ev <- estimator_ev(Y = Y_polarization_w2,
+                       Z = Z,
+                       R = R1,
+                       minY = 0,
+                       maxY = 6,
+                       data = levendusky_replication)
+tidy(fit_ev)
 #> # A tibble: 3 × 10
 #>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
 #>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>
@@ -104,14 +105,15 @@ sample of the nonrespondents, their outcomes stand in for all 536, and
 only the 28 who refused twice still need worst-case treatment.
 
 ``` r
-tidy(estimator_ds(Y = Y_polarization_w2,
-                  Z = Z,
-                  R1 = R1,
-                  Attempt = Attempt,
-                  R2 = R2,
-                  minY = 0,
-                  maxY = 6,
-                  data = levendusky_replication))
+fit_ds <- estimator_ds(Y = Y_polarization_w2,
+                       Z = Z,
+                       R1 = R1,
+                       Attempt = Attempt,
+                       R2 = R2,
+                       minY = 0,
+                       maxY = 6,
+                       data = levendusky_replication)
+tidy(fit_ds)
 #> # A tibble: 3 × 10
 #>   term       estimate std.error conf.low conf.high estimate_lower estimate_upper
 #>   <chr>         <dbl>     <dbl>    <dbl>     <dbl>          <dbl>          <dbl>

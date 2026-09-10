@@ -63,12 +63,13 @@ Refusing any assumption about the missing outcomes gives worst-case bounds. Beca
 ```{r}
 library(attrition)
 
-tidy(estimator_ev(Y = Y_polarization_w2,
-                  Z = Z,
-                  R = R1,
-                  minY = 0,
-                  maxY = 6,
-                  data = levendusky_replication))
+fit_ev <- estimator_ev(Y = Y_polarization_w2,
+                       Z = Z,
+                       R = R1,
+                       minY = 0,
+                       maxY = 6,
+                       data = levendusky_replication)
+tidy(fit_ev)
 ```
 
 The effect lies somewhere between -1.54 and 1.71, which is honest and nearly useless. Little of that width is sampling error: the confidence interval is barely wider than the bounds. A larger sample would not have helped, because the problem is 536 unknown outcomes rather than noise.
@@ -76,14 +77,15 @@ The effect lies somewhere between -1.54 and 1.71, which is honest and nearly use
 Double sampling addresses the unknown outcomes directly. After the first round of data collection, a random sample of the nonrespondents is drawn and pursued with more effort than the first attempt. Here, 50 nonrespondents per condition were offered $4.00 rather than the original $1.00, and 72 of those 100 answered. Because they are a random sample of the nonrespondents, their outcomes stand in for all 536, and only the 28 who refused twice still need worst-case treatment.
 
 ```{r}
-tidy(estimator_ds(Y = Y_polarization_w2,
-                  Z = Z,
-                  R1 = R1,
-                  Attempt = Attempt,
-                  R2 = R2,
-                  minY = 0,
-                  maxY = 6,
-                  data = levendusky_replication))
+fit_ds <- estimator_ds(Y = Y_polarization_w2,
+                       Z = Z,
+                       R1 = R1,
+                       Attempt = Attempt,
+                       R2 = R2,
+                       minY = 0,
+                       maxY = 6,
+                       data = levendusky_replication)
+tidy(fit_ds)
 ```
 
 The identification region shrinks by a factor of 3.6, from 3.25 points wide to 0.91.

@@ -1,5 +1,3 @@
-> **Not ready to submit.** The win-builder rounds below checked the build of 2026-09-08. Code under `R/` has changed since (`estimator_trim()`'s `monotonicity` argument, `summary()` methods, the removal of the `dplyr` and `purrr` dependencies, and the deduplication of the double-sampling internals). Rerun win-builder on the current tarball and replace the dated results below before submitting. Delete this banner when that is done.
-
 # CRAN submission comments for attrition 1.0.0
 
 ## Test environments
@@ -9,8 +7,8 @@
   * macOS-latest (release)
   * Windows-latest (release)
   * Ubuntu-latest (R-devel, release, oldrel-1)
-* win-builder, x86_64-w64-mingw32, 2026-09-08, both Status: 1 NOTE (the note below):
-  * R Under development (unstable) (2026-09-08 r90509 ucrt)
+* win-builder, x86_64-w64-mingw32, on the tarball uploaded 2026-09-10, both Status: 1 NOTE (the note below):
+  * R Under development (unstable) (2026-09-09 r90510 ucrt)
   * R 4.6.1 (2026-06-24 ucrt)
 
 ## R CMD check results
