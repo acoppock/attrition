@@ -67,7 +67,6 @@ arm is trimmed and by how much.</p>
 <span>  R2 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  monotonicity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"treatment_increases_response"</span>, <span class="st">"treatment_decreases_response"</span>,</span>
 <span>    <span class="st">"none"</span><span class="op">)</span>,</span>
-<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  se <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"analytic"</span>, <span class="st">"bootstrap"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  sims <span class="op">=</span> <span class="fl">1000</span>,</span>
@@ -123,10 +122,6 @@ is Lee (2009), and <code>"none"</code> on the double-sampling path, which is wha
 follow-up makes affordable; either default gives way to an explicit value. The
 assumption is the researcher's to make rather than the data's to choose, so
 nothing here picks a direction from the observed response rates.</p></dd>
-
-
-<dt id="arg-strata">strata<a class="anchor" aria-label="anchor" href="#arg-strata"></a></dt>
-<dd><p>Not supported; supplying any value raises an error.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>

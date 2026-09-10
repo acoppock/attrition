@@ -21,7 +21,6 @@ estimator_trim(
   R2 = NULL,
   monotonicity = c("treatment_increases_response", "treatment_decreases_response",
     "none"),
-  strata = NULL,
   alpha = 0.05,
   se = c("analytic", "bootstrap", "none"),
   sims = 1000,
@@ -79,10 +78,6 @@ estimator_trim(
   to an explicit value. The assumption is the researcher's to make
   rather than the data's to choose, so nothing here picks a direction
   from the observed response rates.
-
-- strata:
-
-  Not supported; supplying any value raises an error.
 
 - alpha:
 

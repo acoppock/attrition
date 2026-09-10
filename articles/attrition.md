@@ -379,18 +379,17 @@ sens <-
                  alpha = 0.10,
                  data = levendusky_replication)
 
+sens
+#> Sensitivity analysis on Y_polarization_w2
+#> delta* = 0.071: the 90% confidence interval first includes zero when
+#>   ignorability is dropped for 7.1% of the follow-up nonrespondents.
+#> Components: sensitivity_plot, sims_df (100 values of delta), delta_star
 sens$sensitivity_plot
 ```
 
 ![Identification regions and confidence intervals as a function of the
 sensitivity parameter
 delta](attrition_files/figure-html/unnamed-chunk-14-1.png)
-
-``` r
-
-sens$delta_star
-#> [1] 0.07071
-```
 
 The plot reads left to right, from ignorability at `delta = 0` to the
 worst case at `delta = 1`. The two lines are the lower and upper bound
@@ -669,7 +668,8 @@ follow-up sample reduces it directly. In this study the initial-sample
 confidence interval was 3.50 points wide and no realistic increase in
 sample size would have narrowed it much, since almost all of that width
 came from the 536 unknown outcomes rather than from sampling error. A
-follow-up on 100 of them narrowed it to 1.23.
+follow-up on 100 of them narrowed it to 1.27, and poststratification to
+1.23.
 
 The design decision that remains open is how to split a fixed budget
 between the initial sample and the follow-up, and it depends on

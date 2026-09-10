@@ -43,6 +43,8 @@ expects.
   : Tidy an attrition bounds object
 - [`tidy(`*`<attrition_trim>`*`)`](https://alexandercoppock.com/attrition/reference/tidy.attrition_trim.md)
   : Tidy a trimming bounds object
+- [`tidy(`*`<attrition_sensitivity>`*`)`](https://alexandercoppock.com/attrition/reference/tidy.attrition_sensitivity.md)
+  : Tidy a sensitivity analysis
 - [`summary(`*`<attrition_bounds>`*`)`](https://alexandercoppock.com/attrition/reference/summary.attrition_bounds.md)
   : Summarize bounds
 - [`summary(`*`<attrition_trim>`*`)`](https://alexandercoppock.com/attrition/reference/summary.attrition_trim.md)
@@ -51,6 +53,8 @@ expects.
   : Print bounds
 - [`print(`*`<attrition_trim>`*`)`](https://alexandercoppock.com/attrition/reference/print.attrition_trim.md)
   : Print trimming bounds
+- [`print(`*`<attrition_sensitivity>`*`)`](https://alexandercoppock.com/attrition/reference/print.attrition_sensitivity.md)
+  : Print a sensitivity analysis
 - [`reexports`](https://alexandercoppock.com/attrition/reference/reexports.md)
   [`tidy`](https://alexandercoppock.com/attrition/reference/reexports.md)
   : Objects exported from other packages

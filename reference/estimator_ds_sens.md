@@ -2,7 +2,7 @@
 
 Interpolates between worst-case bounds and ignorability. `delta` is the
 fraction of the follow-up nonrespondents whose outcomes are left
-unmodelled; the remaining 1 - `delta` are assumed to be drawn from a
+unmodeled; the remaining 1 - `delta` are assumed to be drawn from a
 distribution with the mean and variance observed among the follow-up
 respondents. At `delta = 1` the estimator reproduces
 [`estimator_ds`](https://alexandercoppock.com/attrition/reference/estimator_ds.md),
@@ -65,8 +65,8 @@ estimator_ds_sens(
 
 - delta:
 
-  Sensitivity parameter in \[0, 1\]. At delta = 1 (default) worst-case
-  bounds apply; at delta = 0 ignorability holds for all follow-up
+  Sensitivity parameter in \[0, 1\]. At delta = 1 worst-case bounds
+  apply; at delta = 0 ignorability holds for all follow-up
   non-responders.
 
 - strata:
@@ -80,7 +80,8 @@ estimator_ds_sens(
 
 - data:
 
-  A dataframe
+  A dataframe. Must be given by name: `data` is the last argument, so
+  passing it positionally assigns it to another argument.
 
 ## Value
 

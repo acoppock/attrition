@@ -84,11 +84,14 @@ sensitivity_ds(
 
 ## Value
 
-A list with three elements: `sensitivity_plot`, a ggplot object;
-`sims_df`, a data frame of bounds and confidence intervals at each value
-of `delta`; and `delta_star`, a single number giving delta\*, or `NA`
-when no delta\* exists, which happens when the confidence interval
-already contains zero at delta = 0.
+An object of class `"attrition_sensitivity"`: a list with three
+elements, `sensitivity_plot`, a ggplot object; `sims_df`, a data frame
+of bounds and confidence intervals at each value of `delta`; and
+`delta_star`, a single number giving delta\*, or `NA` when no delta\*
+exists, which happens when the confidence interval already contains zero
+at delta = 0. Printing reports delta\*;
+[`tidy()`](https://alexandercoppock.com/attrition/reference/tidy.attrition_sensitivity.md)
+returns `sims_df`.
 
 ## References
 
@@ -121,6 +124,11 @@ df <- data.frame(Y, Z, R1, Attempt, R2)
 
 sens <- sensitivity_ds(Y, Z, R1, Attempt, R2, minY = 1, maxY = 5,
                        sims = 20, data = df)
+sens
+#> Sensitivity analysis on Y
+#> delta* = 1.000: the 95% confidence interval first includes zero when
+#>   ignorability is dropped for 100.0% of the follow-up nonrespondents.
+#> Components: sensitivity_plot, sims_df (20 values of delta), delta_star
 sens$sensitivity_plot
 
 sens$delta_star

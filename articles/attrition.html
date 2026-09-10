@@ -423,11 +423,13 @@ survives almost any amount.</p>
 <span>                 alpha <span class="op">=</span> <span class="fl">0.10</span>,</span>
 <span>                 data <span class="op">=</span> <span class="va">levendusky_replication</span><span class="op">)</span></span>
 <span></span>
+<span><span class="va">sens</span></span>
+<span><span class="co">#&gt; Sensitivity analysis on Y_polarization_w2</span></span>
+<span><span class="co">#&gt; delta* = 0.071: the 90% confidence interval first includes zero when</span></span>
+<span><span class="co">#&gt;   ignorability is dropped for 7.1% of the follow-up nonrespondents.</span></span>
+<span><span class="co">#&gt; Components: sensitivity_plot, sims_df (100 values of delta), delta_star</span></span>
 <span><span class="va">sens</span><span class="op">$</span><span class="va">sensitivity_plot</span></span></code></pre></div>
 <p><img src="attrition_files/figure-html/unnamed-chunk-14-1.png" class="r-plt" alt="Identification regions and confidence intervals as a function of the sensitivity parameter delta" width="672"></p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sens</span><span class="op">$</span><span class="va">delta_star</span></span>
-<span><span class="co">#&gt; [1] 0.07071</span></span></code></pre></div>
 <p>The plot reads left to right, from ignorability at
 <code>delta = 0</code> to the worst case at <code>delta = 1</code>. The
 two lines are the lower and upper bound estimates, which coincide at the
@@ -440,7 +442,7 @@ allowing ignorability to fail for 7 percent of the follow-up
 nonrespondents is enough to erase it. At the 5 percent level there is no
 delta* at all, because the interval around the naive estimate already
 includes zero, and <code>delta_star</code> is <code>NA</code>.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sensitivity_ds.html">sensitivity_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
 <span>               Z <span class="op">=</span> <span class="va">Z</span>,</span>
 <span>               R1 <span class="op">=</span> <span class="va">R1</span>,</span>
@@ -468,7 +470,7 @@ reporters.</p>
 one it is. The two directions are not two ways of writing the same
 assumption. Each names a different group as the always reporters and
 trims the other, so they give different bounds on the same data.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">levendusky_replication</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">Z_condition</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>response_rate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">R1</span><span class="op">)</span><span class="op">)</span></span>
@@ -484,7 +486,7 @@ Lee states, and it implies a trimming proportion that these response
 rates make negative. The estimator returns <code>NA</code> for every
 quantity rather than a number built on an assumption the data
 contradict, and says which direction they leave open.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
 <span>               Z <span class="op">=</span> <span class="va">Z</span>,</span>
 <span>               R <span class="op">=</span> <span class="va">R1</span>,</span>
@@ -498,7 +500,7 @@ contradict, and says which direction they leave open.</p>
 <p>Assuming instead that the polarized article can only have lowered
 response puts the control group in the trimmed role, and the estimator
 runs.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
 <span>               Z <span class="op">=</span> <span class="va">Z</span>,</span>
 <span>               R <span class="op">=</span> <span class="va">R1</span>,</span>
@@ -533,7 +535,7 @@ only while f0 + f1 is below 1.</p>
 <p>The assumption and the design are separate choices, so there are four
 estimators here rather than two, and <code>estimator_trim</code> reaches
 all four.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cells</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="st">"single sample, monotonicity"</span> <span class="op">=</span></span>
 <span>    <span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>, Z <span class="op">=</span> <span class="va">Z</span>, R <span class="op">=</span> <span class="va">R1</span>,</span>
@@ -588,7 +590,7 @@ works everywhere, which is what the other three cells need, and why the
 call below sets a seed: without one the standard errors move a little
 from run to run. Asking for analytic standard errors where they do not
 apply is an error rather than a silent substitution.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">343</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/estimator_trim.html">estimator_trim</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
 <span>               Z <span class="op">=</span> <span class="va">Z</span>,</span>
@@ -609,7 +611,7 @@ apply is an error rather than a silent substitution.</p>
 </h2>
 <p>Every estimator returns a named numeric vector, and every one returns
 the same six elements under the same names.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span>,</span>
 <span>                    Z <span class="op">=</span> <span class="va">Z</span>,</span>
 <span>                    R1 <span class="op">=</span> <span class="va">R1</span>,</span>
@@ -631,7 +633,7 @@ Imbens-Manski interval. Note that the third pair are standard errors
 rather than variances. The names are broom’s, which is the point of
 them: <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> returns the same six quantities in a data
 frame, under exactly the same names.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 10</span></span></span>
 <span><span class="co">#&gt;   term       estimate std.error conf.low conf.high estimate_lower estimate_upper</span></span>
@@ -653,7 +655,7 @@ endpoint with <code>term</code>.</p>
 formula, the remaining columns are named as strings rather than passed
 bare, so <code>R1</code> becomes <code>R1 = "R1"</code>. The interface
 changed, not the argument.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/estimator_ds.html">estimator_ds</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span>,</span>
 <span>             R1 <span class="op">=</span> <span class="st">"R1"</span>,</span>
 <span>             Attempt <span class="op">=</span> <span class="st">"Attempt"</span>,</span>
@@ -677,7 +679,8 @@ a follow-up sample reduces it directly. In this study the initial-sample
 confidence interval was 3.50 points wide and no realistic increase in
 sample size would have narrowed it much, since almost all of that width
 came from the 536 unknown outcomes rather than from sampling error. A
-follow-up on 100 of them narrowed it to 1.23.</p>
+follow-up on 100 of them narrowed it to 1.27, and poststratification to
+1.23.</p>
 <p>The design decision that remains open is how to split a fixed budget
 between the initial sample and the follow-up, and it depends on
 quantities not known until the data are in: the response rate in each
@@ -755,7 +758,7 @@ nonrespondents</td>
 </tbody>
 </table>
 <p>The figure below shortens “double sampled” to DS.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">343</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -825,7 +828,7 @@ nonrespondents</td>
 <span>    estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">estimator</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="va">estimands</span><span class="op">$</span><span class="va">estimator</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    estimand <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">estimand</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">estimands</span><span class="op">$</span><span class="va">estimand</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">gg_df</span>,</span>
 <span>       mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">estimator</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_vline</a></span><span class="op">(</span>xintercept <span class="op">=</span> <span class="fl">0</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>, colour <span class="op">=</span> <span class="st">"grey65"</span><span class="op">)</span> <span class="op">+</span></span>
