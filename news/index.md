@@ -2,6 +2,8 @@
 
 ## attrition 1.0.0
 
+CRAN release: 2026-09-18
+
 First release. The package implements the estimators of Coppock, Gerber,
 Green, and Kern (2017) for randomized experiments with nonignorable
 missing outcomes.

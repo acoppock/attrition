@@ -70,10 +70,10 @@ naive_fit <-
   difference_in_means(formula = Y_polarization_w2 ~ Z,
                       data = filter(levendusky_replication, R1 == 1))
 tidy(naive_fit)
-#>   term estimate std.error statistic p.value conf.low conf.high   df
-#> 1    Z   0.1259   0.06615     1.903 0.05724 -0.00388    0.2557 1439
-#>             outcome
-#> 1 Y_polarization_w2
+#> # A tibble: 1 × 9
+#>   term  estimate std.error statistic p.value conf.low conf.high    df outcome   
+#>   <chr>    <dbl>     <dbl>     <dbl>   <dbl>    <dbl>     <dbl> <dbl> <chr>     
+#> 1 Z        0.126    0.0662      1.90  0.0572 -0.00388     0.256 1439. Y_polariz…
 ```
 
 This estimate is naive in the sense that it only estimates the average

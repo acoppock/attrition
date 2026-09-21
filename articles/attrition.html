@@ -157,10 +157,10 @@ level.</p>
 <span>  <span class="fu"><a href="https://declaredesign.org/r/estimatr/reference/difference_in_means.html" class="external-link">difference_in_means</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">Y_polarization_w2</span> <span class="op">~</span> <span class="va">Z</span>,</span>
 <span>                      data <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">levendusky_replication</span>, <span class="va">R1</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">naive_fit</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   term estimate std.error statistic p.value conf.low conf.high   df</span></span>
-<span><span class="co">#&gt; 1    Z   0.1259   0.06615     1.903 0.05724 -0.00388    0.2557 1439</span></span>
-<span><span class="co">#&gt;             outcome</span></span>
-<span><span class="co">#&gt; 1 Y_polarization_w2</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
+<span><span class="co">#&gt;   term  estimate std.error statistic p.value conf.low conf.high    df outcome   </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Z        0.126    0.066<span style="text-decoration: underline;">2</span>      1.90  0.057<span style="text-decoration: underline;">2</span> -<span style="color: #BB0000;">0.003</span><span style="color: #BB0000; text-decoration: underline;">88</span>     0.256 <span style="text-decoration: underline;">1</span>439. Y_polariz…</span></span></code></pre></div>
 <p>This estimate is naive in the sense that it only estimates the
 average treatment effect if wave 2 attrition is unrelated to potential
 outcomes.</p>
