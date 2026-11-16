@@ -13,7 +13,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/acoppock/attrition/blob/master/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/acoppock/attrition/blob/main/DESCRIPTION)
 
 Coppock A, Gerber A, Green D, Kern H (2026). *attrition: Addressing
 Nonignorable Attrition with Double Sampling and Bounds*. R package
